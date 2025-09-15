@@ -1,0 +1,73 @@
+syntax = "proto3";
+package auth;
+
+service AuthService {
+  rpc SignIn(SignInRequest) returns (SignInResponse);
+  rpc VerifyOtp(VerifyOtpRequest) returns (VerifyOtpResponse);
+  rpc CompleteOnboarding(CompleteOnboardingRequest) returns (UserResponse);
+  rpc OAuthSignIn(OAuthSignInRequest) returns (AuthResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+}
+
+message SignInRequest {
+  string email = 1;
+  string phone = 2;
+}
+
+message SignInResponse {
+  bool success = 1;
+}
+
+message VerifyOtpRequest {
+  string email = 1;
+  string phone = 2;
+  string code = 3;
+}
+
+message VerifyOtpResponse {
+  string accessToken = 1;
+  bool isNewUser = 2;
+  bool isOnboarded = 3;
+}
+
+message CompleteOnboardingRequest {
+  string userId = 1;
+  string name = 2;
+  string gender = 3;
+  string preferredLanguage = 4;
+  string preferredCurrency = 5;
+}
+
+message UserResponse {
+  string id = 1;
+  string email = 2;
+  string phone = 3;
+  string name = 4;
+  string gender = 5;
+  string preferredLanguage = 6;
+  string preferredCurrency = 7;
+  string role = 8;
+  bool isOnboarded = 9;
+}
+
+message OAuthSignInRequest {
+  string email = 1;
+  string name = 2;
+  string providerId = 3;
+  string provider = 4;
+}
+
+message AuthResponse {
+  string accessToken = 1;
+  bool isNewUser = 2;
+  bool isOnboarded = 3;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+}

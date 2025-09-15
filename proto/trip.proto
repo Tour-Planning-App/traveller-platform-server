@@ -1,0 +1,32 @@
+syntax = "proto3";
+package trip;
+
+service TripService {
+  rpc CreateTrip(CreateTripRequest) returns (CreateTripResponse);
+  rpc GetTrip(GetTripRequest) returns (GetTripResponse);
+}
+
+message CreateTripRequest {
+  string name = 1;
+  string startDate = 2;
+  string endDate = 3;
+  string budget = 4;
+  string userId = 5;
+}
+
+message CreateTripResponse {
+  string id = 1;
+  string name = 2;
+}
+
+message GetTripRequest {
+  string id = 1;
+}
+
+message GetTripResponse {
+  string id = 1;
+  string name = 2;
+  string startDate = 3;
+  string endDate = 4;
+  string budget = 5;
+}

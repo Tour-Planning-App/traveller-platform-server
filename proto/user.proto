@@ -1,0 +1,17 @@
+syntax = "proto3"; 
+
+package user;
+
+service UserService { 
+    rpc CreateUser(CreateUserRequest) returns (UserResponse); 
+    rpc UpdateUser(UpdateUserRequest) returns (UserResponse); 
+    rpc GetUser(GetUserRequest) returns (UserResponse); 
+}
+
+message CreateUserRequest { string email = 1; string phone = 2; string googleId = 3; string facebookId = 4; string role = 5; }
+
+message UpdateUserRequest { string id = 1; string name = 2; string gender = 3; string preferredLanguage = 4; string preferredCurrency = 5; bool isOnboarded = 6; }
+
+message GetUserRequest { string id = 1; }
+
+message UserResponse { string id = 1; string email = 2; string phone = 3; string name = 4; string gender = 5; string preferredLanguage = 6; string preferredCurrency = 7; string role = 8; bool isOnboarded = 9; }
