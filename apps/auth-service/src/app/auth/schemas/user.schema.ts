@@ -9,10 +9,10 @@ export class User extends Document {
   @Prop({ unique: true })
   phone?: string;
 
-  @Prop({ unique: true })
+  @Prop({ unique: true, sparse: true }) // sparse: true allows null values without duplicate errors
   googleId?: string;
 
-  @Prop({ unique: true })
+  @Prop({ unique: true, sparse: true }) // sparse: true allows null values without duplicate errors
   facebookId?: string;
 
   @Prop()
@@ -31,10 +31,10 @@ export class User extends Document {
   password?: string; // Hashed, optional for social/email auth
 
   @Prop({ default: 'user' })
-  role: string;
+  role!: string;
 
   @Prop({ default: false })
-  isOnboarded: boolean;
+  isOnboarded!: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

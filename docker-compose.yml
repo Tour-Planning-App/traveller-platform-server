@@ -1,0 +1,117 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "22181:2181"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+#  api-gateway:
+#    build:
+#      context: ./api-gateway
+#      dockerfile: Dockerfile
+#    ports:
+#      - "3200:3200"
+#    environment:
+#      - PORT=3200
+#      - KAFKA_BROKERS=kafka:9092
+#    depends_on:
+#      - kafka
+#    networks:
+#      - app-network
+
+#  authentication-service:
+#    build:
+#      context: ./authentication-service
+#      dockerfile: Dockerfile
+#    environment:
+#      - KAFKA_BROKERS=kafka:9092
+#      - DATABASE_URL=postgresql://postgres:Dineth@123@host.docker.internal:5432/travelplanner_user?schema=public
+#      - JWT_SECRET=super-secret
+#      - JWT_EXP=48h
+#    depends_on:
+#      - kafka
+#    networks:
+#      - app-network
+#    restart: on-failure
+
+#  user-survey-service:
+#    build:
+#      context: ./user-survey-service
+#      dockerfile: Dockerfile
+#    ports:
+#      - "3003:3003" # Expose WebSocket port for user-survey-service
+#    environment:
+#      - KAFKA_BROKERS=kafka:9092
+#      - MONGO_DB_URI=mongodb+srv://dineth:XpmL$33i@cluster0.xn1ch.mongodb.net/travelplanner_survey?retryWrites=true&w=majority&appName=Cluster0
+#    depends_on:
+#      - kafka
+#    networks:
+#      - app-network
+#    restart: on-failure
+#
+#  trip-package-service:
+#    build:
+#      context: ./trip-package-service
+#      dockerfile: Dockerfile
+#    ports:
+#      - "3004:3004" # Expose WebSocket port for trip-package-service
+#    environment:
+#      - KAFKA_BROKERS=kafka:9092
+#      - MONGO_DB_URI=mongodb+srv://dineth:XpmL$33i@cluster0.xn1ch.mongodb.net/travelplanner_survey?retryWrites=true&w=majority&appName=Cluster0
+#    depends_on:
+#      - kafka
+#    networks:
+#      - app-network
+#    restart: on-failure
+#
+#  trip-manager:
+#    build:
+#      context: ./trip-manager
+#      dockerfile: Dockerfile
+#    environment:
+#      - KAFKA_BROKERS=kafka:9092
+#      - MONGO_DB_URI=mongodb+srv://dineth:XpmL$33i@cluster0.xn1ch.mongodb.net/travelplanner_survey?retryWrites=true&w=majority&appName=Cluster0
+#    depends_on:
+#      - kafka
+#    networks:
+#      - app-network
+#    restart: on-failure
+
+networks:
+  app-network:
+    driver: bridge

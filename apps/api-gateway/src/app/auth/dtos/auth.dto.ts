@@ -27,52 +27,52 @@ export class VerifyOtpDto {
   @ApiProperty({ example: '123456', description: '6-digit OTP code' })
   @IsString()
   @Length(6, 6, { message: 'OTP must be 6 digits' })
-  code: string;
+  code!: string;
 }
 
 export class OnboardingDto {
   @ApiProperty({ example: 'John Doe', description: 'User full name' })
   @IsString()
-  name: string;
+  name!: string;
 
   @ApiProperty({ example: 'male', enum: ['male', 'female', 'other', 'prefer_not_to_say'] })
   @IsIn(['male', 'female', 'other', 'prefer_not_to_say'])
-  gender: string;
+  gender!: string;
 
   @ApiProperty({ example: 'English', description: 'Preferred language' })
   @IsString()
-  preferredLanguage: string;
+  preferredLanguage!: string;
 
   @ApiProperty({ example: 'USD', description: 'Preferred currency' })
   @IsString()
-  preferredCurrency: string;
+  preferredCurrency!: string;
 }
 
 export class OAuthProfileDto {
   @ApiProperty({ example: 'john.doe@gmail.com', description: 'User email from provider' })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: 'John Doe', description: 'User name from provider' })
   @IsString()
-  name: string;
+  name!: string;
 
   @ApiProperty({ example: 'google-12345', description: 'Provider-specific ID' })
   @IsString()
-  providerId: string;
+  providerId!: string;
 
   @ApiProperty({ example: 'google', description: 'Provider name (google/facebook)' })
   @IsIn(['google', 'facebook'])
-  provider: string;
+  provider!: string;
 }
 
 export class AuthResponseDto {
   @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...', description: 'JWT access token' })
-  accessToken: string;
+  accessToken!: string;
 
   @ApiProperty({ example: true, description: 'Is this a new user?' })
-  isNewUser: boolean;
+  isNewUser!: boolean;
 
   @ApiProperty({ example: false, description: 'Is onboarding completed?' })
-  isOnboarded: boolean;
+  isOnboarded!: boolean;
 }

@@ -9,6 +9,7 @@ import { PassportModule } from '@nestjs/passport';
 // import { GoogleStrategy } from './strategies/google.strategy';
 // import { FacebookStrategy } from './strategies/facebook.strategy';
 import { ConfigModule } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -19,6 +20,21 @@ import { ConfigModule } from '@nestjs/config';
       secret: process.env.JWT_SECRET || 'secret',
       signOptions: { expiresIn: '7d' },
     }),
+    ClientsModule.register([
+      {
+        name: 'EMAIL_SERVICE',
+        transport: Transport.KAFKA,
+        options: {
+          client: {
+            clientId: 'auth-service',
+            brokers: [process.env.KAFKA_BROKER || 'localhost:9092'],
+          },
+          consumer: {
+            groupId: 'auth-consumer-group',
+          },
+        },
+      },
+    ]),
   ],
   controllers: [AuthController],
   providers: [AuthService],
