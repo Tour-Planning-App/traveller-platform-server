@@ -4,7 +4,7 @@ package auth;
 service AuthService {
   rpc SignIn(SignInRequest) returns (SignInResponse);
   rpc VerifyOtp(VerifyOtpRequest) returns (VerifyOtpResponse);
-  rpc CompleteOnboarding(CompleteOnboardingRequest) returns (UserResponse);
+  rpc CompleteOnboarding(CompleteOnboardingRequest) returns (OnboardingResponse);
   rpc OAuthSignIn(OAuthSignInRequest) returns (AuthResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
 }
@@ -16,6 +16,7 @@ message SignInRequest {
 
 message SignInResponse {
   bool success = 1;
+  string message = 2;
 }
 
 message VerifyOtpRequest {
@@ -25,9 +26,11 @@ message VerifyOtpRequest {
 }
 
 message VerifyOtpResponse {
-  string accessToken = 1;
-  bool isNewUser = 2;
-  bool isOnboarded = 3;
+  bool success = 1;
+  string message = 2;
+  string accessToken = 3;
+  bool isNewUser = 4;
+  bool isOnboarded = 5;
 }
 
 message CompleteOnboardingRequest {
@@ -36,6 +39,28 @@ message CompleteOnboardingRequest {
   string gender = 3;
   string preferredLanguage = 4;
   string preferredCurrency = 5;
+  repeated string travelerTypes = 6;
+  repeated string transportationPreferences = 7;
+  repeated string foodDrinkPreferences = 8;
+  repeated string sriLankaVibes = 9;
+}
+
+message OnboardingResponse {
+  bool success = 1;
+  string message = 2;
+  string id = 3;
+  string email = 4;
+  string phone = 5;
+  string name = 6;
+  string gender = 7;
+  string preferredLanguage = 8;
+  string preferredCurrency = 9;
+  repeated string travelerTypes = 10;
+  repeated string transportationPreferences = 11;
+  repeated string foodDrinkPreferences = 12;
+  repeated string sriLankaVibes = 13;
+  string role = 14;
+  bool isOnboarded = 15;
 }
 
 message UserResponse {

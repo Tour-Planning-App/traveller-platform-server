@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
-import { SignInDto, VerifyOtpDto, OnboardingDto, OAuthProfileDto, AuthResponseDto } from './dtos/auth.dto';
+import { SignInDto, VerifyOtpDto, OnboardingDto, OAuthProfileDto, AuthResponseDto, FullOnboardingDto } from './dtos/auth.dto';
 import twilio from 'twilio';
 import { ClientKafka } from '@nestjs/microservices';
 // import sgMail from '@twilio/email';
@@ -119,7 +119,7 @@ export class AuthService {
       this.logger.log(`OTP verified for ${identifier}, user: ${user._id}`);
       return { accessToken, isNewUser, isOnboarded: user.isOnboarded };
     } catch (error : any) {
-      this.logger.error(`VerifyOtp failed for ${dto.email || dto.phone}: ${error.message}`, error.stack);
+      //this.logger.error(`VerifyOtp failed for ${dto.email || dto.phone}: ${error.message}`, error.stack);
       if (error instanceof UnauthorizedException || error.message.includes('Invalid OTP')) {
         throw new UnauthorizedException('Invalid OTP');
       } else if (error instanceof BadRequestException) {

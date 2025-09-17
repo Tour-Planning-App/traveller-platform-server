@@ -1,4 +1,4 @@
-import { IsEmail, IsString, IsOptional, Length, IsIn, ValidateIf } from 'class-validator';
+import { IsEmail, IsString, IsOptional, Length, IsIn, ValidateIf, ArrayMinSize, ArrayMaxSize, IsEnum, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SignInDto {
@@ -46,6 +46,103 @@ export class OnboardingDto {
   @ApiProperty({ example: 'USD', description: 'Preferred currency' })
   @IsString()
   preferredCurrency!: string;
+
+  @ApiProperty({ example: ['solo', 'friends'], description: 'Traveler types' })
+  @IsArray({ message: 'Traveler types must be an array' })
+  @ArrayMinSize(1, { message: 'At least one traveler type is required' })
+  @ArrayMaxSize(5, { message: 'Maximum 5 traveler types allowed' })
+  @IsEnum(['solo', 'couples', 'friends', 'family', 'business'], { each: true, message: 'Each traveler type must be: solo, couples, friends, family, or business' })
+  travelerTypes!: string[];
+
+  @ApiProperty({ example: ['tuk-tuk', 'car-van-rental'], description: 'Transportation preferences' })
+  @IsArray({ message: 'Transportation preferences must be an array' })
+  @ArrayMinSize(1, { message: 'At least one transportation preference is required' })
+  @ArrayMaxSize(6, { message: 'Maximum 6 transportation preferences allowed' })
+  @IsEnum(['tuk-tuk', 'bike', 'public-buses', 'public-trains', 'car-van-rental', 'walking-cycling'], { each: true, message: 'Each transportation preference must be: tuk-tuk, bike, public-buses, public-trains, car-van-rental, or walking-cycling' })
+  transportationPreferences!: string[];
+
+  @ApiProperty({ example: ['lankan-cuisines', 'western-cuisines'], description: 'Food/drink preferences' })
+  @IsArray({ message: 'Food/drink preferences must be an array' })
+  @ArrayMinSize(1, { message: 'At least one food/drink preference is required' })
+  @ArrayMaxSize(16, { message: 'Maximum 16 food/drink preferences allowed' })
+  @IsEnum([
+    'lankan-cuisines', 'western-cuisines', 'chinese-other-asian-cuisines', 'indian-cuisines', 'middle-eastern-cuisine',
+    'dining', 'street-food', 'vegetarian', 'gluten-free', 'desserts-sweets', 'coffee-tea', 'drinks-juice-bars', 'alcoholic-drinks'
+  ], { each: true, message: 'Each food/drink preference must be one of the allowed values' })
+  foodDrinkPreferences!: string[];
+
+  @ApiProperty({ example: ['misty-highlands', 'beaches'], description: 'Sri Lanka vibes' })
+  @IsArray({ message: 'Sri Lanka vibes must be an array' })
+  @ArrayMinSize(1, { message: 'At least one Sri Lanka vibe is required' })
+  @ArrayMaxSize(8, { message: 'Maximum 8 Sri Lanka vibes allowed' })
+  @IsEnum([
+    'misty-highlands', 'waterfalls-parks', 'beaches', 'art-craft', 'food-culinary', 'photography', 'spa-meditation', 'shopping-markets'
+  ], { each: true, message: 'Each Sri Lanka vibe must be one of the allowed values' })
+  sriLankaVibes!: string[];
+}
+
+export class OnboardingBasicDto {
+  @ApiProperty({ example: 'John Doe', description: 'User full name' })
+  @IsString({ message: 'Name must be a string' })
+  name!: string;
+
+  @ApiProperty({ example: 'male', enum: ['male', 'female', 'other', 'prefer_not_to_say'] })
+  @IsIn(['male', 'female', 'other', 'prefer_not_to_say'], { message: 'Gender must be one of: male, female, other, prefer_not_to_say' })
+  gender!: string;
+
+  @ApiProperty({ example: 'English', description: 'Preferred language' })
+  @IsString({ message: 'Preferred language must be a string' })
+  preferredLanguage!: string;
+
+  @ApiProperty({ example: 'USD', description: 'Preferred currency' })
+  @IsString({ message: 'Preferred currency must be a string' })
+  preferredCurrency!: string;
+}
+
+
+export class OnboardingSurveyDto {
+  @ApiProperty({ example: ['solo', 'friends'], description: 'Traveler types' })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(5)
+  @IsEnum(['solo', 'couples', 'friends', 'family', 'business'], { each: true })
+  travelerTypes!: string[];
+
+  @ApiProperty({ example: ['tuk-tuk', 'car-van-rental'], description: 'Transportation preferences' })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(6)
+  @IsEnum(['tuk-tuk', 'bike', 'public-buses', 'public-trains', 'car-van-rental', 'walking-cycling'], { each: true })
+  transportationPreferences!: string[];
+
+  @ApiProperty({ example: ['lankan-cuisines', 'western-cuisines'], description: 'Food/drink preferences' })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(16)
+  @IsEnum([
+    'lankan-cuisines', 'western-cuisines', 'chinese-other-asian-cuisines', 'indian-cuisines', 'middle-eastern-cuisine',
+    'dining', 'street-food', 'vegetarian', 'gluten-free', 'desserts-sweets', 'coffee-tea', 'drinks-juice-bars', 'alcoholic-drinks'
+  ], { each: true })
+  foodDrinkPreferences!: string[];
+
+  @ApiProperty({ example: ['misty-highlands', 'beaches'], description: 'Sri Lanka vibes' })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(8)
+  @IsEnum([
+    'misty-highlands', 'waterfalls-parks', 'beaches', 'art-craft', 'food-culinary', 'photography', 'spa-meditation', 'shopping-markets'
+  ], { each: true })
+  sriLankaVibes!: string[];
+}
+
+export class FullOnboardingDto {
+  // Basic info
+  @ApiProperty({ type: OnboardingBasicDto })
+  basic!: OnboardingBasicDto;
+
+  // Survey
+  @ApiProperty({ type: OnboardingSurveyDto })
+  survey!: OnboardingSurveyDto;
 }
 
 export class OAuthProfileDto {

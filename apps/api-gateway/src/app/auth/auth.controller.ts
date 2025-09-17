@@ -1,12 +1,12 @@
-import { Body, Controller, HttpException, HttpStatus, Inject, Logger, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpException, HttpStatus, Inject, Logger, Post, Req, UseGuards } from '@nestjs/common';
 import { ClientGrpcProxy } from '@nestjs/microservices';
-import { ApiBadRequestResponse, ApiInternalServerErrorResponse, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiInternalServerErrorResponse, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { catchError, firstValueFrom } from 'rxjs';
 // import { SignInUserDto } from './dtos/signin-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
-import { SignInDto, VerifyOtpDto, OnboardingDto, OAuthProfileDto, AuthResponseDto } from './dtos/auth.dto';
-
+import { SignInDto, VerifyOtpDto, OAuthProfileDto, AuthResponseDto, FullOnboardingDto, OnboardingDto } from './dtos/auth.dto';
+import type { Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -54,13 +54,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Verify OTP and get JWT' })
   @ApiResponse({ status: 200, description: 'Authentication successful', type: AuthResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid OTP code' })
-  //@ApiInternalServerErrorResponse({ description: 'Internal server error during verification' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error during verification' })
   async verifyOtp(@Body() dto: VerifyOtpDto) {
     try {
       const result = await firstValueFrom(
         this.authService.VerifyOtp(dto).pipe(
           catchError((error) => {
-            this.logger.error(`VerifyOtp error: ${error.message}`, error.stack);
+            //this.logger.error(`VerifyOtp error: ${error.message}`, error.stack);
             if (error.code === 2 || error.code === 'INTERNAL') {
               throw new HttpException('Internal server error during verification', HttpStatus.INTERNAL_SERVER_ERROR);
             } else if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
@@ -75,20 +75,23 @@ export class AuthController {
       );
       return result;
     } catch (error:any) {
-      this.logger.error(`VerifyOtp failed: ${error.message}`, error.stack);
+      //this.logger.error(`VerifyOtp failed: ${error.message}`, error.stack);
       throw error;
     }
   }
 
   @Post('onboarding')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Complete onboarding survey' })
   @ApiResponse({ status: 200, description: 'Onboarding completed' })
   @ApiBadRequestResponse({ description: 'Invalid onboarding data' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error during onboarding' })
-  async completeOnboarding(@Body() dto: OnboardingDto) {
+  async completeOnboarding(@Body() dto: OnboardingDto, @Req() req: any) {
     try {
-      const userId = 'from-jwt'; // Extract from req.user.sub in production
+      const userId = req?.user?.userId; // Extract from req.user.sub in production
+      if (!userId) return { success: false, message: 'User not authenticated' };
+
       const result = await firstValueFrom(
         this.authService.CompleteOnboarding({ userId, ...dto }).pipe(
           catchError((error) => {

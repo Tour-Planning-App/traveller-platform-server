@@ -1,7 +1,7 @@
 import { BadRequestException, Controller, Logger, UnauthorizedException } from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
-import { SignInDto, VerifyOtpDto, OnboardingDto, OAuthProfileDto } from './dtos/auth.dto';
+import { SignInDto, VerifyOtpDto, OnboardingDto, OAuthProfileDto, FullOnboardingDto } from './dtos/auth.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -27,7 +27,7 @@ export class AuthController {
     try {
       return await this.authService.verifyOtp(data);
     } catch (error:any) {
-      this.logger.error(`gRPC VerifyOtp error: ${error.message}`, error.stack);
+      //this.logger.error(`gRPC VerifyOtp error: ${error.message}`, error.stack);
       throw new RpcException({
         code: error instanceof UnauthorizedException ? 16 : (error instanceof BadRequestException ? 3 : 2), // UNAUTHENTICATED, INVALID_ARGUMENT, or INTERNAL
         message: error.message,
@@ -35,7 +35,7 @@ export class AuthController {
     }
   }
 
-    @GrpcMethod('AuthService', 'CompleteOnboarding')
+  @GrpcMethod('AuthService', 'CompleteOnboarding')
   async completeOnboarding(data: { userId: string } & OnboardingDto) {
     try {
       return await this.authService.completeOnboarding(data.userId, data);

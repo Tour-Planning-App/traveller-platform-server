@@ -35,6 +35,19 @@ export class User extends Document {
 
   @Prop({ default: false })
   isOnboarded!: boolean;
+
+    // Onboarding Survey Fields
+  @Prop({ type: [String] }) // e.g., ['solo', 'friends']
+  travelerTypes?: string[];
+
+  @Prop({ type: [String] }) // e.g., ['tuk-tuk', 'public-buses']
+  transportationPreferences?: string[];
+
+  @Prop({ type: [String] }) // e.g., ['lankan-cuisines', 'western-cuisines']
+  foodDrinkPreferences?: string[];
+
+  @Prop({ type: [String] }) // e.g., ['misty-highlands', 'beaches']
+  sriLankaVibes?: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
