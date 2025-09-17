@@ -105,9 +105,9 @@ export class AuthService {
         user = new this.userModel({ 
           email, 
           phone, 
-          role: 'Traveller', 
+          role: 'TRAVELER', 
           isOnboarded: false 
-        });
+        }); 
         await user.save();
         this.logger.log(`New user created: ${user._id}`);
       }

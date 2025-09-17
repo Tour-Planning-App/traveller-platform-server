@@ -11,6 +11,9 @@
     },
     {
       "path": "./apps/email-service"
+    },
+    {
+      "path": "./apps/notification-service"
     }
   ]
 }

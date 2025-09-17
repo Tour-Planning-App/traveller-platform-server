@@ -1,0 +1,64 @@
+syntax = "proto3";
+package notification;
+
+service NotificationService {
+  rpc SendNotifications(SendNotificationsRequest) returns (SendNotificationsResponse);
+  rpc SendNotificationsToAll(SendNotificationsToAllRequest) returns (SendNotificationsToAllResponse);
+  rpc RegisterDeviceToken(RegisterDeviceTokenRequest) returns (RegisterDeviceTokenResponse);
+  rpc GetNotifications(GetNotificationsRequest) returns (GetNotificationsResponse);
+}
+
+message SendNotificationsRequest {
+  string email = 1;
+  string title = 2;
+  string content = 3;
+  bool isGlobal = 4;
+}
+
+message SendNotificationsResponse {
+  int32 status = 1;
+  string message = 2;
+  string id = 3;
+}
+
+message SendNotificationsToAllRequest {
+  string title = 1;
+  string content = 2;
+}
+
+message SendNotificationsToAllResponse {
+  int32 status = 1;
+  string message = 2;
+}
+
+message RegisterDeviceTokenRequest {
+  string userId = 1;
+  string email = 2;
+  string expoPushToken = 3;
+}
+
+message RegisterDeviceTokenResponse {
+  int32 status = 1;
+  string message = 2;
+  string id = 3;
+}
+
+message GetNotificationsRequest {
+  string email = 1;
+}
+
+message GetNotificationsResponse {
+  int32 status = 1;
+  string message = 2;
+  repeated Notification data = 3;
+}
+
+message Notification {
+  string id = 1;
+  string email = 2;
+  string title = 3;
+  string content = 4;
+  bool isGlobal = 5;
+  string createdAt = 6;
+  string updatedAt = 7;
+}

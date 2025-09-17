@@ -4,9 +4,12 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
+import { NotificationModule } from './notification/notification.module';
+import {  } from '@nestjs/common';
 
 @Module({
-  imports: [AuthModule,
+  imports: [
+    AuthModule,
     ClientsModule.register([
       {
         name: 'AUTH_PACKAGE',
@@ -14,7 +17,16 @@ import { join } from 'path';
         options: {
           package: 'auth',
           protoPath: join(__dirname, 'proto/auth.proto'),
-          // url: 'auth-service:50051',
+          url: '0.0.0.0:50000',
+        },
+      },
+      {
+        name: 'NOTIFICATION_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'notification',
+          protoPath: join(__dirname, 'proto/notification.proto'),
+          url: '0.0.0.0:50051',
         },
       },
       // {
@@ -34,6 +46,7 @@ import { join } from 'path';
       //   },
       // },
     ]),
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

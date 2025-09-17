@@ -21,7 +21,7 @@ import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
         options: {
            package: 'auth',
            protoPath: join(__dirname, 'proto/auth.proto'),
-        //   url: 'auth-service:50051',
+           url: '0.0.0.0:50000',
          },
       },
     ]),
