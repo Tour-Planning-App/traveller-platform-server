@@ -5,8 +5,7 @@ import { catchError, firstValueFrom } from 'rxjs';
 // import { SignInUserDto } from './dtos/signin-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
-import { SignInDto, VerifyOtpDto, OAuthProfileDto, AuthResponseDto, FullOnboardingDto, OnboardingDto } from './dtos/auth.dto';
-import type { Request } from 'express';
+import { SignInDto, VerifyOtpDto, OAuthProfileDto, AuthResponseDto, OnboardingDto } from './dtos/auth.dto';
 
 @Controller('auth')
 export class AuthController {

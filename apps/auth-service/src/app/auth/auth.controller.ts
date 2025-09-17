@@ -1,7 +1,7 @@
 import { BadRequestException, Controller, Logger, UnauthorizedException } from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
-import { SignInDto, VerifyOtpDto, OnboardingDto, OAuthProfileDto, FullOnboardingDto } from './dtos/auth.dto';
+import { SignInDto, VerifyOtpDto, OnboardingDto, OAuthProfileDto } from './dtos/auth.dto';
 
 @Controller('auth')
 export class AuthController {
