@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { NotificationController } from './notification.controller';
 import { NotificationService } from './notification.service';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { join } from 'path';
+import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
 
 @Module({
     imports: [
@@ -30,6 +31,10 @@ import { join } from 'path';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GrpcExceptionFilter,
     },
   ],
 })
