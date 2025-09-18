@@ -1,0 +1,27 @@
+syntax = "proto3";
+package recommendation;
+
+service RecommendationService {
+  rpc GenerateRecommendations(GenerateRecommendationsRequest) returns (GenerateRecommendationsResponse);
+}
+
+message GenerateRecommendationsRequest {
+  string userId = 1;
+  repeated string travelerTypes = 2;
+  repeated string transportationPreferences = 3;
+  repeated string foodDrinkPreferences = 4;
+  repeated string sriLankaVibes = 5;
+}
+
+message GenerateRecommendationsResponse {
+  int32 status = 1;
+  string message = 2;
+  repeated RecommendationData data = 3;
+}
+
+message RecommendationData {
+  string category = 1; // 'locations', 'restaurants', 'hidden-gems'
+  repeated string recommendations = 2;
+  string description = 3;
+  map<string, string> details = 4;
+}

@@ -5,7 +5,8 @@ import { AuthModule } from './auth/auth.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { NotificationModule } from './notification/notification.module';
-import {  } from '@nestjs/common';
+import {} from '@nestjs/common';
+import { RecommendationModule } from './recommendation/recommendation.module';
 
 @Module({
   imports: [
@@ -29,6 +30,15 @@ import {  } from '@nestjs/common';
           url: '0.0.0.0:50051',
         },
       },
+      {
+        name: 'RECOMMENDATION_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'recommendation',
+          protoPath: join(__dirname, 'proto/recommendation.proto'),
+          url: '0.0.0.0:50052', // Matches recommendation service port
+        },
+      },
       // {
       //   name: 'TRIP_PACKAGE',
       //   transport: Transport.GRPC,
@@ -47,6 +57,7 @@ import {  } from '@nestjs/common';
       // },
     ]),
     NotificationModule,
+    RecommendationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

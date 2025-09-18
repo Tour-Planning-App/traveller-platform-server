@@ -27,7 +27,7 @@ import { NotificationGateway } from './app.gateway';
         options: {
           client: {
             clientId: 'notification-service',
-            brokers: [process.env.KAFKA_BROKER || 'localhost:9092'],
+            brokers: [process.env.KAFKA_BROKER || 'localhost:29092'],
           },
           consumer: {
             groupId: 'notification-consumer-group',

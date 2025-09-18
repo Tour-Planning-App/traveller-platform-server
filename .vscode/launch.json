@@ -76,6 +76,28 @@
         "${workspaceFolder}/apps/notification-service/dist/**/*.(m|c|)js",
         "!**/node_modules/**"
       ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug @traveler-platform-server/recommendation-service with Nx",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "nx",
+        "serve",
+        "@traveler-platform-server/recommendation-service"
+      ],
+      "env": {
+        "NODE_OPTIONS": "--inspect=9233"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/apps/recommendation-service/dist/**/*.(m|c|)js",
+        "!**/node_modules/**"
+      ]
     }
   ]
 }

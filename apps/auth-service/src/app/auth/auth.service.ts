@@ -34,7 +34,7 @@ export class AuthService {
     }
   }
 
-  async signIn(dto: SignInDto): Promise<{ success: boolean }> {
+  async signIn(dto: SignInDto): Promise<any> {
     try {
       const { email, phone } = dto;
       const identifier = email || phone;
@@ -74,7 +74,7 @@ export class AuthService {
         throw new BadRequestException('Must provide email or phone');
       }
 
-      return { success: true };
+      return { success: true , user: email? email : phone};
     } catch (error : any) {
       this.logger.error(`SignIn failed for ${dto.email || dto.phone}: ${error.message}`, error.stack);
       if (error.code === 21608) { // Twilio invalid phone number
