@@ -16,7 +16,8 @@ message SignInRequest {
 
 message SignInResponse {
   bool success = 1;
-  string message = 2;
+  string user = 2;
+  string message = 3;
 }
 
 message VerifyOtpRequest {
