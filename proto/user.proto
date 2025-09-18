@@ -1,17 +1,91 @@
-syntax = "proto3"; 
-
+syntax = "proto3";
 package user;
 
-service UserService { 
-    rpc CreateUser(CreateUserRequest) returns (UserResponse); 
-    rpc UpdateUser(UpdateUserRequest) returns (UserResponse); 
-    rpc GetUser(GetUserRequest) returns (UserResponse); 
+service UserService {
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc GetUserById(GetUserByIdRequest) returns (GetUserResponse); // New method for ID lookup
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
 }
 
-message CreateUserRequest { string email = 1; string phone = 2; string googleId = 3; string facebookId = 4; string role = 5; }
+message CreateUserRequest {
+  string email = 1;
+  string password = 2;
+  string name = 3;
+  string role = 4;
+  string preferredLanguage = 5;
+  string preferredCurrency = 6;
+}
 
-message UpdateUserRequest { string id = 1; string name = 2; string gender = 3; string preferredLanguage = 4; string preferredCurrency = 5; bool isOnboarded = 6; }
+message CreateUserResponse {
+  int32 status = 1;
+  string message = 2;
+  string id = 3;
+}
 
-message GetUserRequest { string id = 1; }
+message GetUserRequest {
+  string email = 1;
+}
 
-message UserResponse { string id = 1; string email = 2; string phone = 3; string name = 4; string gender = 5; string preferredLanguage = 6; string preferredCurrency = 7; string role = 8; bool isOnboarded = 9; }
+message GetUserByIdRequest {
+  string id = 1;
+}
+
+message GetUserResponse {
+  int32 status = 1;
+  string message = 2;
+  User data = 3;
+}
+
+message UpdateUserRequest {
+  string email = 1;
+  string password = 2;
+  string name = 3;
+  string preferredLanguage = 4;
+  string preferredCurrency = 5;
+}
+
+message UpdateUserResponse {
+  int32 status = 1;
+  string message = 2;
+  string id = 3;
+}
+
+message DeleteUserRequest {
+  string email = 1;
+}
+
+message DeleteUserResponse {
+  int32 status = 1;
+  string message = 2;
+}
+
+message UpdateProfileRequest {
+  string email = 1;
+  string name = 2;
+  string preferredLanguage = 3;
+  string preferredCurrency = 4;
+}
+
+message UpdateProfileResponse {
+  int32 status = 1;
+  string message = 2;
+  string id = 3;
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+  string role = 4;
+  string preferredLanguage = 5;
+  string preferredCurrency = 6;
+  repeated string travelerTypes = 7; // From onboarding
+  repeated string transportationPreferences = 8;
+  repeated string foodDrinkPreferences = 9;
+  repeated string sriLankaVibes = 10;
+  string createdAt = 11;
+  string updatedAt = 12;
+}

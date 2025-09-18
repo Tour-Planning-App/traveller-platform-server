@@ -49,11 +49,11 @@ export class AuthService {
       this.logger.debug(`Generated OTP ${code} for ${identifier}`);
 
       if (email) {
-        await this.emailClient.emit('send_verification_code_email', {
+        const emailRes = await this.emailClient.emit('send_verification_code_email', {
           user: { email },
           code,
         }).toPromise();
-        this.logger.log(`Email OTP request sent to email-service for ${email}`);
+        this.logger.log(`Email OTP request sent to email-service for ${emailRes}`);
         // Send OTP via email using Twilio SendGrid
         // await this.sgMailClient.send({
         //   to: email,
@@ -62,6 +62,7 @@ export class AuthService {
         //   text: `Your OTP code is ${code}. It is valid for 10 minutes.`,
         // });
         this.logger.log(`Email OTP sent to ${email}`);
+        return { success: emailRes ? true : false , user: email};
       } else if (phone) {
         // Send OTP via SMS using Twilio
         const message = await this.twilioClient.messages.create({
@@ -70,11 +71,12 @@ export class AuthService {
           to: phone,
         });
         this.logger.log(`SMS OTP sent to ${phone}, SID: ${message.sid}`);
+        return { success: message ? true : false , user: phone};
       } else {
         throw new BadRequestException('Must provide email or phone');
       }
 
-      return { success: true , user: email? email : phone};
+      // return { success: true , user: email? email : phone};
     } catch (error : any) {
       this.logger.error(`SignIn failed for ${dto.email || dto.phone}: ${error.message}`, error.stack);
       if (error.code === 21608) { // Twilio invalid phone number

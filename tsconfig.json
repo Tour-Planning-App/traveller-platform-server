@@ -17,6 +17,12 @@
     },
     {
       "path": "./apps/recommendation-service"
+    },
+    {
+      "path": "./apps/user-service-e2e"
+    },
+    {
+      "path": "./apps/user-service"
     }
   ]
 }

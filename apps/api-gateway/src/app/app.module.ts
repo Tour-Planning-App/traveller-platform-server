@@ -7,6 +7,7 @@ import { join } from 'path';
 import { NotificationModule } from './notification/notification.module';
 import {} from '@nestjs/common';
 import { RecommendationModule } from './recommendation/recommendation.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -39,6 +40,15 @@ import { RecommendationModule } from './recommendation/recommendation.module';
           url: '0.0.0.0:50052', // Matches recommendation service port
         },
       },
+      {
+        name: 'USER_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'user',
+          protoPath: join(__dirname, 'proto/user.proto'),
+          url: '0.0.0.0:50053', // Matches recommendation service port
+        },
+      },
       // {
       //   name: 'TRIP_PACKAGE',
       //   transport: Transport.GRPC,
@@ -58,6 +68,7 @@ import { RecommendationModule } from './recommendation/recommendation.module';
     ]),
     NotificationModule,
     RecommendationModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
