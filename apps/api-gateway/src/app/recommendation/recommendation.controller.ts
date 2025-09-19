@@ -45,11 +45,7 @@ export class RecommendationController {
             })
             )
         );
-        return res.status(HttpStatus.OK).json({
-            success: true,
-            //message: response.message,
-            //data: response.data,
-        });
+        return response;
         } catch (error: any) {
         this.logger.error(`GenerateRecommendations failed: ${error.message}`, error.stack);
         throw error;

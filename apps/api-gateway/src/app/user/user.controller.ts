@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards, Res, Inject, Get, Param, Req, Put, Delete } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Inject, Get, Param, Req, Put, Delete } from '@nestjs/common';
 import {  ClientGrpcProxy } from '@nestjs/microservices';
 import { firstValueFrom, catchError } from 'rxjs';
 import { ApiBadRequestResponse, ApiBearerAuth, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
