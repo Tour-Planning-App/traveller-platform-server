@@ -3,10 +3,10 @@ import { Document } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class User extends Document {
-  @Prop({ unique: true })
+  @Prop({ unique: true, sparse: true })
   email?: string;
 
-  @Prop({ unique: true })
+  @Prop({ unique: true, sparse: true })
   phone?: string;
 
   @Prop({ unique: true, sparse: true }) // sparse: true allows null values without duplicate errors

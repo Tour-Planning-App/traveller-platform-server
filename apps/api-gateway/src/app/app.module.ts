@@ -66,9 +66,11 @@ import { UserModule } from './user/user.module';
       //   },
       // },
     ]),
-    NotificationModule,
-    RecommendationModule,
     UserModule,
+    RecommendationModule,
+    NotificationModule,
+    
+
   ],
   controllers: [AppController],
   providers: [AppService],
