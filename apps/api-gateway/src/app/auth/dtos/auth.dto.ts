@@ -35,18 +35,22 @@ export class VerifyOtpDto {
 export class OnboardingDto {
   @ApiProperty({ example: 'John Doe', description: 'User full name' })
   @IsString()
+  @IsOptional()
   name!: string;
 
   @ApiProperty({ example: 'male', enum: ['male', 'female', 'other', 'prefer_not_to_say'] })
   @IsIn(['male', 'female', 'other', 'prefer_not_to_say'])
+  @IsOptional()
   gender!: string;
 
   @ApiProperty({ example: 'English', description: 'Preferred language' })
   @IsString()
+  @IsOptional()
   preferredLanguage!: string;
 
   @ApiProperty({ example: 'USD', description: 'Preferred currency' })
   @IsString()
+  @IsOptional()
   preferredCurrency!: string;
 
   @ApiProperty({ example: ['solo', 'friends'], description: 'Traveler types' })
@@ -54,6 +58,7 @@ export class OnboardingDto {
   @ArrayMinSize(1, { message: 'At least one traveler type is required' })
   @ArrayMaxSize(5, { message: 'Maximum 5 traveler types allowed' })
   @IsEnum(['solo', 'couples', 'friends', 'family', 'business'], { each: true, message: 'Each traveler type must be: solo, couples, friends, family, or business' })
+  @IsOptional()
   travelerTypes!: string[];
 
   @ApiProperty({ example: ['tuk-tuk', 'car-van-rental'], description: 'Transportation preferences' })
@@ -61,6 +66,7 @@ export class OnboardingDto {
   @ArrayMinSize(1, { message: 'At least one transportation preference is required' })
   @ArrayMaxSize(6, { message: 'Maximum 6 transportation preferences allowed' })
   @IsEnum(['tuk-tuk', 'bike', 'public-buses', 'public-trains', 'car-van-rental', 'walking-cycling'], { each: true, message: 'Each transportation preference must be: tuk-tuk, bike, public-buses, public-trains, car-van-rental, or walking-cycling' })
+  @IsOptional()
   transportationPreferences!: string[];
 
   @ApiProperty({ example: ['lankan-cuisines', 'western-cuisines'], description: 'Food/drink preferences' })
@@ -71,6 +77,7 @@ export class OnboardingDto {
     'lankan-cuisines', 'western-cuisines', 'chinese-other-asian-cuisines', 'indian-cuisines', 'middle-eastern-cuisine',
     'dining', 'street-food', 'vegetarian', 'gluten-free', 'desserts-sweets', 'coffee-tea', 'drinks-juice-bars', 'alcoholic-drinks'
   ], { each: true, message: 'Each food/drink preference must be one of the allowed values' })
+  @IsOptional()
   foodDrinkPreferences!: string[];
 
   @ApiProperty({ example: ['misty-highlands', 'beaches'], description: 'Sri Lanka vibes' })
@@ -80,6 +87,7 @@ export class OnboardingDto {
   @IsEnum([
     'misty-highlands', 'waterfalls-parks', 'beaches', 'art-craft', 'food-culinary', 'photography', 'spa-meditation', 'shopping-markets'
   ], { each: true, message: 'Each Sri Lanka vibe must be one of the allowed values' })
+  @IsOptional()
   sriLankaVibes!: string[];
 }
 
