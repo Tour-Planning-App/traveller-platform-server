@@ -1,4 +1,4 @@
-import { Body, Controller, HttpException, HttpStatus, Inject, Logger, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpException, HttpStatus, Inject, Logger, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import { ApiBadRequestResponse, ApiBearerAuth, ApiInternalServerErrorResponse, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { catchError, firstValueFrom } from 'rxjs';
@@ -79,7 +79,7 @@ export class AuthController {
     }
   }
 
-  @Post('onboarding')
+  @Put('onboarding')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Complete onboarding survey' })
