@@ -3,11 +3,12 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
-import { SignInDto, VerifyOtpDto, OnboardingDto, OAuthProfileDto, AuthResponseDto } from './dtos/auth.dto';
+import { SignInDto, VerifyOtpDto, OnboardingDto, OAuthProfileDto, AuthResponseDto, CreateSubscriptionDto, PlanDto } from './dtos/auth.dto';
 import twilio from 'twilio';
 import { ClientKafka } from '@nestjs/microservices';
 // import sgMail from '@twilio/email';
-
+import Stripe from 'stripe';
+import * as bcrypt from 'bcrypt';
 const otpStore = new Map<string, string>(); // In-memory OTP store (use Redis in production)
 
 @Injectable()
@@ -15,6 +16,7 @@ export class AuthService {
   private twilioClient: twilio.Twilio;
   // private sgMailClient: sgMail.MailService;
   private readonly logger = new Logger(AuthService.name);
+  private stripe: Stripe;
 
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
@@ -27,6 +29,7 @@ export class AuthService {
         process.env.TWILIO_ACCOUNT_SID,
         process.env.TWILIO_AUTH_TOKEN
       );
+      this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-09-30.clover' });
       //this.sgMailClient = sgMail(process.env.TWILIO_SENDGRID_API_KEY);
     } catch (error:any) {
       this.logger.error(`Failed to initialize Twilio clients: ${error.message}`);
@@ -108,7 +111,9 @@ export class AuthService {
           email, 
           phone, 
           role: 'TRAVELER', 
-          isOnboarded: false 
+          isOnboarded: false ,
+          plan: 'free', // New: Assign free plan
+          isSubscribed: false,
         }); 
         await user.save();
         this.logger.log(`New user created: ${user._id}`);
@@ -178,19 +183,145 @@ export class AuthService {
     }
   }
 
-  // async login(email: string, password: string): Promise<string> {
-  //   try {
-  //     const user = await this.userModel.findOne({ email });
-  //     if (!user || !await bcrypt.compare(password, user.password || '')) {
-  //       throw new UnauthorizedException('Invalid credentials');
-  //     }
-  //     const payload = { sub: user._id.toString(), email: user.email, role: user.role };
-  //     return this.jwtService.sign(payload);
-  //   } catch (error) {
-  //     this.logger.error(`Login failed for ${email}: ${error.message}`, error.stack);
-  //     throw error;
-  //   }
-  // }
+  async login(email: string, password: string): Promise<{ token: string; user: any }> {
+    try {
+      console.log('Login attempt for:', email);
+      console.log('Password provided:', password );
+      const user = await this.userModel.findOne({ email });
+      console.log('User found:', user);
+      if (!user || !await bcrypt.compare(password, user.password || '')) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
 
+      // Role-based: admin/superadmin get full access; no extra gating here (handled in guards)
+      const payload = { sub: user._id.toString(), email: user.email, role: user.role };
+      const token = this.jwtService.sign(payload);
+
+      // Return user with role for frontend (e.g., show admin dashboard)
+      const userResponse = {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        role: user.role, // 'admin' or 'superadmin'
+        isOnboarded: user.isOnboarded,
+        plan: user.plan,
+        isSubscribed: user.isSubscribed,
+      };
+
+      this.logger.log(`Login successful for ${email} with role: ${user.role}`);
+      return { token, user: userResponse };
+    } catch (error) {
+      this.logger.error(`Login failed for ${email}: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  // New: Create subscription with Stripe
+  async createSubscription(data: CreateSubscriptionDto): Promise<any> {
+    try {
+      const { userId, plan } = data;
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await this.stripe.customers.create({
+          email: user.email,
+          metadata: { userId },
+        });
+        customerId = customer.id;
+        user.stripeCustomerId = customerId;
+        await user.save();
+      }
+
+      const prices = {
+        basic: process.env.STRIPE_BASIC_PRICE_ID,
+        premium: process.env.STRIPE_PREMIUM_PRICE_ID,
+      };
+      const priceId = prices[plan];
+      if (!priceId) {
+        throw new BadRequestException('Invalid plan');
+      }
+
+      const session = await this.stripe.checkout.sessions.create({
+        customer: customerId,
+        mode: 'subscription',
+        payment_method_types: ['card'],
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${process.env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.FRONTEND_URL}/cancel`,
+        metadata: { userId, plan },
+      });
+
+      return { success: true, message: 'Checkout initiated', checkoutUrl: session.url };
+    } catch (error: any) {
+      this.logger.error(`CreateSubscription error: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  // New: Get subscription
+  async getSubscription(userId: string): Promise<any> {
+    try {
+      const user = await this.userModel.findById(userId).select('plan isSubscribed subscriptionId subscriptionEndDate createdAt');
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+      return {
+        success: true,
+        message: 'Subscription fetched',
+        subscription: {
+          id: user.subscriptionId,
+          userId,
+          plan: { name: user.plan.charAt(0).toUpperCase() + user.plan.slice(1), level: { free: 0, basic: 1, premium: 2 }[user.plan] },
+          status: user.isSubscribed ? 'active' : 'inactive',
+          startDate: (user as any).createdAt?.toISOString?.() || null,
+          endDate: user.subscriptionEndDate?.toISOString() || null,
+        },
+      };
+    } catch (error: any) {
+      this.logger.error(`GetSubscription error: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  // New: Get plans (hardcoded for simplicity; use DB in production)
+  async getPlans(): Promise<any> {
+    const plans: PlanDto[] = [
+      { id: 'free', name: 'Free', level: 0, price: 0, features: ['Basic trip viewing'], duration: 'lifetime' },
+      { id: 'basic', name: 'Basic', level: 1, price: 9.99, features: ['Create trips', 'Personalized recs'], duration: 'monthly' },
+      { id: 'premium', name: 'Premium', level: 2, price: 19.99, features: ['Advanced planning', 'Priority support'], duration: 'monthly' },
+    ];
+    return { success: true, plans };
+  }
+
+  // New: Get plan
+  async getPlan(planId: string): Promise<any> {
+    const plans = await this.getPlans();
+    const plan = plans.plans.find(p => p.id === planId);
+    if (!plan) {
+      throw new BadRequestException('Plan not found');
+    }
+    return { success: true, plan };
+  }
+
+  // New: Update subscription
+  async updateSubscription(subscriptionId: string, planId: string): Promise<any> {
+    try {
+      const user = await this.userModel.findOne({ subscriptionId });
+      if (!user) {
+        throw new BadRequestException('Subscription not found');
+      }
+      // For upgrade, create new checkout session similar to create
+      const createData = { userId: user._id.toString(), plan: planId === 'basic' ? 'basic' : 'premium' };
+      const result = await this.createSubscription(createData as CreateSubscriptionDto);
+      return result;
+    } catch (error: any) {
+      this.logger.error(`UpdateSubscription error: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
 
 }

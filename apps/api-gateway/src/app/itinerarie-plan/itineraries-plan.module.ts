@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import { RecommendationController } from './recommendation.controller';
-import { RecommendationService } from './recommendation.service';
+import { ItinerariesPlanController } from './itineraries-plan.controller';
+import { ItinerariesPlanService } from './itineraries-plan.service';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
-import { JwtAuthGuard } from '../../app/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SubscriptionGuard } from '../auth/guards/subscription.guard';
 import { join } from 'path';
 import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
-import { SubscriptionGuard } from '../auth/guards/subscription.guard';
 
 @Module({
   imports: [
@@ -17,12 +17,12 @@ import { SubscriptionGuard } from '../auth/guards/subscription.guard';
     }),
     ClientsModule.register([
       {
-        name: 'RECOMMENDATION_PACKAGE',
+        name: 'ITINERARIES_PACKAGE',
         transport: Transport.GRPC,
         options: {
-          package: 'recommendation',
-          protoPath: join(__dirname, 'proto/recommendation.proto'),
-          url: 'localhost:50052', // Matches recommendation service port
+          package: 'itineraries',
+          protoPath: join(__dirname, 'proto/itineraries.proto'),
+          url: 'localhost:50054', // Assume port for itineraries service
         },
       },
       {
@@ -36,17 +36,17 @@ import { SubscriptionGuard } from '../auth/guards/subscription.guard';
       },
     ]),
   ],
-  controllers: [RecommendationController],
-  providers: [RecommendationService,
+  controllers: [ItinerariesPlanController],
+  providers: [ItinerariesPlanService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
     {
-      provide:APP_FILTER,
-      useClass:GrpcExceptionFilter
+      provide: APP_FILTER,
+      useClass: GrpcExceptionFilter,
     },
-    SubscriptionGuard
+    SubscriptionGuard, // Optional global; use per-route
   ],
 })
-export class RecommendationModule {}
+export class ItinerariesPlanModule {}

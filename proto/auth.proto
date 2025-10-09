@@ -1,5 +1,6 @@
 syntax = "proto3";
 package auth;
+import "google/protobuf/timestamp.proto";
 
 service AuthService {
   rpc SignIn(SignInRequest) returns (SignInResponse);
@@ -7,6 +8,14 @@ service AuthService {
   rpc CompleteOnboarding(CompleteOnboardingRequest) returns (OnboardingResponse);
   rpc OAuthSignIn(OAuthSignInRequest) returns (AuthResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
+
+  // Subscription RPCs
+  rpc CreateSubscription(CreateSubscriptionRequest) returns (CreateSubscriptionResponse);
+  rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse);
+  rpc GetPlans(GetPlansRequest) returns (GetPlansResponse);
+  rpc GetPlan(GetPlanRequest) returns (GetPlanResponse);
+  rpc UpdateSubscription(UpdateSubscriptionRequest) returns (UpdateSubscriptionResponse);
+  rpc CheckSubscriptionAccess(CheckSubscriptionAccessRequest) returns (CheckSubscriptionAccessResponse);
 }
 
 message SignInRequest {
@@ -74,6 +83,9 @@ message UserResponse {
   string preferredCurrency = 7;
   string role = 8;
   bool isOnboarded = 9;
+  string plan = 10; // 'free', 'basic', 'premium'
+  bool is_subscribed = 11;
+  google.protobuf.Timestamp subscription_end_date = 12;
 }
 
 message OAuthSignInRequest {
@@ -96,4 +108,81 @@ message LoginRequest {
 
 message LoginResponse {
   string token = 1;
+  UserResponse user = 2;
+}
+
+// Subscription messages
+message Plan {
+  string id = 1;
+  string name = 2; // 'Free', 'Basic', 'Premium'
+  int32 level = 3; // 0: Free, 1: Basic, 2: Premium
+  double price = 4;
+  repeated string features = 5;
+  string duration = 6; // 'lifetime', 'monthly'
+}
+
+message Subscription {
+  string id = 1;
+  string user_id = 2;
+  string plan_id = 3;
+  string status = 4; // 'active', 'inactive', 'expired'
+  google.protobuf.Timestamp start_date = 5;
+  google.protobuf.Timestamp end_date = 6;
+}
+
+message CreateSubscriptionRequest {
+  string user_id = 1;
+  string plan_id = 2;
+}
+
+message CreateSubscriptionResponse {
+  bool success = 1;
+  string message = 2;
+  Subscription subscription = 3;
+}
+
+message GetSubscriptionRequest {
+  string user_id = 1;
+}
+
+message GetSubscriptionResponse {
+  bool success = 1;
+  string message = 2;
+  Subscription subscription = 3;
+}
+
+message GetPlansRequest {}
+
+message GetPlansResponse {
+  bool success = 1;
+  repeated Plan plans = 2;
+}
+
+message GetPlanRequest {
+  string plan_id = 1;
+}
+
+message GetPlanResponse {
+  bool success = 1;
+  Plan plan = 2;
+}
+
+message UpdateSubscriptionRequest {
+  string subscription_id = 1;
+  string plan_id = 2;
+}
+
+message UpdateSubscriptionResponse {
+  bool success = 1;
+  string message = 2;
+  Subscription subscription = 3;
+}
+
+message CheckSubscriptionAccessRequest {
+  string user_id = 1;
+  int32 required_level = 2; // 0=free, 1=basic, 2=premium
+}
+
+message CheckSubscriptionAccessResponse {
+  bool has_access = 1;
 }

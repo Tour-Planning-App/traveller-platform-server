@@ -1,4 +1,4 @@
-import { IsEmail, IsString, IsOptional, Length, IsIn, ValidateIf, ArrayMinSize, ArrayMaxSize, IsEnum, IsArray, validate } from 'class-validator';
+import { IsEmail, IsString, IsOptional, Length, IsIn, ValidateIf, ArrayMinSize, ArrayMaxSize, IsEnum, IsArray, validate, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ValidationError } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
@@ -191,4 +191,60 @@ export class AuthResponseDto {
 
   @ApiProperty({ example: false, description: 'Is onboarding completed?' })
   isOnboarded!: boolean;
+}
+
+
+// New DTOs
+export class PlanDto {
+  @ApiProperty({ example: 'free', description: 'Plan ID' })
+  id!: string;
+
+  @ApiProperty({ example: 'Free', description: 'Plan name' })
+  name!: string;
+
+  @ApiProperty({ example: 0, description: 'Feature level (0=Free, 1=Basic, 2=Premium)' })
+  level!: number;
+
+  @ApiProperty({ example: 0, description: 'Monthly price' })
+  price!: number;
+
+  @ApiProperty({ example: ['Basic trip viewing'], description: 'Allowed features' })
+  features!: string[];
+
+  @ApiProperty({ example: 'lifetime', description: 'Duration' })
+  duration!: string;
+}
+
+export class SubscriptionDto {
+  @ApiProperty({ example: 'sub_123', description: 'Subscription ID' })
+  id!: string;
+
+  @ApiProperty({ example: 'user_123', description: 'User ID' })
+  userId!: string;
+
+  @ApiProperty({ type: PlanDto, description: 'Associated plan' })
+  plan!: PlanDto; // Populated in response
+
+  @ApiProperty({ example: 'active', enum: ['active', 'inactive', 'expired'] })
+  status!: string;
+
+  @ApiProperty({ example: '2025-10-08T00:00:00Z', description: 'Start date' })
+  startDate!: string;
+
+  @ApiProperty({ example: null, description: 'End date (null for lifetime)' })
+  endDate?: string | null;
+}
+
+
+
+export class LoginDto {
+  @ApiProperty({ example: 'admin@example.com', description: 'User email' })
+  @IsEmail({}, { message: 'Invalid email format' })
+  email: string;
+
+  @ApiProperty({ example: 'password123', description: 'User password' })
+  @IsString({ message: 'Password must be a string' })
+  @IsNotEmpty({ message: 'Password cannot be empty' })
+  @Length(6, 128, { message: 'Password must be between 6 and 128 characters' })
+  password: string;
 }

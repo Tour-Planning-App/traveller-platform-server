@@ -4,6 +4,7 @@ import { RpcException } from '@nestjs/microservices';
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto, UpdateProfileDto } from './dtos/user.dto';
 import { BadRequestException } from '@nestjs/common';
+import { CreateSubscriptionDto } from './dtos/subscription.dto';
 
 
 @Controller('user')
@@ -95,4 +96,75 @@ export class UserController {
       });
     }
   }
+
+// New: Create subscription (integrate Stripe checkout)
+  @GrpcMethod('UserService', 'CreateSubscription')
+  async createSubscription(@Payload() data: CreateSubscriptionDto & { userId: string }) {
+    try {
+      const result = await this.userService.createSubscription({ ...data, userId: data.userId });
+      return { success: true, message: 'Subscription checkout initiated', checkoutUrl: result.url };
+    } catch (error: any) {
+      this.logger.error(`gRPC CreateSubscription error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
+  // New: Get subscription details
+  @GrpcMethod('UserService', 'GetSubscription')
+  async getSubscription(@Payload() data: { userId: string }) {
+    try {
+      const result = await this.userService.getSubscription(data.userId);
+      return { success: true, message: 'Subscription fetched', data: result };
+    } catch (error: any) {
+      this.logger.error(`gRPC GetSubscription error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
+  // New: Update subscription (e.g., upgrade)
+  @GrpcMethod('UserService', 'UpdateSubscription')
+  async updateSubscription(@Payload() data: CreateSubscriptionDto & { userId: string }) {
+    try {
+      const result = await this.userService.updateSubscription({ ...data, userId: data.userId });
+      return { success: true, message: 'Subscription updated', checkoutUrl: result.url };
+    } catch (error: any) {
+      this.logger.error(`gRPC UpdateSubscription error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
+  // New: Handle Stripe webhook
+  @GrpcMethod('UserService', 'HandleStripeWebhook')
+  async handleStripeWebhook(@Payload() data: any) { // Struct for event
+    try {
+      const result = await this.userService.handleStripeWebhook(data);
+      return { status: 200, message: 'Webhook handled successfully' };
+    } catch (error: any) {
+      this.logger.error(`gRPC HandleStripeWebhook error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
+  @GrpcMethod('UserService', 'CheckSubscriptionAccess')
+  async checkSubscriptionAccess(@Payload() data: { userId: string; requiredLevel: number }) {
+    try {
+      const hasAccess = await this.userService.checkSubscriptionAccess(data.userId, data.requiredLevel);
+      return { hasAccess };
+    } catch (error: any) {
+      throw new RpcException({ code: 2, message: error.message });
+    }
+  }
+
 }

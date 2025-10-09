@@ -7,6 +7,7 @@ import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
 import { JwtModule } from '@nestjs/jwt';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
+import { SubscriptionGuard } from '../auth/guards/subscription.guard';
 
 @Module({
   imports: [
@@ -21,9 +22,18 @@ import { join } from 'path';
           options: {
             package: 'user',
             protoPath: join(__dirname, 'proto/user.proto'),
-            url: 'localhost:50052', // Matches recommendation service port
+            url: 'localhost:50053', // Matches recommendation service port
           },
         },
+        {
+        name: 'AUTH_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'auth',
+          protoPath: join(__dirname, 'proto/auth.proto'), // Adjust if auth is in sibling dir (e.g., ../../ for Nx)
+          url: 'localhost:50000', // Auth service port
+        },
+      },
       ]),
     ],
   controllers: [UserController],
@@ -35,7 +45,8 @@ import { join } from 'path';
         {
           provide:APP_FILTER,
           useClass:GrpcExceptionFilter
-        }
+        },
+        SubscriptionGuard
   ],
 })
 export class UserModule {}

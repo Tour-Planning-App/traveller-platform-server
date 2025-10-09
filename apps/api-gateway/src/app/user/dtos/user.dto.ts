@@ -16,8 +16,8 @@ export class CreateUserDto {
   @IsNotEmpty({ message: 'Name cannot be empty' })
   name: string;
 
-  @ApiProperty({ example: 'superadmin', enum: ['superadmin', 'admin', 'traveler'], description: 'User role' })
-  @IsEnum(['superadmin', 'admin', 'traveler'], { message: 'Invalid role' })
+  @ApiProperty({ example: 'SUPERADMIN', enum: ['SUPERADMIN', 'ADMIN', 'TRAVELER'], description: 'User role' })
+  @IsEnum(['SUPERADMIN', 'ADMIN', 'TRAVELER'], { message: 'Invalid role' })
   role: string;
 
   @ApiProperty({ example: 'English', description: 'Preferred language', required: false })

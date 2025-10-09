@@ -20,6 +20,9 @@
     },
     {
       "path": "./apps/user-service"
+    },
+    {
+      "path": "./apps/itinerarie-plan"
     }
   ]
 }

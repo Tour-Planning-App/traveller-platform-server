@@ -1,11 +1,12 @@
 import { Body, Controller, HttpException, HttpStatus, Inject, Logger, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import { ApiBadRequestResponse, ApiBearerAuth, ApiInternalServerErrorResponse, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { catchError, firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, of } from 'rxjs';
 // import { SignInUserDto } from './dtos/signin-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
-import { SignInDto, VerifyOtpDto, OAuthProfileDto, AuthResponseDto, OnboardingDto } from './dtos/auth.dto';
+import { SignInDto, VerifyOtpDto, OAuthProfileDto, AuthResponseDto, OnboardingDto, LoginDto } from './dtos/auth.dto';
+import { JwtService } from '@nestjs/jwt'; // New import for token verification
 
 @Controller('auth')
 export class AuthController {
@@ -14,6 +15,7 @@ export class AuthController {
 
   constructor(
     @Inject('AUTH_PACKAGE') private authClient: ClientGrpcProxy,
+    private jwtService: JwtService,
   ) {
         this.authService = this.authClient.getService('AuthService');
 
@@ -71,10 +73,61 @@ export class AuthController {
             }
           })
         )
-      );
+      ) as any;
+      // New: Assign free plan if new user
+      if (result.isNewUser) {
+        const payload = this.jwtService.verify(result.accessToken);
+        const userId = payload.sub;
+        const freePlanId = 'free'; // Hardcoded; fetch dynamically in production
+        await firstValueFrom(
+          this.authService.CreateSubscription({ userId, planId: freePlanId }).pipe(
+            catchError((err) => {
+              this.logger.error(`CreateSubscription error: ${err.message}`);
+              // Don't fail auth if subscription creation fails
+              console.warn('Free plan assignment failed, but auth succeeded');
+              return of(null);
+            })
+          )
+        );
+      }
+
       return result;
     } catch (error:any) {
       //this.logger.error(`VerifyOtp failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  @Public()
+  @Post('login')
+  @ApiOperation({ summary: 'Login with email and password (supports admin/superadmin)' })
+  @ApiResponse({ status: 200, description: 'Login successful', type: AuthResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid credentials' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error during login' })
+  async login(@Body() dto: LoginDto) {
+    try {
+      const result = await firstValueFrom(
+        this.authService.Login(dto).pipe(
+          catchError((error) => {
+            this.logger.error(`Login error: ${error.message}`, error.stack);
+            if (error.code === 16 || error.code === 'UNAUTHENTICATED') {
+              throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+            } else if (error.code === 2 || error.code === 'INTERNAL') {
+              throw new HttpException('Internal server error during login', HttpStatus.INTERNAL_SERVER_ERROR);
+            } else if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
+              throw new HttpException('Invalid login data', HttpStatus.BAD_REQUEST);
+            } else {
+              throw new HttpException('Login failed', HttpStatus.BAD_REQUEST);
+            }
+          })
+        )
+      ) as any;
+      return {
+        accessToken: result.token,
+        user: result.user, // Includes role for admin/superadmin
+      };
+    } catch (error: any) {
+      this.logger.error(`Login failed: ${error.message}`, error.stack);
       throw error;
     }
   }

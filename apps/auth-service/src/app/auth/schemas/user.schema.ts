@@ -48,6 +48,26 @@ export class User extends Document {
 
   @Prop({ type: [String] }) // e.g., ['misty-highlands', 'beaches']
   sriLankaVibes?: string[];
+
+  @Prop({ type: String }) // e.g., 'misty-highlands'
+  other?: string;
+
+    // Subscription fields
+  @Prop({ required: false })
+  stripeCustomerId?: string; // Stripe customer ID
+
+  @Prop({ required: false })
+  subscriptionId?: string; // Stripe subscription ID
+
+  @Prop({ enum: ['free', 'basic', 'premium'], default: 'free' })
+  plan: string;
+
+  @Prop({ default: false })
+  isSubscribed: boolean;
+
+  @Prop({ type: Date })
+  subscriptionEndDate?: Date; // For trial/expiration
+  
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

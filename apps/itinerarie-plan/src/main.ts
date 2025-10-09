@@ -3,6 +3,7 @@
  * This is only a minimal backend to get started.
  */
 
+
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
@@ -13,14 +14,13 @@ async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
     transport: Transport.GRPC,
     options: {
-      package: 'user',
-      protoPath: join(__dirname, 'proto/user.proto'),
-      url: 'localhost:50053', // Different port for user service
+      package: 'itineraries',
+      protoPath: join(__dirname, 'proto/itineraries.proto'),
+      url: '0.0.0.0:50054', 
     },
   });
   await app.listen();
-
-  Logger.log(`🚀 User microservice is listening on gRPC channel`);
+  Logger.log(`🚀 Itineraries microservice is listening on gRPC channel`);
 }
 
 bootstrap();

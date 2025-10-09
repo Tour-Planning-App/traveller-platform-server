@@ -7,6 +7,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
+import { SubscriptionGuard } from './guards/subscription.guard';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
       provide: APP_FILTER,
       useClass: GrpcExceptionFilter,
     },
+    SubscriptionGuard
   ],
 })
 export class AuthModule {}

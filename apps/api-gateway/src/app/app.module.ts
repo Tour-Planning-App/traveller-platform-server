@@ -8,6 +8,7 @@ import { NotificationModule } from './notification/notification.module';
 import {} from '@nestjs/common';
 import { RecommendationModule } from './recommendation/recommendation.module';
 import { UserModule } from './user/user.module';
+import { ItinerariesPlanModule } from './itinerarie-plan/itineraries-plan.module';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { UserModule } from './user/user.module';
         options: {
           package: 'auth',
           protoPath: join(__dirname, 'proto/auth.proto'),
-          url: '0.0.0.0:50000',
+          url: 'localhost:50000',
         },
       },
       {
@@ -28,7 +29,7 @@ import { UserModule } from './user/user.module';
         options: {
           package: 'notification',
           protoPath: join(__dirname, 'proto/notification.proto'),
-          url: '0.0.0.0:50051',
+          url: 'localhost:50051',
         },
       },
       {
@@ -37,7 +38,7 @@ import { UserModule } from './user/user.module';
         options: {
           package: 'recommendation',
           protoPath: join(__dirname, 'proto/recommendation.proto'),
-          url: '0.0.0.0:50052', // Matches recommendation service port
+          url: 'localhost:50052', // Matches recommendation service port
         },
       },
       {
@@ -46,7 +47,16 @@ import { UserModule } from './user/user.module';
         options: {
           package: 'user',
           protoPath: join(__dirname, 'proto/user.proto'),
-          url: '0.0.0.0:50053', // Matches recommendation service port
+          url: 'localhost:50053', // Matches recommendation service port
+        },
+      },
+      {
+        name: 'ITINERARIES_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'itineraries',
+          protoPath: join(__dirname, 'proto/itineraries.proto'),
+          url: 'localhost:50054', // Assume port for itineraries service
         },
       },
       // {
@@ -69,8 +79,7 @@ import { UserModule } from './user/user.module';
     UserModule,
     RecommendationModule,
     NotificationModule,
-    
-
+    ItinerariesPlanModule,
   ],
   controllers: [AppController],
   providers: [AppService],

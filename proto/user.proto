@@ -1,13 +1,21 @@
 syntax = "proto3";
 package user;
+import "google/protobuf/timestamp.proto";
 
 service UserService {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
-  rpc GetUserById(GetUserByIdRequest) returns (GetUserResponse); // New method for ID lookup
+  rpc GetUserById(GetUserByIdRequest) returns (GetUserResponse);
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
   rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+
+  // New RPCs for subscriptions
+  rpc CreateSubscription(CreateSubscriptionRequest) returns (CreateSubscriptionResponse);
+  rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse);
+  rpc UpdateSubscription(UpdateSubscriptionRequest) returns (UpdateSubscriptionResponse);
+  rpc HandleStripeWebhook(UpdateSubscriptionRequest) returns (GetUserResponse); // For webhook events
+  rpc CheckSubscriptionAccess(CheckSubscriptionAccessRequest) returns (CheckSubscriptionAccessResponse);
 }
 
 message CreateUserRequest {
@@ -63,10 +71,11 @@ message DeleteUserResponse {
 }
 
 message UpdateProfileRequest {
-  string email = 1;
+  string user_id = 1;
   string name = 2;
-  string preferredLanguage = 3;
-  string preferredCurrency = 4;
+  string email = 3;
+  string preferredLanguage = 4;
+  string preferredCurrency = 5;
 }
 
 message UpdateProfileResponse {
@@ -75,6 +84,7 @@ message UpdateProfileResponse {
   string id = 3;
 }
 
+// Single User message definition
 message User {
   string id = 1;
   string email = 2;
@@ -82,10 +92,63 @@ message User {
   string role = 4;
   string preferredLanguage = 5;
   string preferredCurrency = 6;
-  repeated string travelerTypes = 7; // From onboarding
+  repeated string travelerTypes = 7;
   repeated string transportationPreferences = 8;
   repeated string foodDrinkPreferences = 9;
   repeated string sriLankaVibes = 10;
-  string createdAt = 11;
-  string updatedAt = 12;
+  google.protobuf.Timestamp createdAt = 11;
+  google.protobuf.Timestamp updatedAt = 12;
+  string plan = 13; // 'free', 'basic', 'premium'
+  bool is_subscribed = 14;
+  google.protobuf.Timestamp subscription_end_date = 15;
+}
+
+// New messages for subscriptions
+message CreateSubscriptionRequest {
+  string user_id = 1;
+  string plan = 2; // 'basic' or 'premium'
+}
+
+message CreateSubscriptionResponse {
+  bool success = 1;
+  string message = 2;
+  string checkout_url = 3;
+}
+
+message GetSubscriptionRequest {
+  string user_id = 1;
+}
+
+message GetSubscriptionResponse {
+  bool success = 1;
+  string message = 2;
+  SubscriptionData data = 3;
+}
+
+message SubscriptionData {
+  string id = 1;
+  string plan = 2; // 'free', 'basic', 'premium'
+  bool is_active = 3;
+  google.protobuf.Timestamp end_date = 4;
+  string stripe_subscription_id = 5;
+}
+
+message UpdateSubscriptionRequest {
+  string user_id = 1;
+  string plan = 2;
+}
+
+message UpdateSubscriptionResponse {
+  bool success = 1;
+  string message = 2;
+  string checkout_url = 3;
+}
+
+message CheckSubscriptionAccessRequest {
+  string user_id = 1;
+  int32 required_level = 2; // 0=free, 1=basic, 2=premium
+}
+
+message CheckSubscriptionAccessResponse {
+  bool has_access = 1;
 }

@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package itineraries;
+
+import "google/protobuf/timestamp.proto";
+
+
+message CreateItineraryRequest {
+  string user_id = 1;
+  string title = 2;
+  string destination = 3;
+  repeated string dates = 4; // ISO dates
+  repeated string preferences = 5; // e.g., from onboarding
+}
+
+message CreateItineraryResponse {
+  bool success = 1;
+  string message = 2;
+  Itinerary data = 3;
+}
+
+message GetItinerariesRequest {
+  string user_id = 1;
+}
+
+message GetItinerariesResponse {
+  bool success = 1;
+  string message = 2;
+  repeated Itinerary data = 3;
+}
+
+message Itinerary {
+  string id = 1;
+  string user_id = 2;
+  string title = 3;
+  string destination = 4;
+  repeated string dates = 5;
+  repeated string activities = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+service ItinerariesService {
+  rpc CreateItinerary(CreateItineraryRequest) returns (CreateItineraryResponse);
+  rpc GetItineraries(GetItinerariesRequest) returns (GetItinerariesResponse);
+}
