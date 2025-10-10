@@ -1,13 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, isValidObjectId, Types } from 'mongoose';
-import { Trip } from './schemas/trip.schema';
+import { Activity, Trip } from './schemas/trip.schema';
 import { CreateTripDto, UpdateTripDto, AddItineraryItemDto } from './dtos/trip.dto';
 
 @Injectable()
 export class ItinerariesService {
   constructor(
     @InjectModel(Trip.name) private tripModel: Model<Trip>,
+    @InjectModel(Activity.name) private activityModel: Model<Activity>,
   ) {}
 
   async createTrip(userId: string, createDto: CreateTripDto): Promise<Trip> {
@@ -57,7 +58,7 @@ export class ItinerariesService {
         throw new BadRequestException('Budget must be non-negative');
       }
 
-      const trip = await this.tripModel.findOne({ _id: id, userId });
+      const trip = await this.tripModel.findOne({ _id: id, userId }) as any;
       if (!trip) {
         throw new NotFoundException('Trip not found');
       }
@@ -163,7 +164,7 @@ export class ItinerariesService {
       const activity = new this.activityModel(activityDto.activity);
       await activity.save();
 
-      let itineraryDay = trip.itinerary.find(d => d.day === day);
+      let itineraryDay = trip.itinerary.find(d => d.day === day) as any;
       if (!itineraryDay) {
         itineraryDay = { day, date: trip.dates[day - 1], activities: [], note: '', checklist: [] };
         trip.itinerary.push(itineraryDay);
@@ -244,7 +245,7 @@ export class ItinerariesService {
         throw new NotFoundException('Trip not found');
       }
 
-      const item = { name: name.trim(), description: description?.trim() || '', confirmed: false };
+      const item = { name: name.trim(), description: description?.trim() || '', confirmed: false } as any;
       trip.bucketList.push(item);
       await trip.save();
       return item;
@@ -417,7 +418,7 @@ export class ItinerariesService {
         throw new NotFoundException('Trip not found');
       }
 
-      const itineraryDay = trip.itinerary.find(d => d.day === day);
+      const itineraryDay = trip.itinerary.find(d => d.day === day) as any;
       if (!itineraryDay) {
         throw new BadRequestException('Day not found in itinerary');
       }
