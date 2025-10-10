@@ -56,14 +56,14 @@ export function TripServiceControllerMethods() {
     const grpcMethods: string[] = ["createTrip", "getTrip"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("TripService", method)(constructor.prototype[method], method, descriptor);
+      GrpcMethod("ItinerariesService", method)(constructor.prototype[method], method, descriptor);
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("TripService", method)(constructor.prototype[method], method, descriptor);
+      GrpcStreamMethod("ItinerariesService", method)(constructor.prototype[method], method, descriptor);
     }
   };
 }
 
-export const TRIP_SERVICE_NAME = "TripService";
+export const TRIP_SERVICE_NAME = "ItinerariesService";

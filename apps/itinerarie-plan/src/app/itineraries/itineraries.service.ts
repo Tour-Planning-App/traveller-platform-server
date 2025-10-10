@@ -12,6 +12,7 @@ export class ItinerariesService {
 
   async createTrip(userId: string, createDto: CreateTripDto): Promise<Trip> {
     try {
+      console.log('Creating trip for user:', userId, createDto);
       // Validation
       if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');

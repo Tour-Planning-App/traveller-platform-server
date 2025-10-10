@@ -34,11 +34,16 @@ export class SubscriptionGuard implements CanActivate {
       const subResult = await firstValueFrom(
         this.authService.GetSubscription({ userId }).pipe(
           catchError((error) => {
+            console.error('Error fetching subscription:', error);
             throw new ForbiddenException('Failed to fetch subscription' , error.message);
           })
         )
       ) as { subscription: any };
 
+      console.log('Subscription fetched:', subResult);
+      if (!subResult || !subResult.subscription) {
+        throw new ForbiddenException('No subscription found');
+      }
       const subscription = subResult.subscription;
       if (!subscription || subscription.status !== 'active') {
         throw new ForbiddenException('Active subscription required');

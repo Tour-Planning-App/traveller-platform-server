@@ -270,16 +270,25 @@ export class AuthService {
         throw new BadRequestException('User not found');
       }
       console.log('User subscription details:', user);
+      const timestamp = (date: Date | null): any => {
+        if (!date) return null;
+        const seconds = Math.floor(date.getTime() / 1000);
+        const nanos = Math.floor((date.getTime() % 1000) * 1e6);
+        return { seconds, nanos };
+      };
       return {
         success: true,
         message: 'Subscription fetched',
         subscription: {
           id: user.subscriptionId,
           userId,
+          planId: user.plan,
           plan: { name: user.plan.charAt(0).toUpperCase() + user.plan.slice(1), level: { free: 0, basic: 1, premium: 2 }[user.plan] },
           status: user.isSubscribed ? 'active' : 'inactive',
-          startDate: (user as any).createdAt?.toISOString?.() || null,
-          endDate: user.subscriptionEndDate?.toISOString() || null,
+          // startDate: (user as any).createdAt?.toISOString?.() || null,
+          // endDate: user.subscriptionEndDate?.toISOString() || null,
+          start_date: timestamp((user as any).createdAt), // Use createdAt as start; adjust if separate field
+          end_date: timestamp(user.subscriptionEndDate),
         },
       };
     } catch (error: any) {
@@ -299,14 +308,23 @@ export class AuthService {
   }
 
   // New: Get plan
-  async getPlan(planId: string): Promise<any> {
+async getPlan(planId: string): Promise<any> {
+  try {
+    console.log('Fetching plan for ID:', planId); // Temp debug log
+
     const plans = await this.getPlans();
-    const plan = plans.plans.find(p => p.id === planId);
+    let plan = plans.plans.find(p => p.id.toLowerCase() === planId.toLowerCase()); // Case-insensitive match
     if (!plan) {
-      throw new BadRequestException('Plan not found');
+      console.warn(`Plan not found for ID: ${planId}. Falling back to free plan.`); // Temp log
+      plan = plans.plans.find(p => p.id === 'free') || { id: 'free', name: 'Free', level: 0, price: 0, features: ['Basic access'], duration: 'lifetime' }; // Fallback
     }
+
     return { success: true, plan };
+  } catch (error: any) {
+    this.logger.error(`GetPlan error for ${planId}: ${error.message}`, error.stack);
+    throw new BadRequestException('Plan not found');
   }
+}
 
   // New: Update subscription
   async updateSubscription(subscriptionId: string, planId: string): Promise<any> {

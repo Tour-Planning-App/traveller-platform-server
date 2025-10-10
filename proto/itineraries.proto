@@ -206,7 +206,7 @@ message UpdateChecklistItemResponse {
   string message = 2;
 }
 
-service TripService {
+service ItinerariesService {
   rpc CreateTrip(CreateTripRequest) returns (CreateTripResponse);
   rpc UpdateTrip(UpdateTripRequest) returns (UpdateTripResponse);
   rpc GetTrip(GetTripRequest) returns (GetTripResponse);
