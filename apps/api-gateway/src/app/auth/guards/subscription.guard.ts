@@ -29,13 +29,12 @@ export class SubscriptionGuard implements CanActivate {
     }
 
     const { userId } = request.user;
-
     try {
       // Fetch subscription
       const subResult = await firstValueFrom(
         this.authService.GetSubscription({ userId }).pipe(
           catchError((error) => {
-            throw new ForbiddenException('Failed to fetch subscription');
+            throw new ForbiddenException('Failed to fetch subscription' , error.message);
           })
         )
       ) as { subscription: any };

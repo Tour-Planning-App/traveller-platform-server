@@ -16,7 +16,7 @@ async function bootstrap() {
     options: {
       package: 'itineraries',
       protoPath: join(__dirname, 'proto/itineraries.proto'),
-      url: '0.0.0.0:50054', 
+      url: 'localhost:50054', 
     },
   });
   await app.listen();

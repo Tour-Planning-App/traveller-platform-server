@@ -1,0 +1,76 @@
+syntax = "proto3";
+package feature;
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Tour-Planning-App/traveller-platform-server/proto/feature";
+
+message Feature {
+  string id = 1;
+  string name = 2; // e.g., 'create_trip'
+  string description = 3;
+  repeated string tiers = 4; // ['free', 'basic', 'premium']
+  bool enabled = 5; // Global toggle
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message CreateFeatureRequest {
+  string name = 1;
+  string description = 2;
+  repeated string tiers = 3;
+  bool enabled = 4;
+}
+
+message CreateFeatureResponse {
+  bool success = 1;
+  string message = 2;
+  Feature feature = 3;
+}
+
+message UpdateFeatureRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  repeated string tiers = 4; // Update tiers for flags
+  bool enabled = 5;
+}
+
+message UpdateFeatureResponse {
+  bool success = 1;
+  string message = 2;
+  Feature feature = 3;
+}
+
+message GetFeaturesRequest {
+  repeated string tiers = 1; // Optional filter by tiers
+}
+
+message GetFeaturesResponse {
+  bool success = 1;
+  repeated Feature features = 2;
+}
+
+message GetFeatureRequest {
+  string id = 1;
+}
+
+message GetFeatureResponse {
+  bool success = 1;
+  Feature feature = 2;
+}
+
+message DeleteFeatureRequest {
+  string id = 1;
+}
+
+message DeleteFeatureResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+service FeatureService {
+  rpc CreateFeature(CreateFeatureRequest) returns (CreateFeatureResponse);
+  rpc UpdateFeature(UpdateFeatureRequest) returns (UpdateFeatureResponse);
+  rpc GetFeatures(GetFeaturesRequest) returns (GetFeaturesResponse);
+  rpc GetFeature(GetFeatureRequest) returns (GetFeatureResponse);
+  rpc DeleteFeature(DeleteFeatureRequest) returns (DeleteFeatureResponse);
+}

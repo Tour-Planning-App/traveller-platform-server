@@ -22,7 +22,7 @@ import { SubscriptionGuard } from './guards/subscription.guard';
         options: {
            package: 'auth',
            protoPath: join(__dirname, 'proto/auth.proto'),
-           url: '0.0.0.0:50000',
+           url: 'localhost:50000',
          },
       },
     ]),

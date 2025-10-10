@@ -4,42 +4,220 @@ package itineraries;
 
 import "google/protobuf/timestamp.proto";
 
+option go_package = "github.com/Tour-Planning-App/traveller-platform-server/proto/trip";
 
-message CreateItineraryRequest {
-  string user_id = 1;
-  string title = 2;
-  string destination = 3;
-  repeated string dates = 4; // ISO dates
-  repeated string preferences = 5; // e.g., from onboarding
-}
-
-message CreateItineraryResponse {
-  bool success = 1;
-  string message = 2;
-  Itinerary data = 3;
-}
-
-message GetItinerariesRequest {
-  string user_id = 1;
-}
-
-message GetItinerariesResponse {
-  bool success = 1;
-  string message = 2;
-  repeated Itinerary data = 3;
-}
-
-message Itinerary {
+message Trip {
   string id = 1;
   string user_id = 2;
-  string title = 3;
+  string name = 3;
   string destination = 4;
-  repeated string dates = 5;
-  repeated string activities = 6;
-  google.protobuf.Timestamp created_at = 7;
+  repeated string dates = 5; // ISO strings, e.g., ['2025-12-01', '2025-12-07']
+  double budget = 6; // In user's currency
+  repeated ItineraryDay itinerary = 7;
+  repeated BucketItem bucket_list = 8;
+  bool is_shared = 9;
+  string share_token = 10; // For sharing
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
 }
 
-service ItinerariesService {
-  rpc CreateItinerary(CreateItineraryRequest) returns (CreateItineraryResponse);
-  rpc GetItineraries(GetItinerariesRequest) returns (GetItinerariesResponse);
+message ItineraryDay {
+  int32 day = 1; // Day number (1-based)
+  string date = 2; // ISO date
+  string name = 3; // e.g., 'Day 1: Arrival in Colombo'
+  repeated Activity activities = 4;
+  Note note = 5;
+  Checklist checklist = 6;
+}
+
+message Activity {
+  string id = 1;
+  string type = 2; // 'place', 'stay', 'food', 'activity'
+  string name = 3;
+  string description = 4;
+  double rating = 5;
+  string location = 6; // e.g., 'Colombo, Sri Lanka'
+  google.protobuf.Timestamp time = 7; // Start time
+}
+
+message BucketItem {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  bool confirmed = 4; // Added to itinerary or not
+}
+
+message Note {
+  string content = 1;
+}
+
+message Checklist {
+  repeated ChecklistItem items = 1;
+}
+
+message ChecklistItem {
+  string id = 1;
+  string text = 2;
+  bool completed = 3;
+}
+
+message CreateTripRequest {
+  string user_id = 1;
+  string name = 2;
+  string destination = 3;
+  repeated string dates = 4;
+  double budget = 5;
+}
+
+message CreateTripResponse {
+  bool success = 1;
+  string message = 2;
+  Trip trip = 3;
+}
+
+message UpdateTripRequest {
+  string id = 1;
+  string name = 2;
+  repeated string dates = 3; // For edit dates
+  double budget = 4; // For edit budget
+}
+
+message UpdateTripResponse {
+  bool success = 1;
+  string message = 2;
+  Trip trip = 3;
+}
+
+message GetTripRequest {
+  string id = 1;
+}
+
+message GetTripResponse {
+  bool success = 1;
+  Trip trip = 2;
+}
+
+message GetUserTripsRequest {
+  string user_id = 1;
+}
+
+message GetUserTripsResponse {
+  bool success = 1;
+  repeated Trip trips = 2;
+}
+
+message DeleteTripRequest {
+  string id = 1;
+}
+
+message DeleteTripResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message AddItineraryItemRequest {
+  string trip_id = 1;
+  int32 day = 2;
+  Activity activity = 3; // Add place/stay/food/activity
+}
+
+message AddItineraryItemResponse {
+  bool success = 1;
+  string message = 2;
+  ItineraryDay day = 3;
+}
+
+message RemoveItineraryItemRequest {
+  string trip_id = 1;
+  string activity_id = 2;
+  int32 day = 3;
+}
+
+message RemoveItineraryItemResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message AddBucketItemRequest {
+  string trip_id = 1;
+  string name = 2;
+  string description = 3;
+}
+
+message AddBucketItemResponse {
+  bool success = 1;
+  string message = 2;
+  BucketItem item = 3;
+}
+
+message RemoveBucketItemRequest {
+  string trip_id = 1;
+  string item_id = 2;
+}
+
+message RemoveBucketItemResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ShareTripRequest {
+  string trip_id = 1;
+}
+
+message ShareTripResponse {
+  bool success = 1;
+  string message = 2;
+  string share_token = 3;
+}
+
+message AddNoteRequest {
+  string trip_id = 1;
+  int32 day = 2;
+  string content = 3;
+}
+
+message AddNoteResponse {
+  bool success = 1;
+  string message = 2;
+  Note note = 3;
+}
+
+message AddChecklistItemRequest {
+  string trip_id = 1;
+  int32 day = 2;
+  string text = 3;
+}
+
+message AddChecklistItemResponse {
+  bool success = 1;
+  string message = 2;
+  Checklist checklist = 3;
+}
+
+message UpdateChecklistItemRequest {
+  string trip_id = 1;
+  int32 day = 2;
+  string item_id = 3;
+  bool completed = 4;
+}
+
+message UpdateChecklistItemResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+service TripService {
+  rpc CreateTrip(CreateTripRequest) returns (CreateTripResponse);
+  rpc UpdateTrip(UpdateTripRequest) returns (UpdateTripResponse);
+  rpc GetTrip(GetTripRequest) returns (GetTripResponse);
+  rpc GetUserTrips(GetUserTripsRequest) returns (GetUserTripsResponse);
+  rpc DeleteTrip(DeleteTripRequest) returns (DeleteTripResponse);
+  rpc AddItineraryItem(AddItineraryItemRequest) returns (AddItineraryItemResponse);
+  rpc RemoveItineraryItem(RemoveItineraryItemRequest) returns (RemoveItineraryItemResponse);
+  rpc AddBucketItem(AddBucketItemRequest) returns (AddBucketItemResponse);
+  rpc RemoveBucketItem(RemoveBucketItemRequest) returns (RemoveBucketItemResponse);
+  rpc ShareTrip(ShareTripRequest) returns (ShareTripResponse);
+  rpc AddNote(AddNoteRequest) returns (AddNoteResponse);
+  rpc AddChecklistItem(AddChecklistItemRequest) returns (AddChecklistItemResponse);
+  rpc UpdateChecklistItem(UpdateChecklistItemRequest) returns (UpdateChecklistItemResponse);
 }

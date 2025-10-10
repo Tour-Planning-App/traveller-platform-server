@@ -269,6 +269,7 @@ export class AuthService {
       if (!user) {
         throw new BadRequestException('User not found');
       }
+      console.log('User subscription details:', user);
       return {
         success: true,
         message: 'Subscription fetched',

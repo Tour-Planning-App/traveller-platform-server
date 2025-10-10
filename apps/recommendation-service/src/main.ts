@@ -15,7 +15,7 @@ async function bootstrap() {
     options: {
       package: 'recommendation',
       protoPath: join(__dirname, 'proto/recommendation.proto'),
-      url: '0.0.0.0:50052', 
+      url: 'localhost:50052', 
     },
   });
   await app.listen();
