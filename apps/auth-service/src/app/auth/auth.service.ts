@@ -103,8 +103,19 @@ export class AuthService {
       const storedCode = otpStore.get(identifier);
       if (!storedCode) throw new UnauthorizedException('OTP expired or not found');
       if (code !== storedCode) throw new UnauthorizedException('Invalid OTP');
+      console.log("OTP verified for identifier: ", dto);
+      const query = email ? { email } : { phone };
+      let user = await this.userModel.findOne(query) as any | null;
+      //let user : any;
+      // if(email) {
+      //   user = await this.userModel.findOne({ email }).exec() ;
+      // }else{
+      //   user = await this.userModel.findOne({ phone }).exec() ;
+      // }
+      //let user = await this.userModel.findOne({ email }).exec() as any;
 
-      let user = await this.userModel.findOne({ $or: [{ email }, { phone }] }) as any | null;
+      //let user = await this.userModel.findOne({ $or: [{ email: email }, { phone:phone }] }).exec() as any | null;
+      console.log("User after OTP verification: ", user);
       const isNewUser = !user;
       if (isNewUser) {
         user = new this.userModel({ 
