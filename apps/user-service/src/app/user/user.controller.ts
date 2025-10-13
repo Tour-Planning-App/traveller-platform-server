@@ -5,6 +5,7 @@ import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto, UpdateProfileDto } from './dtos/user.dto';
 import { BadRequestException } from '@nestjs/common';
 import { CreateSubscriptionDto } from './dtos/subscription.dto';
+import { PersonalDetailsDto } from './dtos/auth.dto';
 
 
 @Controller('user')
@@ -87,6 +88,20 @@ export class UserController {
   async updateProfile(@Payload() data: UpdateProfileDto) {
     try {
       const result = await this.userService.updateProfile(data);
+      return { status: 200, message: 'Profile updated successfully', id: result._id };
+    } catch (error: any) {
+      this.logger.error(`gRPC UpdateProfile error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
+  @GrpcMethod('UserService', 'UpdatePersonalDetails')
+  async UpdatePersonalDetails(@Payload() data: any) {
+    try {
+      const result = await this.userService.updatePersonalDetails(data);
       return { status: 200, message: 'Profile updated successfully', id: result._id };
     } catch (error: any) {
       this.logger.error(`gRPC UpdateProfile error: ${error.message}`, error.stack);

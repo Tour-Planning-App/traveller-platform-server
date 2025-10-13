@@ -1,3 +1,4 @@
+// Updated user.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
@@ -22,6 +23,9 @@ export class User extends Document {
   gender?: string;
 
   @Prop()
+  profileImage?: string;
+
+  @Prop()
   preferredLanguage?: string;
 
   @Prop()
@@ -35,6 +39,22 @@ export class User extends Document {
 
   @Prop({ default: false })
   isOnboarded!: boolean;
+
+  // Personal Details Fields
+  @Prop()
+  residentialAddress?: string;
+
+  @Prop()
+  emergencyContactName?: string;
+
+  @Prop()
+  emergencyContactNumber?: string;
+
+  @Prop()
+  bloodType?: string;
+
+  @Prop()
+  allergies?: string;
 
   // Onboarding Survey Fields
   @Prop({ type: [String] }) // e.g., ['solo', 'friends']
@@ -52,6 +72,16 @@ export class User extends Document {
   @Prop({ type: String }) // e.g., 'misty-highlands'
   other?: string;
 
+  // Account Settings Fields
+  @Prop({ default: false })
+  twoFactorEnabled?: boolean;
+
+  @Prop({ type: Object, default: { google: false, facebook: false } })
+  linkedAccounts?: { google: boolean; facebook: boolean };
+
+  @Prop({ default: true })
+  profileVisibility?: boolean;
+
   // Subscription fields
   @Prop({ required: false })
   stripeCustomerId?: string; // Stripe customer ID
@@ -67,7 +97,10 @@ export class User extends Document {
 
   @Prop({ type: Date })
   subscriptionEndDate?: Date; // For trial/expiration
+
+  @Prop({ default: false })
+  isDeactivated?: boolean;
+  
 }
 
-export type UserDocument = User & Document;
 export const UserSchema = SchemaFactory.createForClass(User);

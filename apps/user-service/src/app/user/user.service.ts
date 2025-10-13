@@ -1,3 +1,4 @@
+// Updated user.service.ts (added methods for new features)
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -7,6 +8,7 @@ import { Logger } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { CreateSubscriptionDto } from './dtos/subscription.dto';
 import Stripe from 'stripe';
+import { PersonalDetailsDto, AccountSettingsDto } from './dtos/auth.dto'; // Import new DTOs
 
 @Injectable()
 export class UserService {
@@ -138,6 +140,74 @@ export class UserService {
     }
   }
 
+
+// New: Update Personal Details
+  async updatePersonalDetails(data: { userId: string } & Partial<PersonalDetailsDto>): Promise<User> {
+    try {
+      const user = await this.userModel.findById(data.userId).exec();
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (data.name) user.name = data.name;
+      if (data.residentialAddress !== undefined) user.residentialAddress = data.residentialAddress;
+      if (data.gender !== undefined) user.gender = data.gender;
+      if (data.emergencyContactName !== undefined) user.emergencyContactName = data.emergencyContactName;
+      if (data.emergencyContactNumber !== undefined) user.emergencyContactNumber = data.emergencyContactNumber;
+      if (data.bloodType !== undefined) user.bloodType = data.bloodType;
+      if (data.allergies !== undefined) user.allergies = data.allergies;
+
+      return await user.save();
+    } catch (error) {
+      this.logger.error(`UpdatePersonalDetails error: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+// New: Update Account Settings
+  async updateAccountSettings(data: { userId: string } & Partial<AccountSettingsDto>): Promise<User> {
+    try {
+      const user = await this.userModel.findById(data.userId).exec();
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (data.email) user.email = data.email;
+      if (data.twoFactorEnabled !== undefined) user.twoFactorEnabled = data.twoFactorEnabled;
+      if (data.linkedAccounts) user.linkedAccounts = { ...user.linkedAccounts, ...data.linkedAccounts };
+      if (data.profileVisibility !== undefined) user.profileVisibility = data.profileVisibility;
+
+      return await user.save();
+    } catch (error) {
+      this.logger.error(`UpdateAccountSettings error: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+// New: Deactivate Account
+  async deactivateAccount(data: { userId: string }): Promise<User> {
+    try {
+      const user = await this.userModel.findById(data.userId).exec();
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      user.isDeactivated = true;
+      return await user.save();
+    } catch (error) {
+      this.logger.error(`DeactivateAccount error: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  // New: Delete Account (soft delete or hard)
+  async deleteAccount(userId: string): Promise<void> {
+    try {
+      await this.userModel.findByIdAndDelete(userId).exec();
+    } catch (error) {
+      this.logger.error(`DeleteAccount error: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
 
 // New: Create subscription with Stripe checkout
   async createSubscription(data: CreateSubscriptionDto & { userId: string }): Promise<{ url: string }> {

@@ -194,6 +194,7 @@ export class CreateSubscriptionDto {
   userId: string;
 }
 
+// New DTOs
 export class PlanDto {
   @ApiProperty({ example: 'free', description: 'Plan ID' })
   id!: string;
@@ -222,7 +223,7 @@ export class SubscriptionDto {
   userId!: string;
 
   @ApiProperty({ type: PlanDto, description: 'Associated plan' })
-  plan!: PlanDto;
+  plan!: PlanDto; // Populated in response
 
   @ApiProperty({ example: 'active', enum: ['active', 'inactive', 'expired'] })
   status!: string;
@@ -244,4 +245,63 @@ export class LoginDto {
   @IsNotEmpty({ message: 'Password cannot be empty' })
   @Length(6, 128, { message: 'Password must be between 6 and 128 characters' })
   password: string;
+}
+
+
+// New: Personal Details DTO
+export class PersonalDetailsDto {
+  @ApiProperty({ example: 'John Doe', description: 'Full name' })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiProperty({ example: '123 Main St, City', description: 'Residential address' })
+  @IsOptional()
+  @IsString()
+  residentialAddress?: string;
+
+  @ApiProperty({ example: 'male', enum: ['male', 'female', 'other', 'prefer_not_to_say'] })
+  @IsOptional()
+  @IsIn(['male', 'female', 'other', 'prefer_not_to_say'])
+  gender?: string;
+
+  @ApiProperty({ example: 'Jane Doe', description: 'Emergency contact name' })
+  @IsOptional()
+  @IsString()
+  emergencyContactName?: string;
+
+  @ApiProperty({ example: '+1234567890', description: 'Emergency contact number' })
+  @IsOptional()
+  @IsString()
+  emergencyContactNumber?: string;
+
+  @ApiProperty({ example: 'O+', enum: ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'] })
+  @IsOptional()
+  @IsIn(['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'])
+  bloodType?: string;
+
+  @ApiProperty({ example: 'Peanuts, Latex', description: 'Allergies' })
+  @IsOptional()
+  @IsString()
+  allergies?: string;
+}
+
+// New: Account Settings DTO
+export class AccountSettingsDto {
+  @ApiProperty({ example: 'newemail@example.com', description: 'New email' })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiProperty({ example: true, description: 'Enable 2FA' })
+  @IsOptional()
+  twoFactorEnabled?: boolean;
+
+  @ApiProperty({ example: { google: true, facebook: false }, description: 'Linked accounts' })
+  @IsOptional()
+  linkedAccounts?: { google: boolean; facebook: boolean };
+
+  @ApiProperty({ example: true, description: 'Profile visibility' })
+  @IsOptional()
+  profileVisibility?: boolean;
 }

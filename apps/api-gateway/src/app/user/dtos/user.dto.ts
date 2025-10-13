@@ -1,6 +1,7 @@
+// Updated user.dto.ts (extended with PersonalDetailsDto and AccountSettingsDto)
 import { IsEmail, IsString, IsEnum, IsOptional, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-
+import { PersonalDetailsDto, AccountSettingsDto } from '../../auth/dtos/auth.dto'; // Adjust the import path as necessary
 export class CreateUserDto {
   @ApiProperty({ example: 'user@example.com', description: 'User email' })
   @IsEmail({}, { message: 'Invalid email format' })
@@ -78,6 +79,12 @@ export class UpdateProfileDto {
   @IsString({ message: 'Preferred currency must be a string' })
   preferredCurrency?: string;
 }
+
+// New: Personal Details Update DTO (import from auth.dto.ts or duplicate)
+export type PersonalDetailsUpdateDto = PersonalDetailsDto; // Reference to new DTO
+
+// New: Account Settings Update DTO (import from auth.dto.ts or duplicate)
+export type AccountSettingsUpdateDto = AccountSettingsDto; // Reference to new DTO
 
 export class UserResponseDto {
   @ApiProperty({ example: 200, description: 'Status code' })

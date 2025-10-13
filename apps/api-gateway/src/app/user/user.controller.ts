@@ -9,6 +9,7 @@ import { Logger } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
 import { HttpException } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto, UpdateProfileDto } from './dtos/user.dto';
+import { AccountSettingsDto, PersonalDetailsDto } from '../auth/dtos/auth.dto';
 
 @ApiTags('User')
 @Controller('user')
@@ -228,6 +229,113 @@ export class UserController {
       return result;
     } catch (error: any) {
       this.logger.error(`UpdateProfile failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  // New: Update Personal Details
+  @Put('personal-details')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update personal details' })
+  @ApiResponse({ status: 200, description: 'Personal details updated successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid personal details data' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error during personal details update' })
+  async updatePersonalDetails(@Body() dto: PersonalDetailsDto, @Req() req: any) {
+    try {
+      const userId = req?.user?.userId;
+      if (!userId) return { success: false, message: 'User not authenticated' };
+
+      const result = await firstValueFrom(
+        this.userService.UpdatePersonalDetails({ userId, ...dto }).pipe(
+          catchError((error) => {
+            this.logger.error(`UpdatePersonalDetails error: ${error.message}`, error.stack);
+            if (error.code === 2 || error.code === 'INTERNAL') {
+              throw new HttpException('Internal server error during personal details update', HttpStatus.INTERNAL_SERVER_ERROR);
+            } else if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
+              throw new HttpException('Invalid personal details data', HttpStatus.BAD_REQUEST);
+            } else if (error.details && error.details.includes('User not found')) {
+              throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+            } else {
+              throw new HttpException('Personal details update failed', HttpStatus.BAD_REQUEST);
+            }
+          })
+        )
+      );
+      return result;
+    } catch (error: any) {
+      this.logger.error(`UpdatePersonalDetails failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  // New: Update Account Settings
+  @Put('account-settings')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update account settings' })
+  @ApiResponse({ status: 200, description: 'Account settings updated successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid account settings data' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error during account settings update' })
+  async updateAccountSettings(@Body() dto: AccountSettingsDto, @Req() req: any) {
+    try {
+      const userId = req?.user?.userId;
+      if (!userId) return { success: false, message: 'User not authenticated' };
+
+      const result = await firstValueFrom(
+        this.userService.UpdateAccountSettings({ userId, ...dto }).pipe(
+          catchError((error) => {
+            this.logger.error(`UpdateAccountSettings error: ${error.message}`, error.stack);
+            if (error.code === 2 || error.code === 'INTERNAL') {
+              throw new HttpException('Internal server error during account settings update', HttpStatus.INTERNAL_SERVER_ERROR);
+            } else if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
+              throw new HttpException('Invalid account settings data', HttpStatus.BAD_REQUEST);
+            } else if (error.details && error.details.includes('User not found')) {
+              throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+            } else {
+              throw new HttpException('Account settings update failed', HttpStatus.BAD_REQUEST);
+            }
+          })
+        )
+      );
+      return result;
+    } catch (error: any) {
+      this.logger.error(`UpdateAccountSettings failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  // New: Deactivate Account
+  @Put('deactivate')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Deactivate user account' })
+  @ApiResponse({ status: 200, description: 'Account deactivated successfully' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  async deactivateAccount(@Req() req: any) {
+    try {
+      const userId = req?.user?.userId;
+      if (!userId) return { success: false, message: 'User not authenticated' };
+
+      const result = await firstValueFrom(
+        this.userService.DeactivateAccount({ userId }).pipe(
+          catchError((error) => {
+            this.logger.error(`DeactivateAccount error: ${error.message}`, error.stack);
+            if (error.code === 2 || error.code === 'INTERNAL') {
+              throw new HttpException('Internal server error during deactivation', HttpStatus.INTERNAL_SERVER_ERROR);
+            } else if (error.details && error.details.includes('User not found')) {
+              throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+            } else {
+              throw new HttpException('Account deactivation failed', HttpStatus.BAD_REQUEST);
+            }
+          })
+        )
+      );
+      return result;
+    } catch (error: any) {
+      this.logger.error(`DeactivateAccount failed: ${error.message}`, error.stack);
       throw error;
     }
   }

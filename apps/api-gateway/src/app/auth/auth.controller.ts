@@ -1,4 +1,4 @@
-import { Body, Controller, HttpException, HttpStatus, Inject, Logger, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, HttpStatus, Inject, Logger, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import { ApiBadRequestResponse, ApiBearerAuth, ApiInternalServerErrorResponse, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { catchError, firstValueFrom, of } from 'rxjs';
@@ -50,7 +50,7 @@ export class AuthController {
     }
   }
 
-  @Public()
+@Public()
   @Post('verify-otp')
   @ApiOperation({ summary: 'Verify OTP and get JWT' })
   @ApiResponse({ status: 200, description: 'Authentication successful', type: AuthResponseDto })
@@ -226,6 +226,19 @@ export class AuthController {
       this.logger.error(`FacebookSignIn failed: ${error.message}`, error.stack);
       throw error;
     }
+  }
+
+
+  // New: Endpoint for getting personal details (proxy to user service if needed)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('personal-details')
+  @ApiOperation({ summary: 'Get personal details' })
+  async getPersonalDetails(@Req() req: any) {
+    // Implementation depends on user service; assume proxy
+    const userId = req?.user?.userId;
+    // Call user service GetUserById and return relevant fields
+    return { /* personal details */ };
   }
 
 }

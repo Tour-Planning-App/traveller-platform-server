@@ -158,27 +158,73 @@ export class AuthService {
   }
 
 
-  async oAuthSignIn(profile: OAuthProfileDto): Promise<AuthResponseDto> {
+  // async oAuthSignIn(profile: OAuthProfileDto): Promise<AuthResponseDto> {
+  //   try {
+  //     let user = await this.userModel.findOne({ [profile.provider === 'google' ? 'googleId' : 'facebookId']: profile.providerId }) as any;
+  //     const isNewUser = !user;
+  //     if (isNewUser) {
+  //       user = new this.userModel({ 
+  //         email: profile.email, 
+  //         name: profile.name,
+  //         [profile.provider === 'google' ? 'googleId' : 'facebookId']: profile.providerId,
+  //         role: 'user', 
+  //         isOnboarded: false 
+  //       });
+  //       await user.save();
+  //       this.logger.log(`New OAuth user created: ${user._id} via ${profile.provider}`);
+  //     }else {
+  //       // Update linked account
+  //       user.linkedAccounts = { ...user.linkedAccounts, [provider]: true };
+  //       if (!user.name) user.name = name;
+  //       await user.save();
+  //     }
+
+  //     const payload = { sub: user._id.toString(), email: user.email, role: user.role };
+  //     const accessToken = this.jwtService.sign(payload);
+  //     return { accessToken, isNewUser, isOnboarded: user.isOnboarded };
+  //   } catch (error:any) {
+  //     this.logger.error(`OAuthSignIn failed for ${profile.provider}: ${error.message}`, error.stack);
+  //     throw new InternalServerErrorException('OAuth sign-in failed');
+  //   }
+  // }
+
+  async oAuthSignIn(data: OAuthProfileDto): Promise<AuthResponseDto> {
     try {
-      let user = await this.userModel.findOne({ [profile.provider === 'google' ? 'googleId' : 'facebookId']: profile.providerId }) as any;
-      const isNewUser = !user;
-      if (isNewUser) {
-        user = new this.userModel({ 
-          email: profile.email, 
-          name: profile.name,
-          [profile.provider === 'google' ? 'googleId' : 'facebookId']: profile.providerId,
-          role: 'user', 
-          isOnboarded: false 
+      const { email, name, providerId, provider } = data;
+      let user = await this.userModel.findOne({ [provider === 'google' ? 'googleId' : 'facebookId']: providerId }) as any | null;
+      
+      if (!user) {
+        user = await this.userModel.findOne({ email });
+      }
+
+      if (!user) {
+        user = new this.userModel({
+          email,
+          name,
+          [provider === 'google' ? 'googleId' : 'facebookId']: providerId,
+          role: 'TRAVELER',
+          isOnboarded: false,
+          plan: 'free',
+          linkedAccounts: { [provider]: true },
         });
         await user.save();
-        this.logger.log(`New OAuth user created: ${user._id} via ${profile.provider}`);
+      } else {
+        // Update linked account
+        user.linkedAccounts = { ...user.linkedAccounts, [provider]: true };
+        if (!user.name) user.name = name;
+        await user.save();
       }
 
       const payload = { sub: user._id.toString(), email: user.email, role: user.role };
       const accessToken = this.jwtService.sign(payload);
-      return { accessToken, isNewUser, isOnboarded: user.isOnboarded };
-    } catch (error:any) {
-      this.logger.error(`OAuthSignIn failed for ${profile.provider}: ${error.message}`, error.stack);
+
+      return {
+        accessToken,
+        isNewUser: false, // Or check if newly created
+        isOnboarded: user.isOnboarded,
+      };
+    } catch (error: any) {
+      this.logger.error(`OAuthSignIn error: ${error.message}`, error.stack);
       throw new InternalServerErrorException('OAuth sign-in failed');
     }
   }
