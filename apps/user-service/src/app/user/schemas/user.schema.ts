@@ -63,6 +63,9 @@ export class User extends Document {
   @Prop({ type: [String] }) // e.g., ['tuk-tuk', 'public-buses']
   transportationPreferences?: string[];
 
+  @Prop({ type: [String] }) // e.g., ['surfing', 'wildlife-safari']
+  activityPreferences?: string[];
+
   @Prop({ type: [String] }) // e.g., ['lankan-cuisines', 'western-cuisines']
   foodDrinkPreferences?: string[];
 

@@ -9,8 +9,9 @@ message GenerateRecommendationsRequest {
   string userId = 1;
   repeated string travelerTypes = 2;
   repeated string transportationPreferences = 3;
-  repeated string foodDrinkPreferences = 4;
-  repeated string sriLankaVibes = 5;
+  repeated string activityPreferences = 4;
+  repeated string foodDrinkPreferences = 5;
+  repeated string sriLankaVibes = 6;
 }
 
 message GenerateRecommendationsResponse {

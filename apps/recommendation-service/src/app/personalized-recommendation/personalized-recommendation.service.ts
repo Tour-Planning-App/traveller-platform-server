@@ -34,7 +34,7 @@ export class PersonalizedRecommendationService {
 
   async generateRecommendations(dto: any): Promise<any> {
     try {
-      const { userId, travelerTypes, transportationPreferences, foodDrinkPreferences, sriLankaVibes } = dto;
+      const { userId, travelerTypes, transportationPreferences, activityPreferences, foodDrinkPreferences, sriLankaVibes } = dto;
 
       // Fetch user details from User Service via gRPC
       const userResponse = await firstValueFrom(
@@ -59,6 +59,7 @@ export class PersonalizedRecommendationService {
         - Preferences: {preferredLanguage}, {preferredCurrency}
         - Traveler types: {travelerTypes}
         - Transportation: {transportationPreferences}
+        - Activities: {activityPreferences}
         - Food/Drink: {foodDrinkPreferences}
         - Vibes: {sriLankaVibes}
 
@@ -84,6 +85,7 @@ export class PersonalizedRecommendationService {
         preferredCurrency: user.preferredCurrency || 'USD',
         travelerTypes: travelerTypes?.join(', ') || 'general',
         transportationPreferences: transportationPreferences?.join(', ') || 'general',
+        activityPreferences: activityPreferences?.join(', ') || 'general',
         foodDrinkPreferences: foodDrinkPreferences?.join(', ') || 'general',
         sriLankaVibes: sriLankaVibes?.join(', ') || 'general',
       });

@@ -132,24 +132,25 @@ message User {
   bool isOnboarded = 9;
   repeated string travelerTypes = 10;
   repeated string transportationPreferences = 11;
-  repeated string foodDrinkPreferences = 12;
-  repeated string sriLankaVibes = 13;
-  google.protobuf.Timestamp createdAt = 14;
-  google.protobuf.Timestamp updatedAt = 15;
-  string plan = 16; // 'free', 'basic', 'premium'
-  bool is_subscribed = 17;
-  google.protobuf.Timestamp subscription_end_date = 18;
+  repeated string activityPreferences = 12;
+  repeated string foodDrinkPreferences = 13;
+  repeated string sriLankaVibes = 14;
+  google.protobuf.Timestamp createdAt = 15;
+  google.protobuf.Timestamp updatedAt = 16;
+  string plan = 17; // 'free', 'basic', 'premium'
+  bool is_subscribed = 18;
+  google.protobuf.Timestamp subscription_end_date = 19;
   // New Personal Details fields
-  string residential_address = 19;
-  string emergency_contact_name = 20;
-  string emergency_contact_number = 21;
-  string blood_type = 22;
-  string allergies = 23;
+  string residential_address = 20;
+  string emergency_contact_name = 21;
+  string emergency_contact_number = 22;
+  string blood_type = 23;
+  string allergies = 24;
   // New Account Settings fields
-  bool two_factor_enabled = 24;
-  map<string, bool> linked_accounts = 25; // e.g., { "google": true, "facebook": false }
-  bool profile_visibility = 26;
-  bool is_deactivated = 27;
+  bool two_factor_enabled = 25;
+  map<string, bool> linked_accounts = 26; // e.g., { "google": true, "facebook": false }
+  bool profile_visibility = 27;
+  bool is_deactivated = 28;
 }
 
 // New messages for subscriptions

@@ -18,6 +18,12 @@ export class GenerateRecommendationsDto {
   @IsEnum(['tuk-tuk', 'bike', 'public-buses', 'public-trains', 'car-van-rental', 'walking-cycling'], { each: true })
   transportationPreferences?: string[];
 
+  @ApiProperty({ example: ['surfing', 'wildlife-safari'], description: 'Activity preferences' })
+  @IsArray({ message: 'Activity preferences must be an array' })
+  @IsEnum(['surfing', 'wildlife-safari', 'cultural-tours', 'visiting-tea-plantations', 'exploring-ancient-ruins', 'beach-relaxation'], { each: true, message: 'Each activity preference must be: tuk-tuk, bike, public-buses, public-trains, car-van-rental, or walking-cycling' })
+  @IsOptional()
+  activityPreferences!: string[];
+
   @ApiProperty({ example: ['lankan-cuisines'], description: 'Food/drink preferences', required: false })
   @IsOptional()
   @IsArray({ message: 'Food/drink preferences must be an array' })

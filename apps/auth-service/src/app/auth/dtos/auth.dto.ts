@@ -53,24 +53,24 @@ export class OnboardingDto {
 
   @ApiProperty({ example: ['solo', 'friends'], description: 'Traveler types' })
   @IsArray({ message: 'Traveler types must be an array' })
-  @ArrayMinSize(1, { message: 'At least one traveler type is required' })
-  @ArrayMaxSize(5, { message: 'Maximum 5 traveler types allowed' })
+  // @ArrayMinSize(1, { message: 'At least one traveler type is required' })
+  // @ArrayMaxSize(5, { message: 'Maximum 5 traveler types allowed' })
   @IsEnum(['solo', 'couples', 'friends', 'family', 'business'], { each: true, message: 'Each traveler type must be: solo, couples, friends, family, or business' })
   @IsOptional()
   travelerTypes!: string[];
 
   @ApiProperty({ example: ['tuk-tuk', 'car-van-rental'], description: 'Transportation preferences' })
   @IsArray({ message: 'Transportation preferences must be an array' })
-  @ArrayMinSize(1, { message: 'At least one transportation preference is required' })
-  @ArrayMaxSize(6, { message: 'Maximum 6 transportation preferences allowed' })
+  // @ArrayMinSize(1, { message: 'At least one transportation preference is required' })
+  // @ArrayMaxSize(6, { message: 'Maximum 6 transportation preferences allowed' })
   @IsEnum(['tuk-tuk', 'bike', 'public-buses', 'public-trains', 'car-van-rental', 'walking-cycling'], { each: true, message: 'Each transportation preference must be: tuk-tuk, bike, public-buses, public-trains, car-van-rental, or walking-cycling' })
   @IsOptional()
   transportationPreferences!: string[];
 
   @ApiProperty({ example: ['lankan-cuisines', 'western-cuisines'], description: 'Food/drink preferences' })
   @IsArray({ message: 'Food/drink preferences must be an array' })
-  @ArrayMinSize(1, { message: 'At least one food/drink preference is required' })
-  @ArrayMaxSize(16, { message: 'Maximum 16 food/drink preferences allowed' })
+  // @ArrayMinSize(1, { message: 'At least one food/drink preference is required' })
+  // @ArrayMaxSize(16, { message: 'Maximum 16 food/drink preferences allowed' })
   @IsEnum([
     'lankan-cuisines', 'western-cuisines', 'chinese-other-asian-cuisines', 'indian-cuisines', 'middle-eastern-cuisine',
     'dining', 'street-food', 'vegetarian', 'gluten-free', 'desserts-sweets', 'coffee-tea', 'drinks-juice-bars', 'alcoholic-drinks'
@@ -80,8 +80,8 @@ export class OnboardingDto {
 
   @ApiProperty({ example: ['misty-highlands', 'beaches'], description: 'Sri Lanka vibes' })
   @IsArray({ message: 'Sri Lanka vibes must be an array' })
-  @ArrayMinSize(1, { message: 'At least one Sri Lanka vibe is required' })
-  @ArrayMaxSize(8, { message: 'Maximum 8 Sri Lanka vibes allowed' })
+  // @ArrayMinSize(1, { message: 'At least one Sri Lanka vibe is required' })
+  // @ArrayMaxSize(8, { message: 'Maximum 8 Sri Lanka vibes allowed' })
   @IsEnum([
     'misty-highlands', 'waterfalls-parks', 'beaches', 'art-craft', 'food-culinary', 'photography', 'spa-meditation', 'shopping-markets'
   ], { each: true, message: 'Each Sri Lanka vibe must be one of the allowed values' })
@@ -116,15 +116,22 @@ export class OnboardingSurveyDto {
 
   @ApiProperty({ example: ['tuk-tuk', 'car-van-rental'], description: 'Transportation preferences' })
   @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(6)
+  // @ArrayMinSize(1)
+  // @ArrayMaxSize(6)
   @IsEnum(['tuk-tuk', 'bike', 'public-buses', 'public-trains', 'car-van-rental', 'walking-cycling'], { each: true })
   transportationPreferences!: string[];
 
+
+  @ApiProperty({ example: ['surfing', 'wildlife-safari'], description: 'Activity preferences' })
+  @IsArray({ message: 'Activity preferences must be an array' })
+  @IsEnum(['surfing', 'wildlife-safari', 'cultural-tours', 'visiting-tea-plantations', 'exploring-ancient-ruins', 'beach-relaxation'], { each: true, message: 'Each activity preference must be: tuk-tuk, bike, public-buses, public-trains, car-van-rental, or walking-cycling' })
+  @IsOptional()
+  activityPreferences!: string[];
+
   @ApiProperty({ example: ['lankan-cuisines', 'western-cuisines'], description: 'Food/drink preferences' })
   @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(16)
+  // @ArrayMinSize(1)
+  // @ArrayMaxSize(16)
   @IsEnum([
     'lankan-cuisines', 'western-cuisines', 'chinese-other-asian-cuisines', 'indian-cuisines', 'middle-eastern-cuisine',
     'dining', 'street-food', 'vegetarian', 'gluten-free', 'desserts-sweets', 'coffee-tea', 'drinks-juice-bars', 'alcoholic-drinks'
@@ -133,8 +140,8 @@ export class OnboardingSurveyDto {
 
   @ApiProperty({ example: ['misty-highlands', 'beaches'], description: 'Sri Lanka vibes' })
   @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(8)
+  // @ArrayMinSize(1)
+  // @ArrayMaxSize(8)
   @IsEnum([
     'misty-highlands', 'waterfalls-parks', 'beaches', 'art-craft', 'food-culinary', 'photography', 'spa-meditation', 'shopping-markets'
   ], { each: true })
