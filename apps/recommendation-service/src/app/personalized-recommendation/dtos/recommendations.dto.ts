@@ -1,4 +1,4 @@
-import { IsString, IsArray, IsEnum, IsOptional, IsNotEmpty } from 'class-validator';
+import { IsString, IsArray, IsEnum, IsOptional, IsNotEmpty, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class GenerateRecommendationsDto {
@@ -7,11 +7,10 @@ export class GenerateRecommendationsDto {
   @IsNotEmpty({ message: 'User ID cannot be empty' })
   userId: string;
 
-  @ApiProperty({ example: ['solo'], description: 'Traveler types', required: false })
+  @ApiProperty({ example: 'solo', description: 'Traveler types', enum:['solo', 'couples', 'friends', 'family', 'business'] })
+  @IsIn(['solo', 'couples', 'friends', 'family', 'business'])
   @IsOptional()
-  @IsArray({ message: 'Traveler types must be an array' })
-  @IsEnum(['solo', 'couples', 'friends', 'family', 'business'], { each: true })
-  travelerTypes?: string[];
+  travelerTypes!: string[];
 
   @ApiProperty({ example: ['tuk-tuk'], description: 'Transportation preferences', required: false })
   @IsOptional()

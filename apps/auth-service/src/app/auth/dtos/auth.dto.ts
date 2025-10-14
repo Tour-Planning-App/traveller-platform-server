@@ -109,11 +109,9 @@ export class OnboardingBasicDto {
 
 
 export class OnboardingSurveyDto {
-  @ApiProperty({ example: ['solo', 'friends'], description: 'Traveler types' })
-  @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(5)
-  @IsEnum(['solo', 'couples', 'friends', 'family', 'business'], { each: true })
+  @ApiProperty({ example: 'solo', description: 'Traveler types', enum:['solo', 'couples', 'friends', 'family', 'business'] })
+  @IsIn(['solo', 'couples', 'friends', 'family', 'business'])
+  @IsOptional()
   travelerTypes!: string[];
 
   @ApiProperty({ example: ['tuk-tuk', 'car-van-rental'], description: 'Transportation preferences' })
