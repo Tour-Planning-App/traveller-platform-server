@@ -60,7 +60,8 @@
         "apps/notification-service-e2e/**/*",
         "apps/recommendation-service-e2e/**/*",
         "apps/user-service-e2e/**/*",
-        "apps/itinerarie-plan-e2e/**/*"
+        "apps/itinerarie-plan-e2e/**/*",
+        "apps/community-service-e2e/**/*"
       ]
     }
   ],

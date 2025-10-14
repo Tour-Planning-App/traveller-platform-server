@@ -1,0 +1,280 @@
+// community.proto
+syntax = "proto3";
+package community;
+import "google/protobuf/timestamp.proto";
+
+service CommunityService {
+  // Posts RPCs
+  rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
+  rpc GetPosts(GetPostsRequest) returns (GetPostsResponse);
+  rpc GetPostById(GetPostByIdRequest) returns (GetPostResponse);
+  rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResponse);
+  rpc DeletePost(DeletePostRequest) returns (DeletePostResponse);
+  rpc LikePost(LikePostRequest) returns (LikePostResponse);
+  rpc CommentPost(CommentPostRequest) returns (CommentPostResponse);
+
+  // User interactions
+  rpc FollowUser(FollowUserRequest) returns (FollowUserResponse);
+  rpc UnfollowUser(UnfollowUserRequest) returns (FollowUserResponse);
+  rpc GetFollowers(GetFollowersRequest) returns (GetFollowersResponse);
+  rpc GetFollowing(GetFollowingRequest) returns (GetFollowingResponse);
+
+  // Notifications
+  rpc GetNotifications(GetNotificationsRequest) returns (GetNotificationsResponse);
+  rpc MarkNotificationAsRead(MarkNotificationAsReadRequest) returns (MarkNotificationAsReadResponse);
+
+  // Profile
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+
+  // Search
+  rpc SearchPosts(SearchPostsRequest) returns (SearchPostsResponse);
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+}
+
+message CreatePostRequest {
+  string user_id = 1;
+  string caption = 2;
+  string image_url = 3; // Optional, for uploaded image
+  repeated string tags = 4; // Optional tags
+}
+
+message CreatePostResponse {
+  bool success = 1;
+  string message = 2;
+  Post post = 3;
+}
+
+message GetPostsRequest {
+  string user_id = 1; // Optional, for user's posts
+  string feed_type = 2; // "popular" or "following"
+  int32 limit = 3;
+  int32 offset = 4;
+  string search_query = 5; // Optional search
+}
+
+message GetPostsResponse {
+  bool success = 1;
+  repeated Post posts = 2;
+  int32 total = 3;
+}
+
+message GetPostByIdRequest {
+  string post_id = 1;
+}
+
+message GetPostResponse {
+  bool success = 1;
+  Post post = 2;
+}
+
+message UpdatePostRequest {
+  string post_id = 1;
+  string user_id = 2;
+  string caption = 3;
+  string image_url = 4;
+}
+
+message UpdatePostResponse {
+  bool success = 1;
+  string message = 2;
+  Post post = 3;
+}
+
+message DeletePostRequest {
+  string post_id = 1;
+  string user_id = 2;
+}
+
+message DeletePostResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message LikePostRequest {
+  string post_id = 1;
+  string user_id = 2;
+  bool like = 3; // true to like, false to unlike
+}
+
+message LikePostResponse {
+  bool success = 1;
+  string message = 2;
+  int32 like_count = 3;
+}
+
+message CommentPostRequest {
+  string post_id = 1;
+  string user_id = 2;
+  string comment = 3;
+}
+
+message CommentPostResponse {
+  bool success = 1;
+  string message = 2;
+  Comment comment = 3;
+}
+
+message FollowUserRequest {
+  string follower_id = 1;
+  string followee_id = 2;
+}
+
+message FollowUserResponse {
+  bool success = 1;
+  string message = 2;
+  bool is_following = 3;
+}
+
+message UnfollowUserRequest {
+  string follower_id = 1;
+  string followee_id = 2;
+}
+
+message GetFollowersRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetFollowersResponse {
+  bool success = 1;
+  repeated UserSummary followers = 2;
+  int32 total = 3;
+}
+
+message GetFollowingRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetFollowingResponse {
+  bool success = 1;
+  repeated UserSummary following = 2;
+  int32 total = 3;
+}
+
+message GetNotificationsRequest {
+  string user_id = 1;
+  string type = 2; // "community", "trips", "unread", "missed"
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message GetNotificationsResponse {
+  bool success = 1;
+  repeated Notification notifications = 2;
+  int32 total = 3;
+}
+
+message MarkNotificationAsReadRequest {
+  string notification_id = 1;
+  string user_id = 2;
+}
+
+message MarkNotificationAsReadResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetProfileRequest {
+  string user_id = 1;
+}
+
+message GetProfileResponse {
+  bool success = 1;
+  Profile profile = 2;
+}
+
+message UpdateProfileRequest {
+  string user_id = 1;
+  string bio = 2;
+  string profile_image = 3;
+}
+
+message UpdateProfileResponse {
+  bool success = 1;
+  string message = 2;
+  Profile profile = 3;
+}
+
+message SearchPostsRequest {
+  string query = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message SearchPostsResponse {
+  bool success = 1;
+  repeated Post posts = 2;
+  int32 total = 3;
+}
+
+message SearchUsersRequest {
+  string query = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message SearchUsersResponse {
+  bool success = 1;
+  repeated UserSummary users = 2;
+  int32 total = 3;
+}
+
+// Messages
+message Post {
+  string id = 1;
+  string user_id = 2;
+  string caption = 3;
+  string image_url = 4;
+  repeated string tags = 5;
+  int32 like_count = 6;
+  repeated Like likes = 7;
+  repeated Comment comments = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message Like {
+  string user_id = 1;
+  google.protobuf.Timestamp created_at = 2;
+}
+
+message Comment {
+  string id = 1;
+  string user_id = 2;
+  string text = 3;
+  google.protobuf.Timestamp created_at = 4;
+}
+
+message UserSummary {
+  string id = 1;
+  string name = 2;
+  string username = 3;
+  string profile_image = 4;
+  bool is_following = 5;
+}
+
+message Notification {
+  string id = 1;
+  string user_id = 2;
+  string type = 3; // "like", "comment", "follow", "budget_exceeded", etc.
+  string title = 4;
+  string message = 5;
+  bool is_read = 6;
+  google.protobuf.Timestamp created_at = 7;
+  string related_id = 8; // post_id, user_id, etc.
+}
+
+message Profile {
+  string id = 1;
+  string user_id = 2;
+  string bio = 3;
+  string profile_image = 4;
+  int32 post_count = 5;
+  int32 follower_count = 6;
+  int32 following_count = 7;
+  repeated Post posts = 8;
+}

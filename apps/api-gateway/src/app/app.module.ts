@@ -9,6 +9,7 @@ import {} from '@nestjs/common';
 import { RecommendationModule } from './recommendation/recommendation.module';
 import { UserModule } from './user/user.module';
 import { ItinerariesPlanModule } from './itinerarie-plan/itineraries-plan.module';
+import { CommunityServiceModule } from './community-service/community-service.module';
 
 @Module({
   imports: [
@@ -59,6 +60,15 @@ import { ItinerariesPlanModule } from './itinerarie-plan/itineraries-plan.module
           url: 'localhost:50054', // Assume port for itineraries service
         },
       },
+      {
+        name: 'COMMUNITY_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'community',
+          protoPath: join(__dirname, 'proto/community.proto'),
+          url: 'localhost:50055', // Assume port for itineraries service
+        },
+      },
       // {
       //   name: 'TRIP_PACKAGE',
       //   transport: Transport.GRPC,
@@ -80,6 +90,7 @@ import { ItinerariesPlanModule } from './itinerarie-plan/itineraries-plan.module
     RecommendationModule,
     NotificationModule,
     ItinerariesPlanModule,
+    CommunityServiceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

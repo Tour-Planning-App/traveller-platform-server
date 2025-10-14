@@ -23,6 +23,9 @@
     },
     {
       "path": "./apps/itinerarie-plan"
+    },
+    {
+      "path": "./apps/community-service"
     }
   ]
 }
