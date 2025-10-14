@@ -52,7 +52,7 @@ export class OnboardingDto {
   preferredCurrency!: string;
 
   @ApiProperty({ example: 'solo', description: 'Traveler types', enum:['solo', 'couples', 'friends', 'family', 'business'] })
-  @IsIn(['solo', 'couples', 'friends', 'family', 'business'])
+  @IsString()
   @IsOptional()
   travelerTypes!: string;
 
@@ -115,7 +115,7 @@ export class OnboardingBasicDto {
 
 export class OnboardingSurveyDto {
   @ApiProperty({ example: 'solo', description: 'Traveler types', enum:['solo', 'couples', 'friends', 'family', 'business'] })
-  @IsIn(['solo', 'couples', 'friends', 'family', 'business'])
+  @IsString()
   @IsOptional()
   travelerTypes!: string;
 

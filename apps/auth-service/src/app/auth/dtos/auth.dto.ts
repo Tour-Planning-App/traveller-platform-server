@@ -51,11 +51,8 @@ export class OnboardingDto {
   @IsOptional()
   preferredCurrency!: string;
 
-  @ApiProperty({ example: ['solo', 'friends'], description: 'Traveler types' })
-  @IsArray({ message: 'Traveler types must be an array' })
-  // @ArrayMinSize(1, { message: 'At least one traveler type is required' })
-  // @ArrayMaxSize(5, { message: 'Maximum 5 traveler types allowed' })
-  @IsEnum(['solo', 'couples', 'friends', 'family', 'business'], { each: true, message: 'Each traveler type must be: solo, couples, friends, family, or business' })
+  @ApiProperty({ example: 'solo', description: 'Traveler types' })
+  @IsString()
   @IsOptional()
   travelerTypes!: string;
 
@@ -110,7 +107,7 @@ export class OnboardingBasicDto {
 
 export class OnboardingSurveyDto {
   @ApiProperty({ example: 'solo', description: 'Traveler types', enum:['solo', 'couples', 'friends', 'family', 'business'] })
-  @IsIn(['solo', 'couples', 'friends', 'family', 'business'])
+  @IsString()
   @IsOptional()
   travelerTypes!: string;
 
