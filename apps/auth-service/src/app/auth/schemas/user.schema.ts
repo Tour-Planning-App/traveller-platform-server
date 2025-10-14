@@ -51,6 +51,9 @@ export class User extends Document {
   emergencyContactNumber?: string;
 
   @Prop()
+  emergencyContactAddress?: string;
+
+  @Prop()
   bloodType?: string;
 
   @Prop()

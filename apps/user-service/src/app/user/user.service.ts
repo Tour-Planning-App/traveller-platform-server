@@ -154,6 +154,7 @@ export class UserService {
       if (data.gender !== undefined) user.gender = data.gender;
       if (data.emergencyContactName !== undefined) user.emergencyContactName = data.emergencyContactName;
       if (data.emergencyContactNumber !== undefined) user.emergencyContactNumber = data.emergencyContactNumber;
+      if (data.emergencyContactAddress !== undefined) user.emergencyContactAddress = data.emergencyContactAddress;
       if (data.bloodType !== undefined) user.bloodType = data.bloodType;
       if (data.allergies !== undefined) user.allergies = data.allergies;
 

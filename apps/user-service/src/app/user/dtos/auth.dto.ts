@@ -282,6 +282,11 @@ export class PersonalDetailsDto {
   @IsString()
   emergencyContactNumber?: string;
 
+  @ApiProperty({ example: '123 Main St, City', description: 'Emergency contact address' })
+  @IsOptional()
+  @IsString()
+  emergencyContactAddress?: string;
+
   @ApiProperty({ example: 'O+', enum: ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'] })
   @IsOptional()
   @IsIn(['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'])
