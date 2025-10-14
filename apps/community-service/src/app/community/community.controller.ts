@@ -1,5 +1,5 @@
 // community.controller.ts (updated to use DTOs - assuming HTTP for simplicity, or keep gRPC with DTO typing)
-import { Body, Controller, Get, Post, Put, Delete, Param, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Delete, Param, Query, Logger, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CommunityService } from './community.service';
 import {
@@ -21,113 +21,337 @@ import {
   SearchUsersDto, SearchUsersResponseDto,
   // Import all other DTOs
 } from './dtos/post.dto';
+import { GrpcMethod, Payload, RpcException } from '@nestjs/microservices';
+import { MediaService } from './media.service';
 
 @ApiTags('Community')
-@Controller('community')
+@Controller()
 export class CommunityController {
-  constructor(private readonly communityService: CommunityService) {}
+  private readonly logger = new Logger(CommunityController.name);
 
-  @Post('posts')
-  @ApiOperation({ summary: 'Create a new post' })
-  @ApiResponse({ status: 201, type: CreatePostResponseDto })
-  async createPost(@Body() data: CreatePostDto): Promise<CreatePostResponseDto> {
-    return this.communityService.createPost(data);
+  constructor(
+    private readonly communityService: CommunityService,
+    private readonly mediaService: MediaService,
+  ) {}
+
+  @GrpcMethod('CommunityService', 'CreatePost')
+  async createPost(@Payload() data: CreatePostDto): Promise<CreatePostResponseDto> {
+    try {
+      const result = await this.communityService.createPost(data);
+      return {
+        success: result.success,
+        message: result.message,
+        post: result.post,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC CreatePost error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Get('posts')
-  @ApiOperation({ summary: 'Get posts' })
-  @ApiResponse({ status: 200, type: GetPostsResponseDto })
-  async getPosts(@Query() data: GetPostsDto): Promise<GetPostsResponseDto> {
-    return this.communityService.getPosts(data);
+  @GrpcMethod('CommunityService', 'GetPosts')
+  async getPosts(@Payload() data: GetPostsDto): Promise<GetPostsResponseDto> {
+    try {
+      const result = await this.communityService.getPosts(data);
+      return {
+        success: result.success,
+        posts: result.posts,
+        total: result.total,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC GetPosts error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Get('posts/:id')
-  @ApiOperation({ summary: 'Get post by ID' })
-  async getPostById(@Param('id') id: string): Promise<GetPostResponseDto> {
-    return this.communityService.getPostById({ post_id: id });
+  @GrpcMethod('CommunityService', 'GetPostById')
+  async getPostById(@Payload() data: any): Promise<GetPostResponseDto> {
+    try {
+      const result = await this.communityService.getPostById(data);
+      return {
+        success: result.success,
+        post: result.post,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC GetPostById error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Put('posts/:id')
-  @ApiOperation({ summary: 'Update post' })
-  async updatePost(@Param('id') id: string, @Body() data: Omit<UpdatePostDto, 'post_id'>): Promise<UpdatePostResponseDto> {
-    return this.communityService.updatePost({ ...data, post_id: id });
+  @GrpcMethod('CommunityService', 'UpdatePost')
+  async updatePost(@Payload() data: UpdatePostDto): Promise<UpdatePostResponseDto> {
+    try {
+      const result = await this.communityService.updatePost(data);
+      return {
+        success: result.success,
+        message: result.message,
+        post: result.post,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC UpdatePost error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Delete('posts/:id')
-  @ApiOperation({ summary: 'Delete post' })
-  async deletePost(@Param('id') id: string, @Body() data: Omit<DeletePostDto, 'post_id'>): Promise<DeletePostResponseDto> {
-    return this.communityService.deletePost({ ...data, post_id: id });
+  @GrpcMethod('CommunityService', 'DeletePost')
+  async deletePost(@Payload() data: DeletePostDto): Promise<DeletePostResponseDto> {
+    try {
+      const result = await this.communityService.deletePost(data);
+      return {
+        success: result.success,
+        message: result.message,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC DeletePost error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Post('posts/:id/like')
-  @ApiOperation({ summary: 'Like or unlike post' })
-  async likePost(@Param('id') id: string, @Body() data: Omit<LikePostDto, 'post_id'>): Promise<LikePostResponseDto> {
-    return this.communityService.likePost({ ...data, post_id: id });
+  @GrpcMethod('CommunityService', 'LikePost')
+  async likePost(@Payload() data: LikePostDto): Promise<LikePostResponseDto> {
+    try {
+      const result = await this.communityService.likePost(data);
+      return {
+        success: result.success,
+        message: result.message,
+        like_count: result.like_count,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC LikePost error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Post('posts/:id/comment')
-  @ApiOperation({ summary: 'Add comment to post' })
-  async commentPost(@Param('id') id: string, @Body() data: Omit<CommentPostDto, 'post_id'>): Promise<CommentPostResponseDto> {
-    return this.communityService.commentPost({ ...data, post_id: id });
+  @GrpcMethod('CommunityService', 'CommentPost')
+  async commentPost(@Payload() data: CommentPostDto): Promise<CommentPostResponseDto> {
+    try {
+      const result = await this.communityService.commentPost(data);
+      return {
+        success: result.success,
+        message: result.message,
+        comment: result.comment,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC CommentPost error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Post('follow/:userId')
-  @ApiOperation({ summary: 'Follow user' })
-  async followUser(@Param('userId') userId: string, @Body() data: Omit<FollowUserDto, 'followee_id'>): Promise<FollowUserResponseDto> {
-    return this.communityService.followUser({ ...data, followee_id: userId });
+  @GrpcMethod('CommunityService', 'FollowUser')
+  async followUser(@Payload() data: FollowUserDto): Promise<FollowUserResponseDto> {
+    try {
+      const result = await this.communityService.followUser(data);
+      return {
+        success: result.success,
+        message: result.message,
+        is_following: result.is_following,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC FollowUser error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Delete('follow/:userId')
-  @ApiOperation({ summary: 'Unfollow user' })
-  async unfollowUser(@Param('userId') userId: string, @Body() data: Omit<UnfollowUserDto, 'followee_id'>): Promise<FollowUserResponseDto> {
-    return this.communityService.unfollowUser({ ...data, followee_id: userId });
+  @GrpcMethod('CommunityService', 'UnfollowUser')
+  async unfollowUser(@Payload() data: UnfollowUserDto): Promise<FollowUserResponseDto> {
+    try {
+      const result = await this.communityService.unfollowUser(data);
+      return {
+        success: result.success,
+        message: result.message,
+        is_following: result.is_following,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC UnfollowUser error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Get('followers/:userId')
-  @ApiOperation({ summary: 'Get followers' })
-  async getFollowers(@Param('userId') userId: string, @Query() data: GetFollowersDto): Promise<GetFollowersResponseDto> {
-    return this.communityService.getFollowers({ ...data, user_id: userId });
+  @GrpcMethod('CommunityService', 'GetFollowers')
+  async getFollowers(@Payload() data: GetFollowersDto): Promise<GetFollowersResponseDto> {
+    try {
+      const result = await this.communityService.getFollowers(data);
+      return {
+        success: result.success,
+        followers: result.followers,
+        total: result.total,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC GetFollowers error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Get('following/:userId')
-  @ApiOperation({ summary: 'Get following' })
-  async getFollowing(@Param('userId') userId: string, @Query() data: GetFollowingDto): Promise<GetFollowingResponseDto> {
-    return this.communityService.getFollowing({ ...data, user_id: userId });
+  @GrpcMethod('CommunityService', 'GetFollowing')
+  async getFollowing(@Payload() data: GetFollowingDto): Promise<GetFollowingResponseDto> {
+    try {
+      const result = await this.communityService.getFollowing(data);
+      return {
+        success: result.success,
+        following: result.following,
+        total: result.total,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC GetFollowing error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Get('notifications')
-  @ApiOperation({ summary: 'Get notifications' })
-  async getNotifications(@Query() data: GetNotificationsDto): Promise<GetNotificationsResponseDto> {
-    return this.communityService.getNotifications(data);
+  @GrpcMethod('CommunityService', 'GetNotifications')
+  async getNotifications(@Payload() data: GetNotificationsDto): Promise<GetNotificationsResponseDto> {
+    try {
+      const result = await this.communityService.getNotifications(data);
+      return {
+        success: result.success,
+        notifications: result.notifications,
+        total: result.total,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC GetNotifications error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Put('notifications/:id/read')
-  @ApiOperation({ summary: 'Mark notification as read' })
-  async markNotificationAsRead(@Param('id') id: string, @Body() data: Omit<MarkNotificationAsReadDto, 'notification_id'>): Promise<MarkNotificationAsReadResponseDto> {
-    return this.communityService.markNotificationAsRead({ ...data, notification_id: id });
+  @GrpcMethod('CommunityService', 'MarkNotificationAsRead')
+  async markNotificationAsRead(@Payload() data: MarkNotificationAsReadDto): Promise<MarkNotificationAsReadResponseDto> {
+    try {
+      const result = await this.communityService.markNotificationAsRead(data);
+      return {
+        success: result.success,
+        message: result.message,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC MarkNotificationAsRead error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Get('profile/:userId')
-  @ApiOperation({ summary: 'Get profile' })
-  async getProfile(@Param('userId') userId: string): Promise<GetProfileResponseDto> {
-    return this.communityService.getProfile({ user_id: userId });
+  @GrpcMethod('CommunityService', 'GetProfile')
+  async getProfile(@Payload() data: any): Promise<GetProfileResponseDto> {
+    try {
+      const result = await this.communityService.getProfile(data);
+      return {
+        success: result.success,
+        profile: result.profile,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC GetProfile error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Put('profile')
-  @ApiOperation({ summary: 'Update profile' })
-  async updateProfile(@Body() data: UpdateProfileDto): Promise<UpdateProfileResponseDto> {
-    return this.communityService.updateProfile(data);
+  @GrpcMethod('CommunityService', 'UpdateProfile')
+  async updateProfile(@Payload() data: UpdateProfileDto): Promise<UpdateProfileResponseDto> {
+    try {
+      const result = await this.communityService.updateProfile(data);
+      return {
+        success: result.success,
+        message: result.message,
+        profile: result.profile,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC UpdateProfile error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Get('search/posts')
-  @ApiOperation({ summary: 'Search posts' })
-  async searchPosts(@Query() data: SearchPostsDto): Promise<SearchPostsResponseDto> {
-    return this.communityService.searchPosts(data);
+  @GrpcMethod('CommunityService', 'SearchPosts')
+  async searchPosts(@Payload() data: SearchPostsDto): Promise<SearchPostsResponseDto> {
+    try {
+      const result = await this.communityService.searchPosts(data);
+      return {
+        success: result.success,
+        posts: result.posts,
+        total: result.total,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC SearchPosts error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 
-  @Get('search/users')
-  @ApiOperation({ summary: 'Search users' })
-  async searchUsers(@Query() data: SearchUsersDto): Promise<SearchUsersResponseDto> {
-    return this.communityService.searchUsers(data);
+  @GrpcMethod('CommunityService', 'SearchUsers')
+  async searchUsers(@Payload() data: SearchUsersDto): Promise<SearchUsersResponseDto> {
+    try {
+      const result = await this.communityService.searchUsers(data);
+      return {
+        success: result.success,
+        users: result.users,
+        total: result.total,
+      };
+    } catch (error: any) {
+      this.logger.error(`gRPC SearchUsers error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
+  @GrpcMethod('CommunityService', 'UploadMedia')
+  async uploadMedia(@Payload() data: any): Promise<any> {
+    try {
+      const buffer = Buffer.from(data.file_data);
+      const url = await this.mediaService.uploadFile(
+        buffer,
+        data.file_name,
+        data.content_type,
+      );
+      return { success: true, message: 'Upload successful', url };
+    } catch (error: any) {
+      this.logger.error(`gRPC UploadMedia error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
   }
 }

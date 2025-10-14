@@ -21,6 +21,7 @@
     "@swc/helpers": "~0.5.11",
     "@swc/jest": "~0.2.38",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.0.0",
     "@types/node": "20.19.9",
     "@types/passport-jwt": "^4.0.1",
     "eslint": "^9.8.0",
@@ -43,6 +44,7 @@
     "apps/*"
   ],
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.908.0",
     "@grpc/grpc-js": "^1.13.4",
     "@grpc/proto-loader": "^0.8.0",
     "@langchain/community": "^0.3.56",
@@ -68,6 +70,7 @@
     "expo-server-sdk": "^4.0.0",
     "kafkajs": "^2.2.4",
     "mongoose": "^8.18.1",
+    "multer": "^2.0.2",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.1.13",

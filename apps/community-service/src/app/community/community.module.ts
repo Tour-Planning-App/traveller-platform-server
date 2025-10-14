@@ -7,6 +7,8 @@ import { Post, PostSchema } from './schemas/post.schema';
 import { Notification, NotificationSchema } from './schemas/notification.schema';
 import { Follow, FollowSchema } from './schemas/follow.schema';
 import { join } from 'path';
+import { MediaService } from './media.service'; // New import
+import { MulterModule } from '@nestjs/platform-express'; // For file uploads
 
 @Module({
   imports: [
@@ -39,8 +41,11 @@ import { join } from 'path';
         },
       },
     ]),
+    MulterModule.register({
+      dest: '/tmp/uploads', // Temporary storage; adjust as needed
+    }),
   ],
-  providers: [CommunityService],
+  providers: [CommunityService, MediaService], // Add MediaService
   controllers: [CommunityController],
 })
 export class CommunityModule {}

@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Post, Put, Delete, Param, Query, Req, UseGuards, HttpException, HttpStatus, Inject } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Delete, Param, Query, Req, UseGuards, HttpException, HttpStatus, Inject, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import { firstValueFrom, catchError } from 'rxjs';
-import { ApiBearerAuth, ApiBadRequestResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBadRequestResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOperation, ApiResponse, ApiTags, ApiConsumes } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Logger } from '@nestjs/common';
 import {
@@ -24,6 +24,7 @@ import {
   SearchUsersDto, SearchUsersResponseDto,
   // Import all DTOs
 } from './dtos/community.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Community')
 @Controller('community')
@@ -34,6 +35,65 @@ export class CommunityServiceController {
   constructor(@Inject('COMMUNITY_PACKAGE') private client: ClientGrpcProxy) {
     this.communityService = this.client.getService('CommunityService');
   }
+
+  @Post('media/upload')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload media via gRPC to Backblaze B2' })
+  @ApiResponse({ status: 201, description: 'File uploaded successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid file or upload failed' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error during upload' })
+  async uploadMedia(
+    @UploadedFile() file: any,
+    @Req() req: any,
+  ): Promise<{ success: boolean; url: string; message: string }> {
+    try {
+      const userId = req?.user?.userId;
+      if (!userId) {
+        return { success: false, url: '', message: 'User not authenticated' };
+      }
+
+      if (!file) {
+        throw new HttpException('No file uploaded', HttpStatus.BAD_REQUEST);
+      }
+
+      // Validate file
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'];
+      if (!allowedTypes.includes(file.mimetype)) {
+        throw new HttpException('Unsupported file type', HttpStatus.BAD_REQUEST);
+      }
+
+      // Prepare gRPC request (base64 encode buffer)
+      const base64Data = file.buffer.toString('base64');
+      const data: any = {
+        user_id: userId,
+        file_data: Buffer.from(base64Data, 'base64'), // Reconstruct bytes
+        file_name: file.originalname,
+        content_type: file.mimetype,
+      };
+
+      const result = await firstValueFrom(
+        this.communityService.UploadMedia(data).pipe(
+          catchError((error) => {
+            this.logger.error(`UploadMedia gRPC error: ${error.message}`, error.stack);
+            if (error.code === 2 || error.code === 'INTERNAL') {
+              throw new HttpException('Internal server error during upload', HttpStatus.INTERNAL_SERVER_ERROR);
+            } else if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
+              throw new HttpException('Invalid file data', HttpStatus.BAD_REQUEST);
+            } else {
+              throw new HttpException('Upload failed', HttpStatus.BAD_REQUEST);
+            }
+          }),
+        ),
+      ) as any;
+
+      return { success: result.success, url: result.url, message: result.message } as any;
+    } catch (error: any) {
+      this.logger.error(`UploadMedia failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
 
   @Post('posts')
   @UseGuards(JwtAuthGuard)

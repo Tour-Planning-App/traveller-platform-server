@@ -30,8 +30,21 @@ service CommunityService {
   // Search
   rpc SearchPosts(SearchPostsRequest) returns (SearchPostsResponse);
   rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+
+  rpc UploadMedia(UploadMediaRequest) returns (UploadMediaResponse);
+}
+message UploadMediaRequest {
+  string user_id = 1;
+  bytes file_data = 2; // Binary file data (base64 decoded in service)
+  string file_name = 3;
+  string content_type = 4; // e.g., 'image/jpeg'
 }
 
+message UploadMediaResponse {
+  bool success = 1;
+  string message = 2;
+  string url = 3; // Public URL from B2
+}
 message CreatePostRequest {
   string user_id = 1;
   string caption = 2;
