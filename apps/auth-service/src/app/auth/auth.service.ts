@@ -148,7 +148,7 @@ export class AuthService {
     }
   }
 
-  async completeOnboarding(userId: string, dto: OnboardingDto): Promise<User> {
+  async completeOnboarding(userId: string, dto: OnboardingDto): Promise<any> {
     try {
       const user = await this.userModel.findByIdAndUpdate(
         userId,
@@ -157,7 +157,7 @@ export class AuthService {
       );
       if (!user) throw new BadRequestException('User not found');
       this.logger.log(`Onboarding completed for user: ${userId}`);
-      return user;
+      return { success: user ? true : false , user: user};
     } catch (error:any) {
       this.logger.error(`CompleteOnboarding failed for ${userId}: ${error.message}`, error.stack);
       if (error instanceof BadRequestException) {
