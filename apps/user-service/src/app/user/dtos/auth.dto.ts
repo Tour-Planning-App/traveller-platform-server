@@ -60,13 +60,13 @@ export class OnboardingDto {
   @IsArray({ message: 'Transportation preferences must be an array' })
   // @ArrayMinSize(1, { message: 'At least one transportation preference is required' })
   // @ArrayMaxSize(6, { message: 'Maximum 6 transportation preferences allowed' })
-  @IsEnum(['tuk-tuk', 'bike', 'public-buses', 'public-trains', 'car-van-rental', 'walking-cycling'], { each: true, message: 'Each transportation preference must be: tuk-tuk, bike, public-buses, public-trains, car-van-rental, or walking-cycling' })
+  // @IsEnum(['tuk-tuk', 'bike', 'public-buses', 'public-trains', 'car-van-rental', 'walking-cycling'], { each: true, message: 'Each transportation preference must be: tuk-tuk, bike, public-buses, public-trains, car-van-rental, or walking-cycling' })
   @IsOptional()
   transportationPreferences!: string[];
 
   @ApiProperty({ example: ['surfing', 'wildlife-safari'], description: 'Activity preferences' })
   @IsArray({ message: 'Activity preferences must be an array' })
-  @IsEnum(['surfing', 'wildlife-safari', 'cultural-tours', 'visiting-tea-plantations', 'exploring-ancient-ruins', 'beach-relaxation'], { each: true, message: 'Each activity preference must be: tuk-tuk, bike, public-buses, public-trains, car-van-rental, or walking-cycling' })
+  // @IsEnum(['surfing', 'wildlife-safari', 'cultural-tours', 'visiting-tea-plantations', 'exploring-ancient-ruins', 'beach-relaxation'], { each: true, message: 'Each activity preference must be: tuk-tuk, bike, public-buses, public-trains, car-van-rental, or walking-cycling' })
   @IsOptional()
   activityPreferences!: string[];
 
@@ -74,10 +74,10 @@ export class OnboardingDto {
   @IsArray({ message: 'Food/drink preferences must be an array' })
   // @ArrayMinSize(1, { message: 'At least one food/drink preference is required' })
   // @ArrayMaxSize(16, { message: 'Maximum 16 food/drink preferences allowed' })
-  @IsEnum([
-    'lankan-cuisines', 'western-cuisines', 'chinese-other-asian-cuisines', 'indian-cuisines', 'middle-eastern-cuisine',
-    'dining', 'street-food', 'vegetarian', 'gluten-free', 'desserts-sweets', 'coffee-tea', 'drinks-juice-bars', 'alcoholic-drinks'
-  ], { each: true, message: 'Each food/drink preference must be one of the allowed values' })
+  // @IsEnum([
+  //   'lankan-cuisines', 'western-cuisines', 'chinese-other-asian-cuisines', 'indian-cuisines', 'middle-eastern-cuisine',
+  //   'dining', 'street-food', 'vegetarian', 'gluten-free', 'desserts-sweets', 'coffee-tea', 'drinks-juice-bars', 'alcoholic-drinks'
+  // ], { each: true, message: 'Each food/drink preference must be one of the allowed values' })
   @IsOptional()
   foodDrinkPreferences!: string[];
 
@@ -85,9 +85,9 @@ export class OnboardingDto {
   @IsArray({ message: 'Sri Lanka vibes must be an array' })
   // @ArrayMinSize(1, { message: 'At least one Sri Lanka vibe is required' })
   // @ArrayMaxSize(8, { message: 'Maximum 8 Sri Lanka vibes allowed' })
-  @IsEnum([
-    'misty-highlands', 'waterfalls-parks', 'beaches', 'art-craft', 'food-culinary', 'photography', 'spa-meditation', 'shopping-markets'
-  ], { each: true, message: 'Each Sri Lanka vibe must be one of the allowed values' })
+  // @IsEnum([
+  //   'misty-highlands', 'waterfalls-parks', 'beaches', 'art-craft', 'food-culinary', 'photography', 'spa-meditation', 'shopping-markets'
+  // ], { each: true, message: 'Each Sri Lanka vibe must be one of the allowed values' })
   @IsOptional()
   sriLankaVibes!: string[];
 }
@@ -121,12 +121,12 @@ export class OnboardingSurveyDto {
   @IsArray()
   // @ArrayMinSize(1)
   // @ArrayMaxSize(6)
-  @IsEnum(['tuk-tuk', 'bike', 'public-buses', 'public-trains', 'car-van-rental', 'walking-cycling'], { each: true })
+  // @IsEnum(['tuk-tuk', 'bike', 'public-buses', 'public-trains', 'car-van-rental', 'walking-cycling'], { each: true })
   transportationPreferences!: string[];
 
   @ApiProperty({ example: ['surfing', 'wildlife-safari'], description: 'Activity preferences' })
   @IsArray({ message: 'Activity preferences must be an array' })
-  @IsEnum(['surfing', 'wildlife-safari', 'cultural-tours', 'visiting-tea-plantations', 'exploring-ancient-ruins', 'beach-relaxation'], { each: true, message: 'Each activity preference must be: tuk-tuk, bike, public-buses, public-trains, car-van-rental, or walking-cycling' })
+  // @IsEnum(['surfing', 'wildlife-safari', 'cultural-tours', 'visiting-tea-plantations', 'exploring-ancient-ruins', 'beach-relaxation'], { each: true, message: 'Each activity preference must be: tuk-tuk, bike, public-buses, public-trains, car-van-rental, or walking-cycling' })
   @IsOptional()
   activityPreferences!: string[];
 
@@ -134,19 +134,19 @@ export class OnboardingSurveyDto {
   @IsArray()
   // @ArrayMinSize(1)
   // @ArrayMaxSize(16)
-  @IsEnum([
-    'lankan-cuisines', 'western-cuisines', 'chinese-other-asian-cuisines', 'indian-cuisines', 'middle-eastern-cuisine',
-    'dining', 'street-food', 'vegetarian', 'gluten-free', 'desserts-sweets', 'coffee-tea', 'drinks-juice-bars', 'alcoholic-drinks'
-  ], { each: true })
+  // @IsEnum([
+  //   'lankan-cuisines', 'western-cuisines', 'chinese-other-asian-cuisines', 'indian-cuisines', 'middle-eastern-cuisine',
+  //   'dining', 'street-food', 'vegetarian', 'gluten-free', 'desserts-sweets', 'coffee-tea', 'drinks-juice-bars', 'alcoholic-drinks'
+  // ], { each: true })
   foodDrinkPreferences!: string[];
 
   @ApiProperty({ example: ['misty-highlands', 'beaches'], description: 'Sri Lanka vibes' })
   @IsArray()
   // @ArrayMinSize(1)
   // @ArrayMaxSize(8)
-  @IsEnum([
-    'misty-highlands', 'waterfalls-parks', 'beaches', 'art-craft', 'food-culinary', 'photography', 'spa-meditation', 'shopping-markets'
-  ], { each: true })
+  // @IsEnum([
+  //   'misty-highlands', 'waterfalls-parks', 'beaches', 'art-craft', 'food-culinary', 'photography', 'spa-meditation', 'shopping-markets'
+  // ], { each: true })
   sriLankaVibes!: string[];
 }
 

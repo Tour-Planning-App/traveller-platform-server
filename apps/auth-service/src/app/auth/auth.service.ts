@@ -157,7 +157,8 @@ export class AuthService {
       );
       if (!user) throw new BadRequestException('User not found');
       this.logger.log(`Onboarding completed for user: ${userId}`);
-      return { success: user ? true : false , user: user};
+      const result = { success: user ? true : false , ...user};
+      return result;
     } catch (error:any) {
       this.logger.error(`CompleteOnboarding failed for ${userId}: ${error.message}`, error.stack);
       if (error instanceof BadRequestException) {
