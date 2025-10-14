@@ -54,7 +54,7 @@ export class OnboardingDto {
   @ApiProperty({ example: 'solo', description: 'Traveler types', enum:['solo', 'couples', 'friends', 'family', 'business'] })
   @IsIn(['solo', 'couples', 'friends', 'family', 'business'])
   @IsOptional()
-  travelerTypes!: string[];
+  travelerTypes!: string;
 
   @ApiProperty({ example: ['tuk-tuk', 'car-van-rental'], description: 'Transportation preferences' })
   @IsArray({ message: 'Transportation preferences must be an array' })
@@ -117,7 +117,7 @@ export class OnboardingSurveyDto {
   @ApiProperty({ example: 'solo', description: 'Traveler types', enum:['solo', 'couples', 'friends', 'family', 'business'] })
   @IsIn(['solo', 'couples', 'friends', 'family', 'business'])
   @IsOptional()
-  travelerTypes!: string[];
+  travelerTypes!: string;
 
   @ApiProperty({ example: ['tuk-tuk', 'car-van-rental'], description: 'Transportation preferences' })
   @IsArray()

@@ -10,7 +10,7 @@ export class GenerateRecommendationsDto {
   @ApiProperty({ example: 'solo', description: 'Traveler types', enum:['solo', 'couples', 'friends', 'family', 'business'] })
   @IsIn(['solo', 'couples', 'friends', 'family', 'business'])
   @IsOptional()
-  travelerTypes!: string[];
+  travelerTypes!: string;
 
   @ApiProperty({ example: ['tuk-tuk'], description: 'Transportation preferences', required: false })
   @IsOptional()

@@ -60,8 +60,8 @@ export class User extends Document {
   allergies?: string;
 
   // Onboarding Survey Fields
-  @Prop({ type: [String] }) // e.g., ['solo', 'friends']
-  travelerTypes?: string[];
+  @Prop() // e.g., ['solo', 'friends']
+  travelerTypes?: string;
 
   @Prop({ type: [String] }) // e.g., ['tuk-tuk', 'public-buses']
   transportationPreferences?: string[];
