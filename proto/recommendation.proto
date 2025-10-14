@@ -7,7 +7,7 @@ service RecommendationService {
 
 message GenerateRecommendationsRequest {
   string userId = 1;
-  repeated string travelerTypes = 2;
+  string travelerTypes = 2;
   repeated string transportationPreferences = 3;
   repeated string activityPreferences = 4;
   repeated string foodDrinkPreferences = 5;

@@ -50,7 +50,7 @@ message CompleteOnboardingRequest {
   string gender = 3;
   string preferredLanguage = 4;
   string preferredCurrency = 5;
-  repeated string travelerTypes = 6;
+  string travelerTypes = 6;
   repeated string transportationPreferences = 7;
   repeated string activityPreferences = 8;
   repeated string foodDrinkPreferences = 9;
@@ -67,7 +67,7 @@ message OnboardingResponse {
   string gender = 7;
   string preferredLanguage = 8;
   string preferredCurrency = 9;
-  repeated string travelerTypes = 10;
+  string travelerTypes = 10;
   repeated string transportationPreferences = 11;
   repeated string activityPreferences = 12;
   repeated string foodDrinkPreferences = 13;

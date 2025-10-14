@@ -130,7 +130,7 @@ message User {
   string preferredCurrency = 7;
   string role = 8;
   bool isOnboarded = 9;
-  repeated string travelerTypes = 10;
+  string travelerTypes = 10;
   repeated string transportationPreferences = 11;
   repeated string activityPreferences = 12;
   repeated string foodDrinkPreferences = 13;
