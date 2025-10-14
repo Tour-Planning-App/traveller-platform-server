@@ -37,10 +37,6 @@ export class PostDto {
   @IsString()
   id: string;
 
-  @ApiProperty({ example: 'user123' })
-  @IsString()
-  user_id: string;
-
   @ApiProperty({ example: 'Amazing trip to Sri Lanka!' })
   @IsString()
   @IsOptional()
