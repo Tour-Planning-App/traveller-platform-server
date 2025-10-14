@@ -37,7 +37,7 @@ export class CommunityService {
     @InjectModel(Post.name) private postModel: Model<Post>,
     @InjectModel(Notification.name) private notificationModel: Model<Notification>,
     @InjectModel(Follow.name) private followModel: Model<Follow>,
-    @Inject('USER_SERVICE') private userClient: ClientGrpcProxy,
+    @Inject('USER_PACKAGE') private userClient: ClientGrpcProxy,
   ) {
     this.userService = this.userClient.getService('UserService');
   }
