@@ -37,6 +37,9 @@ export class PostDto {
   @IsString()
   id: string;
 
+  @IsString()
+  user_id: string;
+
   @ApiProperty({ example: 'Amazing trip to Sri Lanka!' })
   @IsString()
   @IsOptional()
@@ -80,7 +83,8 @@ export class PostDto {
 }
 
 export class CreatePostDto {
-
+  @IsString()
+  user_id: string;
 
   @ApiProperty({ example: 'Amazing trip to Sri Lanka!' })
   @IsString()

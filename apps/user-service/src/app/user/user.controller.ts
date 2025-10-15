@@ -5,7 +5,6 @@ import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto, UpdateProfileDto } from './dtos/user.dto';
 import { BadRequestException } from '@nestjs/common';
 import { CreateSubscriptionDto } from './dtos/subscription.dto';
-import { PersonalDetailsDto } from './dtos/auth.dto';
 
 
 @Controller('user')
@@ -74,7 +73,7 @@ export class UserController {
   async deleteUser(@Payload() data: { email: string }) {
     try {
       const result = await this.userService.deleteUser(data.email);
-      return { status: 200, message: 'User deleted successfully' };
+      return { status: 200, message: 'User deleted successfully' , result: result};
     } catch (error: any) {
       this.logger.error(`gRPC DeleteUser error: ${error.message}`, error.stack);
       throw new RpcException({
@@ -162,7 +161,7 @@ export class UserController {
   async handleStripeWebhook(@Payload() data: any) { // Struct for event
     try {
       const result = await this.userService.handleStripeWebhook(data);
-      return { status: 200, message: 'Webhook handled successfully' };
+      return { status: 200, message: 'Webhook handled successfully', result: result };
     } catch (error: any) {
       this.logger.error(`gRPC HandleStripeWebhook error: ${error.message}`, error.stack);
       throw new RpcException({

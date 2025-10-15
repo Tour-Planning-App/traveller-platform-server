@@ -2,11 +2,10 @@ import { Body, Controller, Get, HttpException, HttpStatus, Inject, Logger, Post,
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import { ApiBadRequestResponse, ApiBearerAuth, ApiInternalServerErrorResponse, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { catchError, firstValueFrom, of } from 'rxjs';
-// import { SignInUserDto } from './dtos/signin-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
 import { SignInDto, VerifyOtpDto, OAuthProfileDto, AuthResponseDto, OnboardingDto, LoginDto } from './dtos/auth.dto';
-import { JwtService } from '@nestjs/jwt'; // New import for token verification
+import { JwtService } from '@nestjs/jwt'; 
 
 @Controller('auth')
 export class AuthController {
@@ -238,7 +237,7 @@ export class AuthController {
     // Implementation depends on user service; assume proxy
     const userId = req?.user?.userId;
     // Call user service GetUserById and return relevant fields
-    return { /* personal details */ };
+    return userId;
   }
 
 }

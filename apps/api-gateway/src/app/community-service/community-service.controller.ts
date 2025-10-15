@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Put, Delete, Param, Query, Req, UseGuards, HttpException, HttpStatus, Inject, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import { firstValueFrom, catchError } from 'rxjs';
-import { ApiBearerAuth, ApiBadRequestResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOperation, ApiResponse, ApiTags, ApiConsumes } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBadRequestResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOperation, ApiResponse, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Logger } from '@nestjs/common';
 import {
@@ -39,6 +39,20 @@ export class CommunityServiceController {
   @Post('media/upload')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
+  @ApiBody({
+  description: 'Media file upload',
+  type: 'multipart/form-data',
+  schema: {
+    type: 'object',
+    properties: {
+      file: {
+        type: 'string',
+        format: 'binary',
+        description: 'Media file (JPEG, PNG, GIF, MP4)',
+      },
+    },
+  },
+})
   @ApiOperation({ summary: 'Upload media via gRPC to Backblaze B2' })
   @ApiResponse({ status: 201, description: 'File uploaded successfully' })
   @ApiBadRequestResponse({ description: 'Invalid file or upload failed' })

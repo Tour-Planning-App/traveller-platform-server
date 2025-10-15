@@ -1,6 +1,6 @@
 // community.controller.ts (updated to use DTOs - assuming HTTP for simplicity, or keep gRPC with DTO typing)
-import { Body, Controller, Get, Post, Put, Delete, Param, Query, Logger, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {  Controller, Logger, BadRequestException } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { CommunityService } from './community.service';
 import {
   CreatePostDto, CreatePostResponseDto,

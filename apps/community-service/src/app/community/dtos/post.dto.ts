@@ -80,6 +80,9 @@ export class PostDto {
 }
 
 export class CreatePostDto {
+  @ApiProperty({ example: 'user123' })
+  @IsString()
+  user_id: string;
 
   @ApiProperty({ example: 'Amazing trip to Sri Lanka!' })
   @IsString()
