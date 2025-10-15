@@ -180,10 +180,6 @@ export class UpdatePostDto {
   @IsString()
   post_id: string;
 
-  @ApiProperty({ example: 'user123' })
-  @IsString()
-  user_id: string;
-
   @ApiProperty({ example: 'Updated caption' })
   @IsString()
   @IsOptional()
