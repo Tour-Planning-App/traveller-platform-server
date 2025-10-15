@@ -26,6 +26,9 @@
     },
     {
       "path": "./apps/community-service"
+    },
+    {
+      "path": "./apps/tips-service"
     }
   ]
 }

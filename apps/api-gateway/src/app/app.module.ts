@@ -10,6 +10,7 @@ import { RecommendationModule } from './recommendation/recommendation.module';
 import { UserModule } from './user/user.module';
 import { ItinerariesPlanModule } from './itinerarie-plan/itineraries-plan.module';
 import { CommunityServiceModule } from './community-service/community-service.module';
+import { TipsServiceModule } from './tips-service/tips-service.module';
 
 @Module({
   imports: [
@@ -69,6 +70,15 @@ import { CommunityServiceModule } from './community-service/community-service.mo
           url: 'localhost:50055', // Assume port for itineraries service
         },
       },
+      {
+        name: 'TIPS_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'tips',
+          protoPath: join(__dirname, 'proto/tips.proto'),
+          url: 'localhost:50056', // Assume port for itineraries service
+        },
+        }
       // {
       //   name: 'TRIP_PACKAGE',
       //   transport: Transport.GRPC,
@@ -91,6 +101,7 @@ import { CommunityServiceModule } from './community-service/community-service.mo
     NotificationModule,
     ItinerariesPlanModule,
     CommunityServiceModule,
+    TipsServiceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

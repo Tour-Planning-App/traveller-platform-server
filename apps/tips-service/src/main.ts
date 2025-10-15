@@ -13,14 +13,14 @@ async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
     transport: Transport.GRPC,
     options: {
-      package: 'community',
-      protoPath: join(__dirname, 'proto/community.proto'),
-      url: 'localhost:50055', // Different port for user service
+      package: 'tips',
+      protoPath: join(__dirname, 'proto/tips.proto'),
+      url: 'localhost:50056', // Different port for user service
     },
   });
   await app.listen();
 
-  Logger.log(`🚀 Community microservice is listening on gRPC channel`);
+  Logger.log(`🚀 Tips microservice is listening on gRPC channel`);
 }
 
 bootstrap();

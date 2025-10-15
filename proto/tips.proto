@@ -1,0 +1,176 @@
+// tips.proto
+syntax = "proto3";
+package tips;
+import "google/protobuf/timestamp.proto";
+
+service TipsService {
+  // Categories RPCs
+  rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
+  rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
+  rpc GetCategoryById(GetCategoryByIdRequest) returns (GetCategoryResponse);
+  rpc UpdateCategory(UpdateCategoryRequest) returns (UpdateCategoryResponse);
+  rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse);
+
+  // Tips RPCs
+  rpc CreateTip(CreateTipRequest) returns (CreateTipResponse);
+  rpc GetTips(GetTipsRequest) returns (GetTipsResponse);
+  rpc GetTipById(GetTipByIdRequest) returns (GetTipResponse);
+  rpc UpdateTip(UpdateTipRequest) returns (UpdateTipResponse);
+  rpc DeleteTip(DeleteTipRequest) returns (DeleteTipResponse);
+
+  // Admin: Get all users
+  rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
+}
+
+message CreateCategoryRequest {
+  string admin_id = 1;
+  string name = 2;
+  string description = 3; // Optional
+}
+
+message CreateCategoryResponse {
+  bool success = 1;
+  string message = 2;
+  Category category = 3;
+}
+
+message GetCategoriesRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message GetCategoriesResponse {
+  bool success = 1;
+  repeated Category categories = 2;
+  int32 total = 3;
+}
+
+message GetCategoryByIdRequest {
+  string category_id = 1;
+}
+
+message GetCategoryResponse {
+  bool success = 1;
+  Category category = 2;
+}
+
+message UpdateCategoryRequest {
+  string category_id = 1;
+  string admin_id = 2;
+  string name = 3;
+  string description = 4;
+}
+
+message UpdateCategoryResponse {
+  bool success = 1;
+  string message = 2;
+  Category category = 3;
+}
+
+message DeleteCategoryRequest {
+  string category_id = 1;
+  string admin_id = 2;
+}
+
+message DeleteCategoryResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message CreateTipRequest {
+  string admin_id = 1;
+  string category_id = 2;
+  string title = 3;
+  string content = 4;
+  string image_url = 5; // Optional
+}
+
+message CreateTipResponse {
+  bool success = 1;
+  string message = 2;
+  Tip tip = 3;
+}
+
+message GetTipsRequest {
+  string category_id = 1; // Optional, if empty get all
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetTipsResponse {
+  bool success = 1;
+  repeated Tip tips = 2;
+  int32 total = 3;
+}
+
+message GetTipByIdRequest {
+  string tip_id = 1;
+}
+
+message GetTipResponse {
+  bool success = 1;
+  Tip tip = 2;
+}
+
+message UpdateTipRequest {
+  string tip_id = 1;
+  string admin_id = 2;
+  string category_id = 3;
+  string title = 4;
+  string content = 5;
+  string image_url = 6;
+}
+
+message UpdateTipResponse {
+  bool success = 1;
+  string message = 2;
+  Tip tip = 3;
+}
+
+message DeleteTipRequest {
+  string tip_id = 1;
+  string admin_id = 2;
+}
+
+message DeleteTipResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetAllUsersRequest {
+  string admin_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetAllUsersResponse {
+  bool success = 1;
+  repeated UserSummary users = 2;
+  int32 total = 3;
+}
+
+// Messages
+message Category {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message Tip {
+  string id = 1;
+  string category_id = 2;
+  string title = 3;
+  string content = 4;
+  string image_url = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message UserSummary {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4; // e.g., 'admin', 'user'
+}
