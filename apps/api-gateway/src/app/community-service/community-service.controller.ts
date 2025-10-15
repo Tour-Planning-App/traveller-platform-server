@@ -40,19 +40,19 @@ export class CommunityServiceController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-  description: 'Media file upload',
-  type: 'multipart/form-data',
-  schema: {
-    type: 'object',
-    properties: {
-      file: {
-        type: 'string',
-        format: 'binary',
-        description: 'Media file (JPEG, PNG, GIF, MP4)',
+    description: 'Media file upload',
+    type: 'multipart/form-data',
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Media file (JPEG, PNG, GIF, MP4)',
+        },
       },
     },
-  },
-})
+  })
   @ApiOperation({ summary: 'Upload media via gRPC to Backblaze B2' })
   @ApiResponse({ status: 201, description: 'File uploaded successfully' })
   @ApiBadRequestResponse({ description: 'Invalid file or upload failed' })
@@ -80,10 +80,10 @@ export class CommunityServiceController {
       // Prepare gRPC request (base64 encode buffer)
       const base64Data = file.buffer.toString('base64');
       const data: any = {
-        user_id: userId,
-        file_data: Buffer.from(base64Data, 'base64'), // Reconstruct bytes
-        file_name: file.originalname,
-        content_type: file.mimetype,
+        userId: userId,
+        fileData: Buffer.from(base64Data, 'base64'), // Reconstruct bytes
+        fileName: file.originalname,
+        contentType: file.mimetype,
       };
 
       const result = await firstValueFrom(
@@ -122,7 +122,7 @@ export class CommunityServiceController {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };
 
-      const data = { ...dto, user_id: userId }; // Override with authenticated user
+      const data = { ...dto, userId: userId }; // Override with authenticated user
 
       const result = await firstValueFrom(
         this.communityService.CreatePost(data).pipe(
@@ -159,7 +159,7 @@ export class CommunityServiceController {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };
 
-      const data = { ...dto, user_id: userId }; // Include authenticated user if needed
+      const data = { ...dto, userId: userId }; // Include authenticated user if needed
 
       const result = await firstValueFrom(
         this.communityService.GetPosts(data).pipe(
@@ -195,7 +195,7 @@ export class CommunityServiceController {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };
 
-      const data: GetPostByIdDto = { post_id: id };
+      const data: GetPostByIdDto = { postId: id } as any;
 
       const result = await firstValueFrom(
         this.communityService.GetPostById(data).pipe(
@@ -228,12 +228,12 @@ export class CommunityServiceController {
   @ApiBadRequestResponse({ description: 'Invalid post data' })
   @ApiNotFoundResponse({ description: 'Post not found' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error during post update' })
-  async updatePost(@Param('id') id: string, @Body() dto: Omit<UpdatePostDto, 'post_id'>, @Req() req: any) {
+  async updatePost(@Param('id') id: string, @Body() dto: Omit<UpdatePostDto, 'postId'>, @Req() req: any) {
     try {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };
 
-      const data: UpdatePostDto = { ...dto, post_id: id, user_id: userId };
+      const data: UpdatePostDto = { ...dto, postId: id, userId: userId } as any;
 
       const result = await firstValueFrom(
         this.communityService.UpdatePost(data).pipe(
@@ -271,7 +271,7 @@ export class CommunityServiceController {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };
 
-      const data: DeletePostDto = { post_id: id, user_id: userId };
+      const data: DeletePostDto = { postId: id, userId: userId } as any;
 
       const result = await firstValueFrom(
         this.communityService.DeletePost(data).pipe(
@@ -304,12 +304,12 @@ export class CommunityServiceController {
   @ApiBadRequestResponse({ description: 'Invalid post ID' })
   @ApiNotFoundResponse({ description: 'Post not found' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error during like update' })
-  async likePost(@Param('id') id: string, @Body() dto: Omit<LikePostDto, 'post_id'>, @Req() req: any) {
+  async likePost(@Param('id') id: string, @Body() dto: Omit<LikePostDto, 'postId'>, @Req() req: any) {
     try {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };
 
-      const data: LikePostDto = { ...dto, post_id: id, user_id: userId };
+      const data: LikePostDto = { ...dto, postId: id, userId: userId } as any;
 
       const result = await firstValueFrom(
         this.communityService.LikePost(data).pipe(
@@ -342,12 +342,12 @@ export class CommunityServiceController {
   @ApiBadRequestResponse({ description: 'Invalid comment data' })
   @ApiNotFoundResponse({ description: 'Post not found' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error during comment addition' })
-  async commentPost(@Param('id') id: string, @Body() dto: Omit<CommentPostDto, 'post_id'>, @Req() req: any) {
+  async commentPost(@Param('id') id: string, @Body() dto: Omit<CommentPostDto, 'postId'>, @Req() req: any) {
     try {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };
 
-      const data: CommentPostDto = { ...dto, post_id: id, user_id: userId };
+      const data: CommentPostDto = { ...dto, postId: id, userId: userId } as any;
 
       const result = await firstValueFrom(
         this.communityService.CommentPost(data).pipe(
@@ -381,10 +381,10 @@ export class CommunityServiceController {
   @ApiInternalServerErrorResponse({ description: 'Internal server error during follow' })
   async followUser(@Param('userId') userId: string, @Req() req: any) {
     try {
-      const userIdCurrent = req?.user?.userId;
-      if (!userIdCurrent) return { success: false, message: 'User not authenticated' };
+      const currentUserId = req?.user?.userId;
+      if (!currentUserId) return { success: false, message: 'User not authenticated' };
 
-      const data: FollowUserDto = { follower_id: userIdCurrent, followee_id: userId };
+      const data: FollowUserDto = { followerId: currentUserId, followeeId: userId } as any;
 
       const result = await firstValueFrom(
         this.communityService.FollowUser(data).pipe(
@@ -416,10 +416,10 @@ export class CommunityServiceController {
   @ApiInternalServerErrorResponse({ description: 'Internal server error during unfollow' })
   async unfollowUser(@Param('userId') userId: string, @Req() req: any) {
     try {
-      const userIdCurrent = req?.user?.userId;
-      if (!userIdCurrent) return { success: false, message: 'User not authenticated' };
+      const currentUserId = req?.user?.userId;
+      if (!currentUserId) return { success: false, message: 'User not authenticated' };
 
-      const data: UnfollowUserDto = { follower_id: userIdCurrent, followee_id: userId };
+      const data: UnfollowUserDto = { followerId: currentUserId, followeeId: userId } as any;
 
       const result = await firstValueFrom(
         this.communityService.UnfollowUser(data).pipe(
@@ -449,12 +449,12 @@ export class CommunityServiceController {
   @ApiResponse({ status: 200, description: 'Followers fetched successfully', type: GetFollowersResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid user ID' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error during followers fetch' })
-  async getFollowers(@Param('userId') userId: string, @Query() dto: Omit<GetFollowersDto, 'user_id'>, @Req() req: any) {
+  async getFollowers(@Param('userId') userId: string, @Query() dto: Omit<GetFollowersDto, 'userId'>, @Req() req: any) {
     try {
       const currentUserId = req?.user?.userId;
       if (!currentUserId) return { success: false, message: 'User not authenticated' };
 
-      const data: GetFollowersDto = { ...dto, user_id: userId };
+      const data: GetFollowersDto = { ...dto, userId: userId } as any;
 
       const result = await firstValueFrom(
         this.communityService.GetFollowers(data).pipe(
@@ -484,12 +484,12 @@ export class CommunityServiceController {
   @ApiResponse({ status: 200, description: 'Following fetched successfully', type: GetFollowingResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid user ID' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error during following fetch' })
-  async getFollowing(@Param('userId') userId: string, @Query() dto: Omit<GetFollowingDto, 'user_id'>, @Req() req: any) {
+  async getFollowing(@Param('userId') userId: string, @Query() dto: Omit<GetFollowingDto, 'userId'>, @Req() req: any) {
     try {
       const currentUserId = req?.user?.userId;
       if (!currentUserId) return { success: false, message: 'User not authenticated' };
 
-      const data: GetFollowingDto = { ...dto, user_id: userId };
+      const data: GetFollowingDto = { ...dto, userId: userId } as any;
 
       const result = await firstValueFrom(
         this.communityService.GetFollowing(data).pipe(
@@ -524,7 +524,7 @@ export class CommunityServiceController {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };
 
-      const data = { ...dto, user_id: userId };
+      const data = { ...dto, userId: userId };
 
       const result = await firstValueFrom(
         this.communityService.GetNotifications(data).pipe(
@@ -560,7 +560,7 @@ export class CommunityServiceController {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };
 
-      const data: MarkNotificationAsReadDto = { notification_id: id, user_id: userId };
+      const data: MarkNotificationAsReadDto = { notificationId: id, userId: userId } as any;
 
       const result = await firstValueFrom(
         this.communityService.MarkNotificationAsRead(data).pipe(
@@ -598,7 +598,7 @@ export class CommunityServiceController {
       const currentUserId = req?.user?.userId;
       if (!currentUserId) return { success: false, message: 'User not authenticated' };
 
-      const data: GetProfileDto = { user_id: userId };
+      const data: GetProfileDto = { userId: userId } as any;
 
       const result = await firstValueFrom(
         this.communityService.GetProfile(data).pipe(
@@ -635,7 +635,7 @@ export class CommunityServiceController {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };
 
-      const data = { ...dto, user_id: userId };
+      const data = { ...dto, userId: userId };
 
       const result = await firstValueFrom(
         this.communityService.UpdateProfile(data).pipe(

@@ -129,7 +129,7 @@ export class CommunityController {
       return {
         success: result.success,
         message: result.message,
-        like_count: result.like_count,
+        likeCount: result.likeCount,
       };
     } catch (error: any) {
       this.logger.error(`gRPC LikePost error: ${error.message}`, error.stack);
@@ -165,7 +165,7 @@ export class CommunityController {
       return {
         success: result.success,
         message: result.message,
-        is_following: result.is_following,
+        isFollowing: result.isFollowing,
       };
     } catch (error: any) {
       this.logger.error(`gRPC FollowUser error: ${error.message}`, error.stack);
@@ -183,7 +183,7 @@ export class CommunityController {
       return {
         success: result.success,
         message: result.message,
-        is_following: result.is_following,
+        isFollowing: result.isFollowing,
       };
     } catch (error: any) {
       this.logger.error(`gRPC UnfollowUser error: ${error.message}`, error.stack);
@@ -339,11 +339,11 @@ export class CommunityController {
   @GrpcMethod('CommunityService', 'UploadMedia')
   async uploadMedia(@Payload() data: any): Promise<any> {
     try {
-      const buffer = Buffer.from(data.file_data);
+      const buffer = Buffer.from(data.fileData);
       const url = await this.mediaService.uploadFile(
         buffer,
-        data.file_name,
-        data.content_type,
+        data.fileName,
+        data.contentType,
       );
       return { success: true, message: 'Upload successful', url };
     } catch (error: any) {

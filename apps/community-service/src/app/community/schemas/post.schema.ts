@@ -5,13 +5,13 @@ import { Document, Types } from 'mongoose';
 @Schema({ timestamps: true })
 export class Post extends Document {
   @Prop({ required: true })
-  user_id: Types.ObjectId;
+  userId: Types.ObjectId;
 
   @Prop()
   caption: string;
 
   @Prop()
-  image_url: string;
+  imageUrl: string;
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }] })
   likes: Types.ObjectId[];
@@ -23,7 +23,7 @@ export class Post extends Document {
   tags: string[];
 
   @Prop({ default: 0 })
-  like_count: number;
+  likeCount: number;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

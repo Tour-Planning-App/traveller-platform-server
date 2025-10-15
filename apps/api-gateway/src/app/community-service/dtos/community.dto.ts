@@ -6,11 +6,11 @@ import { ApiProperty } from '@nestjs/swagger';
 export class LikeDto {
   @ApiProperty({ example: 'user123' })
   @IsString()
-  user_id: string;
+  userId: string;
 
   @ApiProperty({ example: '2023-10-01T00:00:00Z' })
   @IsString()
-  created_at: string;
+  createdAt: string;
 }
 
 export class CommentDto {
@@ -20,7 +20,7 @@ export class CommentDto {
 
   @ApiProperty({ example: 'user123' })
   @IsString()
-  user_id: string;
+  userId: string;
 
   @ApiProperty({ example: 'Great post!' })
   @IsString()
@@ -29,7 +29,7 @@ export class CommentDto {
 
   @ApiProperty({ example: '2023-10-01T00:00:00Z' })
   @IsString()
-  created_at: string;
+  createdAt: string;
 }
 
 export class PostDto {
@@ -37,8 +37,9 @@ export class PostDto {
   @IsString()
   id: string;
 
+  @ApiProperty({ example: 'user123' })
   @IsString()
-  user_id: string;
+  userId: string;
 
   @ApiProperty({ example: 'Amazing trip to Sri Lanka!' })
   @IsString()
@@ -48,7 +49,7 @@ export class PostDto {
   @ApiProperty({ example: 'https://example.com/image.jpg' })
   @IsString()
   @IsOptional()
-  image_url?: string;
+  imageUrl?: string;
 
   @ApiProperty({ example: ['#srilanka', '#travel'] })
   @IsArray()
@@ -57,7 +58,7 @@ export class PostDto {
 
   @ApiProperty({ example: 150 })
   @IsNumber()
-  like_count: number;
+  likeCount: number;
 
   @ApiProperty({ type: [LikeDto] })
   @IsArray()
@@ -75,14 +76,17 @@ export class PostDto {
 
   @ApiProperty({ example: '2023-10-01T00:00:00Z' })
   @IsString()
-  created_at: string;
+  createdAt: string;
 
   @ApiProperty({ example: '2023-10-01T00:00:00Z' })
   @IsString()
-  updated_at: string;
+  updatedAt: string;
 }
 
 export class CreatePostDto {
+  // @ApiProperty({ example: 'user123' })
+  // @IsString()
+  // userId: string;
 
   @ApiProperty({ example: 'Amazing trip to Sri Lanka!' })
   @IsString()
@@ -92,7 +96,7 @@ export class CreatePostDto {
   @ApiProperty({ example: 'https://example.com/image.jpg' })
   @IsString()
   @IsOptional()
-  image_url?: string;
+  imageUrl?: string;
 
   @ApiProperty({ example: ['#srilanka', '#travel'] })
   @IsArray()
@@ -116,15 +120,15 @@ export class CreatePostResponseDto {
 }
 
 export class GetPostsDto {
-  @ApiProperty({ example: 'user123', required: false })
-  @IsString()
-  @IsOptional()
-  user_id?: string;
+  // @ApiProperty({ example: 'user123', required: false })
+  // @IsString()
+  // @IsOptional()
+  // userId?: string;
 
   @ApiProperty({ example: 'popular', enum: ['popular', 'following'] })
   @IsString()
   @IsOptional()
-  feed_type?: 'popular' | 'following';
+  feedType?: 'popular' | 'following';
 
   @ApiProperty({ example: 10 })
   @IsNumber()
@@ -139,7 +143,7 @@ export class GetPostsDto {
   @ApiProperty({ example: 'sri lanka' })
   @IsString()
   @IsOptional()
-  search_query?: string;
+  searchQuery?: string;
 }
 
 export class GetPostsResponseDto {
@@ -161,7 +165,7 @@ export class GetPostsResponseDto {
 export class GetPostByIdDto {
   @ApiProperty({ example: 'post123' })
   @IsString()
-  post_id: string;
+  postId: string;
 }
 
 export class GetPostResponseDto {
@@ -178,7 +182,11 @@ export class GetPostResponseDto {
 export class UpdatePostDto {
   @ApiProperty({ example: 'post123' })
   @IsString()
-  post_id: string;
+  postId: string;
+
+  @ApiProperty({ example: 'user123' })
+  @IsString()
+  userId: string;
 
   @ApiProperty({ example: 'Updated caption' })
   @IsString()
@@ -188,7 +196,7 @@ export class UpdatePostDto {
   @ApiProperty({ example: 'https://example.com/new-image.jpg' })
   @IsString()
   @IsOptional()
-  image_url?: string;
+  imageUrl?: string;
 }
 
 export class UpdatePostResponseDto {
@@ -209,11 +217,11 @@ export class UpdatePostResponseDto {
 export class DeletePostDto {
   @ApiProperty({ example: 'post123' })
   @IsString()
-  post_id: string;
+  postId: string;
 
   @ApiProperty({ example: 'user123' })
   @IsString()
-  user_id: string;
+  userId: string;
 }
 
 export class DeletePostResponseDto {
@@ -229,11 +237,11 @@ export class DeletePostResponseDto {
 export class LikePostDto {
   @ApiProperty({ example: 'post123' })
   @IsString()
-  post_id: string;
+  postId: string;
 
   @ApiProperty({ example: 'user123' })
   @IsString()
-  user_id: string;
+  userId: string;
 
   @ApiProperty({ example: true })
   @IsBoolean()
@@ -251,17 +259,17 @@ export class LikePostResponseDto {
 
   @ApiProperty({ example: 150 })
   @IsNumber()
-  like_count: number;
+  likeCount: number;
 }
 
 export class CommentPostDto {
   @ApiProperty({ example: 'post123' })
   @IsString()
-  post_id: string;
+  postId: string;
 
   @ApiProperty({ example: 'user123' })
   @IsString()
-  user_id: string;
+  userId: string;
 
   @ApiProperty({ example: 'Great post!' })
   @IsString()
@@ -301,11 +309,11 @@ export class UserSummaryDto {
   @ApiProperty({ example: 'https://example.com/profile.jpg' })
   @IsString()
   @IsOptional()
-  profile_image?: string;
+  profileImage?: string;
 
   @ApiProperty({ example: true })
   @IsBoolean()
-  is_following: boolean;
+  isFollowing: boolean;
 }
 
 export class NotificationDto {
@@ -315,7 +323,7 @@ export class NotificationDto {
 
   @ApiProperty({ example: 'user123' })
   @IsString()
-  user_id: string;
+  userId: string;
 
   @ApiProperty({ example: 'like' })
   @IsString()
@@ -331,16 +339,16 @@ export class NotificationDto {
 
   @ApiProperty({ example: false })
   @IsBoolean()
-  is_read: boolean;
+  isRead: boolean;
 
   @ApiProperty({ example: '2023-10-01T00:00:00Z' })
   @IsString()
-  created_at: string;
+  createdAt: string;
 
   @ApiProperty({ example: 'post123' })
   @IsString()
   @IsOptional()
-  related_id?: string;
+  relatedId?: string;
 }
 
 export class ProfileDto {
@@ -350,7 +358,7 @@ export class ProfileDto {
 
   @ApiProperty({ example: 'user123' })
   @IsString()
-  user_id: string;
+  userId: string;
 
   @ApiProperty({ example: 'Travel enthusiast from Sri Lanka' })
   @IsString()
@@ -360,19 +368,19 @@ export class ProfileDto {
   @ApiProperty({ example: 'https://example.com/profile.jpg' })
   @IsString()
   @IsOptional()
-  profile_image?: string;
+  profileImage?: string;
 
   @ApiProperty({ example: 12 })
   @IsNumber()
-  post_count: number;
+  postCount: number;
 
   @ApiProperty({ example: 125 })
   @IsNumber()
-  follower_count: number;
+  followerCount: number;
 
   @ApiProperty({ example: 212 })
   @IsNumber()
-  following_count: number;
+  followingCount: number;
 
   @ApiProperty({ type: [PostDto] })
   @IsArray()
@@ -385,11 +393,11 @@ export class ProfileDto {
 export class FollowUserDto {
   @ApiProperty({ example: 'user123' })
   @IsString()
-  follower_id: string;
+  followerId: string;
 
   @ApiProperty({ example: 'user456' })
   @IsString()
-  followee_id: string;
+  followeeId: string;
 }
 
 export class FollowUserResponseDto {
@@ -403,23 +411,23 @@ export class FollowUserResponseDto {
 
   @ApiProperty({ example: true })
   @IsBoolean()
-  is_following: boolean;
+  isFollowing: boolean;
 }
 
 export class UnfollowUserDto {
   @ApiProperty({ example: 'user123' })
   @IsString()
-  follower_id: string;
+  followerId: string;
 
   @ApiProperty({ example: 'user456' })
   @IsString()
-  followee_id: string;
+  followeeId: string;
 }
 
 export class GetFollowersDto {
   @ApiProperty({ example: 'user123' })
   @IsString()
-  user_id: string;
+  userId: string;
 
   @ApiProperty({ example: 10 })
   @IsNumber()
@@ -451,7 +459,7 @@ export class GetFollowersResponseDto {
 export class GetFollowingDto {
   @ApiProperty({ example: 'user123' })
   @IsString()
-  user_id: string;
+  userId: string;
 
   @ApiProperty({ example: 10 })
   @IsNumber()
@@ -483,7 +491,7 @@ export class GetFollowingResponseDto {
 export class GetNotificationsDto {
   @ApiProperty({ example: 'user123' })
   @IsString()
-  user_id: string;
+  userId: string;
 
   @ApiProperty({ example: 'community', enum: ['community', 'trips', 'unread', 'missed'] })
   @IsString()
@@ -520,11 +528,11 @@ export class GetNotificationsResponseDto {
 export class MarkNotificationAsReadDto {
   @ApiProperty({ example: 'notif123' })
   @IsString()
-  notification_id: string;
+  notificationId: string;
 
   @ApiProperty({ example: 'user123' })
   @IsString()
-  user_id: string;
+  userId: string;
 }
 
 export class MarkNotificationAsReadResponseDto {
@@ -540,7 +548,7 @@ export class MarkNotificationAsReadResponseDto {
 export class GetProfileDto {
   @ApiProperty({ example: 'user123' })
   @IsString()
-  user_id: string;
+  userId: string;
 }
 
 export class GetProfileResponseDto {
@@ -557,7 +565,7 @@ export class GetProfileResponseDto {
 export class UpdateProfileDto {
   @ApiProperty({ example: 'user123' })
   @IsString()
-  user_id: string;
+  userId: string;
 
   @ApiProperty({ example: 'Travel enthusiast from Sri Lanka' })
   @IsString()
@@ -567,7 +575,7 @@ export class UpdateProfileDto {
   @ApiProperty({ example: 'https://example.com/new-profile.jpg' })
   @IsString()
   @IsOptional()
-  profile_image?: string;
+  profileImage?: string;
 }
 
 export class UpdateProfileResponseDto {

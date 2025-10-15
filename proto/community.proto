@@ -34,10 +34,10 @@ service CommunityService {
   rpc UploadMedia(UploadMediaRequest) returns (UploadMediaResponse);
 }
 message UploadMediaRequest {
-  string user_id = 1;
-  bytes file_data = 2; // Binary file data (base64 decoded in service)
-  string file_name = 3;
-  string content_type = 4; // e.g., 'image/jpeg'
+  string userId = 1;
+  bytes fileData = 2; // Binary file data (base64 decoded in service)
+  string fileName = 3;
+  string contentType = 4; // e.g., 'image/jpeg'
 }
 
 message UploadMediaResponse {
@@ -46,9 +46,9 @@ message UploadMediaResponse {
   string url = 3; // Public URL from B2
 }
 message CreatePostRequest {
-  string user_id = 1;
+  string userId = 1;
   string caption = 2;
-  string image_url = 3; // Optional, for uploaded image
+  string imageUrl = 3; // Optional, for uploaded image
   repeated string tags = 4; // Optional tags
 }
 
@@ -59,11 +59,11 @@ message CreatePostResponse {
 }
 
 message GetPostsRequest {
-  string user_id = 1; // Optional, for user's posts
-  string feed_type = 2; // "popular" or "following"
+  string userId = 1; // Optional, for user's posts
+  string feedType = 2; // "popular" or "following"
   int32 limit = 3;
   int32 offset = 4;
-  string search_query = 5; // Optional search
+  string searchQuery = 5; // Optional search
 }
 
 message GetPostsResponse {
@@ -73,7 +73,7 @@ message GetPostsResponse {
 }
 
 message GetPostByIdRequest {
-  string post_id = 1;
+  string postId = 1;
 }
 
 message GetPostResponse {
@@ -82,10 +82,10 @@ message GetPostResponse {
 }
 
 message UpdatePostRequest {
-  string post_id = 1;
-  string user_id = 2;
+  string postId = 1;
+  string userId = 2;
   string caption = 3;
-  string image_url = 4;
+  string imageUrl = 4;
 }
 
 message UpdatePostResponse {
@@ -95,8 +95,8 @@ message UpdatePostResponse {
 }
 
 message DeletePostRequest {
-  string post_id = 1;
-  string user_id = 2;
+  string postId = 1;
+  string userId = 2;
 }
 
 message DeletePostResponse {
@@ -105,20 +105,20 @@ message DeletePostResponse {
 }
 
 message LikePostRequest {
-  string post_id = 1;
-  string user_id = 2;
+  string postId = 1;
+  string userId = 2;
   bool like = 3; // true to like, false to unlike
 }
 
 message LikePostResponse {
   bool success = 1;
   string message = 2;
-  int32 like_count = 3;
+  int32 likeCount = 3;
 }
 
 message CommentPostRequest {
-  string post_id = 1;
-  string user_id = 2;
+  string postId = 1;
+  string userId = 2;
   string comment = 3;
 }
 
@@ -129,23 +129,23 @@ message CommentPostResponse {
 }
 
 message FollowUserRequest {
-  string follower_id = 1;
-  string followee_id = 2;
+  string followerId = 1;
+  string followeeId = 2;
 }
 
 message FollowUserResponse {
   bool success = 1;
   string message = 2;
-  bool is_following = 3;
+  bool isFollowing = 3;
 }
 
 message UnfollowUserRequest {
-  string follower_id = 1;
-  string followee_id = 2;
+  string followerId = 1;
+  string followeeId = 2;
 }
 
 message GetFollowersRequest {
-  string user_id = 1;
+  string userId = 1;
   int32 limit = 2;
   int32 offset = 3;
 }
@@ -157,7 +157,7 @@ message GetFollowersResponse {
 }
 
 message GetFollowingRequest {
-  string user_id = 1;
+  string userId = 1;
   int32 limit = 2;
   int32 offset = 3;
 }
@@ -169,7 +169,7 @@ message GetFollowingResponse {
 }
 
 message GetNotificationsRequest {
-  string user_id = 1;
+  string userId = 1;
   string type = 2; // "community", "trips", "unread", "missed"
   int32 limit = 3;
   int32 offset = 4;
@@ -182,8 +182,8 @@ message GetNotificationsResponse {
 }
 
 message MarkNotificationAsReadRequest {
-  string notification_id = 1;
-  string user_id = 2;
+  string notificationId = 1;
+  string userId = 2;
 }
 
 message MarkNotificationAsReadResponse {
@@ -192,7 +192,7 @@ message MarkNotificationAsReadResponse {
 }
 
 message GetProfileRequest {
-  string user_id = 1;
+  string userId = 1;
 }
 
 message GetProfileResponse {
@@ -201,9 +201,9 @@ message GetProfileResponse {
 }
 
 message UpdateProfileRequest {
-  string user_id = 1;
+  string userId = 1;
   string bio = 2;
-  string profile_image = 3;
+  string profileImage = 3;
 }
 
 message UpdateProfileResponse {
@@ -239,55 +239,55 @@ message SearchUsersResponse {
 // Messages
 message Post {
   string id = 1;
-  string user_id = 2;
+  string userId = 2;
   string caption = 3;
-  string image_url = 4;
+  string imageUrl = 4;
   repeated string tags = 5;
-  int32 like_count = 6;
+  int32 likeCount = 6;
   repeated Like likes = 7;
   repeated Comment comments = 8;
-  google.protobuf.Timestamp created_at = 9;
-  google.protobuf.Timestamp updated_at = 10;
+  google.protobuf.Timestamp createdAt = 9;
+  google.protobuf.Timestamp updatedAt = 10;
 }
 
 message Like {
-  string user_id = 1;
-  google.protobuf.Timestamp created_at = 2;
+  string userId = 1;
+  google.protobuf.Timestamp createdAt = 2;
 }
 
 message Comment {
   string id = 1;
-  string user_id = 2;
+  string userId = 2;
   string text = 3;
-  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp createdAt = 4;
 }
 
 message UserSummary {
   string id = 1;
   string name = 2;
   string username = 3;
-  string profile_image = 4;
-  bool is_following = 5;
+  string profileImage = 4;
+  bool isFollowing = 5;
 }
 
 message Notification {
   string id = 1;
-  string user_id = 2;
+  string userId = 2;
   string type = 3; // "like", "comment", "follow", "budget_exceeded", etc.
   string title = 4;
   string message = 5;
-  bool is_read = 6;
-  google.protobuf.Timestamp created_at = 7;
-  string related_id = 8; // post_id, user_id, etc.
+  bool isRead = 6;
+  google.protobuf.Timestamp createdAt = 7;
+  string relatedId = 8; // post_id, user_id, etc.
 }
 
 message Profile {
   string id = 1;
-  string user_id = 2;
+  string userId = 2;
   string bio = 3;
-  string profile_image = 4;
-  int32 post_count = 5;
-  int32 follower_count = 6;
-  int32 following_count = 7;
+  string profileImage = 4;
+  int32 postCount = 5;
+  int32 followerCount = 6;
+  int32 followingCount = 7;
   repeated Post posts = 8;
 }

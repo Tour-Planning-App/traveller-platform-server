@@ -5,10 +5,10 @@ import { Document, Types } from 'mongoose';
 @Schema({ timestamps: true })
 export class Follow extends Document {
   @Prop({ required: true })
-  follower_id: Types.ObjectId;
+  followerId: Types.ObjectId;
 
   @Prop({ required: true })
-  followee_id: Types.ObjectId;
+  followeeId: Types.ObjectId;
 }
 
 export const FollowSchema = SchemaFactory.createForClass(Follow);

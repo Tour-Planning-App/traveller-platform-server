@@ -45,15 +45,15 @@ export class CommunityService {
   async createPost(data: CreatePostDto): Promise<CreatePostResponseDto> {
     try {
       // Verify user exists via UserService gRPC
-      const user = await firstValueFrom(this.userService.GetUserById({ id: data.user_id })) as any;
+      const user = await firstValueFrom(this.userService.GetUserById({ id: data.userId })) as any;
       if (!user.data) {
         throw new NotFoundException('User not found');
       }
 
       const post = new this.postModel({
         ...data,
-        user_id: data.user_id,
-        like_count: 0,
+        userId: data.userId,
+        likeCount: 0,
         likes: [],
         comments: [],
       });
@@ -61,7 +61,7 @@ export class CommunityService {
 
       // Emit Kafka event for post creation (e.g., notify followers)
       // Assuming Kafka client is injected or handled elsewhere
-      // this.kafkaClient.emit('post.created', { postId: post.id, userId: data.user_id });
+      // this.kafkaClient.emit('post.created', { postId: post.id, userId: data.userId });
 
       return { success: true, message: 'Post created', post: post.toObject() } as any;
     } catch (error) {
@@ -73,27 +73,27 @@ export class CommunityService {
   async getPosts(data: GetPostsDto): Promise<GetPostsResponseDto> {
     try {
       let query: any = {};
-      if (data.user_id) query.user_id = data.user_id;
-      if (data.feed_type === 'following') {
+      if (data.userId) query.userId = data.userId;
+      if (data.feedType === 'following') {
         // Fetch following users via follow model and aggregate
-        const following = await this.followModel.find({ follower_id: data.user_id }).select('followee_id');
-        const followeeIds = following.map(f => f.followee_id);
+        const following = await this.followModel.find({ followerId: data.userId }).select('followeeId');
+        const followeeIds = following.map(f => f.followeeId);
         if (followeeIds.length === 0) {
           return { success: true, posts: [], total: 0 };
         }
-        query.user_id = { $in: followeeIds };
+        query.userId = { $in: followeeIds };
       }
-      // For popular, sort by like_count descending, then created_at
-      const sortQuery = data.feed_type === 'popular' 
-        ? { like_count: -1, created_at: -1 } 
-        : { created_at: -1 } as any;
+      // For popular, sort by likeCount descending, then createdAt
+      const sortQuery = data.feedType === 'popular' 
+        ? { likeCount: -1, createdAt: -1 } 
+        : { createdAt: -1 } as any;
 
       const posts = await this.postModel
         .find(query)
         .sort(sortQuery)
         .limit(data.limit || 10)
         .skip(data.offset || 0)
-        .populate('user_id', 'name profile_image') // Assuming ref to user in schema
+        .populate('userId', 'name profileImage') // Assuming ref to user in schema
         .exec();
 
       const total = await this.postModel.countDocuments(query);
@@ -108,11 +108,11 @@ export class CommunityService {
   async getPostById(data: GetPostByIdDto): Promise<GetPostResponseDto> {
     try {
       const post = await this.postModel
-        .findById(data.post_id)
-        .populate('user_id', 'name profile_image')
+        .findById(data.postId)
+        .populate('userId', 'name profileImage')
         .populate({
           path: 'comments',
-          populate: { path: 'user_id', select: 'name profile_image' }
+          populate: { path: 'userId', select: 'name profileImage' }
         })
         .exec();
 
@@ -130,10 +130,10 @@ export class CommunityService {
   async updatePost(data: UpdatePostDto): Promise<UpdatePostResponseDto> {
     try {
       const post = await this.postModel.findOneAndUpdate(
-        { _id: data.post_id, user_id: data.user_id },
-        { $set: { caption: data.caption, image_url: data.image_url } },
+        { _id: data.postId, userId: data.userId },
+        { $set: { caption: data.caption, imageUrl: data.imageUrl } },
         { new: true }
-      ).populate('user_id', 'name profile_image').exec();
+      ).populate('userId', 'name profileImage').exec();
 
       if (!post) {
         throw new NotFoundException('Post not found or unauthorized');
@@ -148,13 +148,13 @@ export class CommunityService {
 
   async deletePost(data: DeletePostDto): Promise<DeletePostResponseDto> {
     try {
-      const post = await this.postModel.findOneAndDelete({ _id: data.post_id, user_id: data.user_id });
+      const post = await this.postModel.findOneAndDelete({ _id: data.postId, userId: data.userId });
       if (!post) {
         throw new NotFoundException('Post not found or unauthorized');
       }
 
       // Emit Kafka event for post deletion
-      // this.kafkaClient.emit('post.deleted', { postId: data.post_id });
+      // this.kafkaClient.emit('post.deleted', { postId: data.postId });
 
       return { success: true, message: 'Post deleted' };
     } catch (error) {
@@ -165,29 +165,29 @@ export class CommunityService {
 
   async likePost(data: LikePostDto): Promise<LikePostResponseDto> {
     try {
-      const post = await this.postModel.findById(data.post_id) as any;
+      const post = await this.postModel.findById(data.postId) as any;
       if (!post) {
         throw new NotFoundException('Post not found');
       }
 
-      const existingLikeIndex = post.likes.findIndex(l => l.user_id === data.user_id);
+      const existingLikeIndex = post.likes.findIndex(l => l.userId === data.userId);
       if (data.like) {
         if (existingLikeIndex === -1) {
-          post.likes.push({ user_id: data.user_id, created_at: new Date().toISOString() });
-          post.like_count += 1;
+          post.likes.push({ userId: data.userId, createdAt: new Date().toISOString() });
+          post.likeCount += 1;
         }
       } else {
         if (existingLikeIndex !== -1) {
           post.likes.splice(existingLikeIndex, 1);
-          post.like_count -= 1;
+          post.likeCount -= 1;
         }
       }
       await post.save();
 
       // Emit Kafka event for like notification
-      // this.kafkaClient.emit('post.liked', { postId: data.post_id, userId: data.user_id, action: data.like ? 'liked' : 'unliked' });
+      // this.kafkaClient.emit('post.liked', { postId: data.postId, userId: data.userId, action: data.like ? 'liked' : 'unliked' });
 
-      return { success: true, message: 'Like updated', like_count: post.like_count };
+      return { success: true, message: 'Like updated', likeCount: post.likeCount };
     } catch (error) {
       this.logger.error(`LikePost error: ${error.message}`);
       throw new BadRequestException('Failed to update like');
@@ -196,7 +196,7 @@ export class CommunityService {
 
   async commentPost(data: CommentPostDto): Promise<CommentPostResponseDto> {
     try {
-      const post = await this.postModel.findById(data.post_id);
+      const post = await this.postModel.findById(data.postId);
       if (!post) {
         throw new NotFoundException('Post not found');
       }
@@ -204,15 +204,15 @@ export class CommunityService {
       // Assuming a separate Comment model; for simplicity, add to post.comments array
       const newComment = {
         id: new Date().getTime().toString(), // Simple ID
-        user_id: data.user_id,
+        userId: data.userId,
         text: data.comment,
-        created_at: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       } as any;
       post.comments.push(newComment);
       await post.save();
 
       // Emit Kafka event for comment notification
-      // this.kafkaClient.emit('post.commented', { postId: data.post_id, userId: data.user_id, commentId: newComment.id });
+      // this.kafkaClient.emit('post.commented', { postId: data.postId, userId: data.userId, commentId: newComment.id });
 
       return { success: true, message: 'Comment added', comment: newComment };
     } catch (error) {
@@ -223,21 +223,21 @@ export class CommunityService {
 
   async followUser(data: FollowUserDto): Promise<FollowUserResponseDto> {
     try {
-      let follow = await this.followModel.findOne({ follower_id: data.follower_id, followee_id: data.followee_id });
+      let follow = await this.followModel.findOne({ followerId: data.followerId, followeeId: data.followeeId });
       if (follow) {
-        return { success: false, message: 'Already following', is_following: true };
+        return { success: false, message: 'Already following', isFollowing: true };
       }
 
       follow = new this.followModel({
-        follower_id: data.follower_id,
-        followee_id: data.followee_id,
+        followerId: data.followerId,
+        followeeId: data.followeeId,
       });
       await follow.save();
 
       // Emit Kafka event for follow notification
-      // this.kafkaClient.emit('user.followed', { followerId: data.follower_id, followeeId: data.followee_id });
+      // this.kafkaClient.emit('user.followed', { followerId: data.followerId, followeeId: data.followeeId });
 
-      return { success: true, message: 'Followed', is_following: true };
+      return { success: true, message: 'Followed', isFollowing: true };
     } catch (error) {
       this.logger.error(`FollowUser error: ${error.message}`);
       throw new BadRequestException('Failed to follow user');
@@ -247,17 +247,17 @@ export class CommunityService {
   async unfollowUser(data: UnfollowUserDto): Promise<FollowUserResponseDto> {
     try {
       const follow = await this.followModel.findOneAndDelete({
-        follower_id: data.follower_id,
-        followee_id: data.followee_id,
+        followerId: data.followerId,
+        followeeId: data.followeeId,
       });
       if (!follow) {
-        return { success: false, message: 'Not following', is_following: false };
+        return { success: false, message: 'Not following', isFollowing: false };
       }
 
       // Emit Kafka event for unfollow
-      // this.kafkaClient.emit('user.unfollowed', { followerId: data.follower_id, followeeId: data.followee_id });
+      // this.kafkaClient.emit('user.unfollowed', { followerId: data.followerId, followeeId: data.followeeId });
 
-      return { success: true, message: 'Unfollowed', is_following: false };
+      return { success: true, message: 'Unfollowed', isFollowing: false };
     } catch (error) {
       this.logger.error(`UnfollowUser error: ${error.message}`);
       throw new BadRequestException('Failed to unfollow user');
@@ -267,20 +267,20 @@ export class CommunityService {
   async getFollowers(data: GetFollowersDto): Promise<GetFollowersResponseDto> {
     try {
       const followers = await this.followModel
-        .find({ followee_id: data.user_id })
-        .populate('follower_id', 'name profile_image username')
+        .find({ followeeId: data.userId })
+        .populate('followerId', 'name profileImage username')
         .limit(data.limit || 10)
         .skip(data.offset || 0)
         .exec() as any;
 
-      const total = await this.followModel.countDocuments({ followee_id: data.user_id });
+      const total = await this.followModel.countDocuments({ followeeId: data.userId });
 
       const followerSummaries = followers.map(f => ({
-        id: f.follower_id._id,
-        name: f.follower_id.name,
-        username: f.follower_id.username,
-        profile_image: f.follower_id.profile_image,
-        is_following: true, // Since they follow you
+        id: f.followerId._id,
+        name: f.followerId.name,
+        username: f.followerId.username,
+        profileImage: f.followerId.profileImage,
+        isFollowing: true, // Since they follow you
       })) ;
 
       return { success: true, followers: followerSummaries, total };
@@ -293,20 +293,20 @@ export class CommunityService {
   async getFollowing(data: GetFollowingDto): Promise<GetFollowingResponseDto> {
     try {
       const following = await this.followModel
-        .find({ follower_id: data.user_id })
-        .populate('followee_id', 'name profile_image username')
+        .find({ followerId: data.userId })
+        .populate('followeeId', 'name profileImage username')
         .limit(data.limit || 10)
         .skip(data.offset || 0)
         .exec() as any;
 
-      const total = await this.followModel.countDocuments({ follower_id: data.user_id });
+      const total = await this.followModel.countDocuments({ followerId: data.userId });
 
       const followingSummaries = following.map(f => ({
-        id: f.followee_id._id,
-        name: f.followee_id.name,
-        username: f.followee_id.username,
-        profile_image: f.followee_id.profile_image,
-        is_following: true,
+        id: f.followeeId._id,
+        name: f.followeeId.name,
+        username: f.followeeId.username,
+        profileImage: f.followeeId.profileImage,
+        isFollowing: true,
       }));
 
       return { success: true, following: followingSummaries, total };
@@ -318,12 +318,12 @@ export class CommunityService {
 
   async getNotifications(data: GetNotificationsDto): Promise<GetNotificationsResponseDto> {
     try {
-      let query: any = { user_id: data.user_id };
+      let query: any = { userId: data.userId };
       if (data.type) query.type = data.type;
 
       const notifications = await this.notificationModel
         .find(query)
-        .sort({ created_at: -1 })
+        .sort({ createdAt: -1 })
         .limit(data.limit || 10)
         .skip(data.offset || 0)
         .exec();
@@ -340,8 +340,8 @@ export class CommunityService {
   async markNotificationAsRead(data: MarkNotificationAsReadDto): Promise<MarkNotificationAsReadResponseDto> {
     try {
       const notification = await this.notificationModel.findOneAndUpdate(
-        { _id: data.notification_id, user_id: data.user_id },
-        { $set: { is_read: true } },
+        { _id: data.notificationId, userId: data.userId },
+        { $set: { isRead: true } },
         { new: true }
       );
 
@@ -359,32 +359,32 @@ export class CommunityService {
   async getProfile(data: GetProfileDto): Promise<GetProfileResponseDto> {
     try {
       // Fetch user from UserService
-      const user = await firstValueFrom(this.userService.GetUserById({ id: data.user_id })) as any;
+      const user = await firstValueFrom(this.userService.GetUserById({ id: data.userId })) as any;
       if (!user.data) {
         throw new NotFoundException('User not found');
       }
 
       // Fetch post count, followers, following
-      const postCount = await this.postModel.countDocuments({ user_id: data.user_id });
-      const followerCount = await this.followModel.countDocuments({ followee_id: data.user_id });
-      const followingCount = await this.followModel.countDocuments({ follower_id: data.user_id });
+      const postCount = await this.postModel.countDocuments({ userId: data.userId });
+      const followerCount = await this.followModel.countDocuments({ followeeId: data.userId });
+      const followingCount = await this.followModel.countDocuments({ followerId: data.userId });
 
       // Fetch recent posts
       const posts = await this.postModel
-        .find({ user_id: data.user_id })
-        .sort({ created_at: -1 })
+        .find({ userId: data.userId })
+        .sort({ createdAt: -1 })
         .limit(12)
-        .populate('user_id', 'name')
+        .populate('userId', 'name')
         .exec();
 
       const profile = {
-        id: data.user_id,
-        user_id: data.user_id,
+        id: data.userId,
+        userId: data.userId,
         bio: user.data.bio || '', // Assuming user has bio
-        profile_image: user.data.profile_image,
-        post_count: postCount,
-        follower_count: followerCount,
-        following_count: followingCount,
+        profileImage: user.data.profileImage,
+        postCount: postCount,
+        followerCount: followerCount,
+        followingCount: followingCount,
         posts,
       };
 
@@ -399,9 +399,9 @@ export class CommunityService {
     try {
       // Update in UserService
       const updatedUser = await firstValueFrom(this.userService.UpdateProfile({
-        user_id: data.user_id,
+        userId: data.userId,
         bio: data.bio,
-        profile_image: data.profile_image,
+        profileImage: data.profileImage,
       }));
 
       if (!updatedUser) {
@@ -426,10 +426,10 @@ export class CommunityService {
 
       const posts = await this.postModel
         .find(query)
-        .sort({ created_at: -1 })
+        .sort({ createdAt: -1 })
         .limit(data.limit || 10)
         .skip(data.offset || 0)
-        .populate('user_id', 'name')
+        .populate('userId', 'name')
         .exec();
 
       const total = await this.postModel.countDocuments(query);
@@ -451,8 +451,8 @@ export class CommunityService {
         id: u.id,
         name: u.name,
         username: u.username || '',
-        profile_image: u.profile_image,
-        is_following: false, // Check via follow model if needed
+        profileImage: u.profileImage,
+        isFollowing: false, // Check via follow model if needed
       })) || [];
 
       return { success: true, users: userSummaries, total: users.total || 0 };
