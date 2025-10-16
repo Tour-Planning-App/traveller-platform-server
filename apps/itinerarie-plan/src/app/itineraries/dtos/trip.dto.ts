@@ -6,10 +6,6 @@ export class CreateTripDto {
   @IsString()
   name: string;
 
-  @ApiProperty({ example: 'Colombo' })
-  @IsString()
-  destination: string;
-
   @ApiProperty({ example: ['2025-12-01', '2025-12-07'] })
   @IsArray()
   dates: string[];
