@@ -6,7 +6,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Logger } from '@nestjs/common';
 import {
   CreatePostDto, CreatePostResponseDto,
-  GetPostsDto, GetPostsResponseDto,
+   GetPostsResponseDto,
   GetPostByIdDto, GetPostResponseDto,
   UpdatePostDto, UpdatePostResponseDto,
   DeletePostDto, DeletePostResponseDto,
@@ -37,6 +37,8 @@ export class CommunityServiceController {
   }
 
   @Post('media/upload')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -72,7 +74,7 @@ export class CommunityServiceController {
       }
 
       // Validate file
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'];
+      const allowedTypes = ['image/jpeg','image/jpg', 'image/png','image/avif','image/webp', 'image/gif', 'video/mp4'];
       if (!allowedTypes.includes(file.mimetype)) {
         throw new HttpException('Unsupported file type', HttpStatus.BAD_REQUEST);
       }
@@ -154,7 +156,7 @@ export class CommunityServiceController {
   @ApiResponse({ status: 200, description: 'Posts fetched successfully', type: GetPostsResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error during posts fetch' })
-  async getPosts(@Query() dto: GetPostsDto, @Req() req: any) {
+  async getPosts(@Query() dto: any, @Req() req: any) {
     try {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };

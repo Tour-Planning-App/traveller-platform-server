@@ -7,11 +7,15 @@ import { extname } from 'path';
 export class MediaService {
   private readonly logger = new Logger(MediaService.name);
   private s3Client: S3Client;
+  private readonly endpoint: string;
+  private readonly region: string;
 
   constructor() {
+    this.region = 'us-west-000';
+    this.endpoint = process.env.B2_ENDPOINT || 'https://s3.us-west-000.backblazeb2.com';
     this.s3Client = new S3Client({
-      region: 'us-west-000',
-      endpoint: process.env.B2_ENDPOINT || 'https://s3.us-west-000.backblazeb2.com',
+      region: this.region,
+      endpoint: this.endpoint,
       credentials: {
         accessKeyId: process.env.B2_APPLICATION_KEY_ID || '',
         secretAccessKey: process.env.B2_APPLICATION_KEY || '',
@@ -27,18 +31,16 @@ export class MediaService {
 
     const fileExtension = extname(fileName);
     const key = `community-media/${Date.now()}-${Math.round(Math.random() * 1e9)}${fileExtension}`;
-
     const params = {
       Bucket: bucketName,
       Key: key,
       Body: buffer,
       ContentType: contentType,
-      ACL: 'public-read',
     } as any;
 
     try {
       await this.s3Client.send(new PutObjectCommand(params));
-      const url = `https://${bucketName}.backblazeb2.com/${key}`; // Adjust endpoint domain
+      const url = `https://f005.backblazeb2.com/file/${bucketName}/${key}`;
       this.logger.log(`File uploaded: ${url}`);
       return url;
     } catch (error: any) {
