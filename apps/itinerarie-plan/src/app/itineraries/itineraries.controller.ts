@@ -1,7 +1,7 @@
 import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod, Payload } from '@nestjs/microservices';
 import { RpcException } from '@nestjs/microservices';
-import { CreateTripDto, UpdateTripDto, AddItineraryItemDto } from './dtos/trip.dto';
+import { CreateTripDto, UpdateTripDto, AddItineraryItemDto, CreateAITripDto, SearchLocationsDto } from './dtos/trip.dto';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ItinerariesService } from './itineraries.service';
 
@@ -20,6 +20,22 @@ export class ItinerariesController {
       return { success: true, message: 'Trip created successfully', trip: result };
     } catch (error: any) {
       this.logger.error(`gRPC CreateTrip error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof ForbiddenException ? 7 : (error instanceof BadRequestException ? 3 : 2),
+        message: error.message,
+      });
+    }
+  }
+
+  @GrpcMethod('ItinerariesService', 'CreateAITrip')
+  async createAITrip(@Payload() data: { userId: string } & CreateAITripDto) {
+    try {
+      const { userId, ...dto } = data;
+      console.log('Received createAITrip request for userId:', userId, 'with data:', dto);
+      const result = await this.tripService.createAITrip(userId, dto);
+      return { success: true, message: 'AI Trip created successfully', trip: result };
+    } catch (error: any) {
+      this.logger.error(`gRPC CreateAITrip error: ${error.message}`, error.stack);
       throw new RpcException({
         code: error instanceof ForbiddenException ? 7 : (error instanceof BadRequestException ? 3 : 2),
         message: error.message,
@@ -85,10 +101,10 @@ export class ItinerariesController {
   }
 
   @GrpcMethod('ItinerariesService', 'AddItineraryItem')
-  async addItineraryItem(@Payload() data: { trip_id: string; userId: string; day: number } & AddItineraryItemDto) {
+  async addItineraryItem(@Payload() data: { tripId: string; userId: string; day: number } & AddItineraryItemDto) {
     try {
-      const { trip_id, userId, day, ...dto } = data;
-      const result = await this.tripService.addItineraryItem(trip_id, day, dto, userId);
+      const { tripId, userId, day, ...dto } = data;
+      const result = await this.tripService.addItineraryItem(tripId, day, dto, userId);
       return { success: true, message: 'Itinerary item added', day: result };
     } catch (error: any) {
       this.logger.error(`gRPC AddItineraryItem error: ${error.message}`, error.stack);
@@ -100,9 +116,9 @@ export class ItinerariesController {
   }
 
   @GrpcMethod('ItinerariesService', 'RemoveItineraryItem')
-  async removeItineraryItem(@Payload() data: { trip_id: string; userId: string; activity_id: string; day: number }) {
+  async removeItineraryItem(@Payload() data: { tripId: string; userId: string; activityId: string; day: number }) {
     try {
-      await this.tripService.removeItineraryItem(data.trip_id, data.activity_id, data.day, data.userId);
+      await this.tripService.removeItineraryItem(data.tripId, data.activityId, data.day, data.userId);
       return { success: true, message: 'Itinerary item removed' };
     } catch (error: any) {
       this.logger.error(`gRPC RemoveItineraryItem error: ${error.message}`, error.stack);
@@ -114,9 +130,10 @@ export class ItinerariesController {
   }
 
   @GrpcMethod('ItinerariesService', 'AddBucketItem')
-  async addBucketItem(@Payload() data: { trip_id: string; userId: string; name: string; description: string }) {
+  async addBucketItem(@Payload() data: { tripId: string; userId: string; name: string; description: string; photoUrl?: string; address?: string }) {
     try {
-      const result = await this.tripService.addBucketItem(data.trip_id, data.name, data.description, data.userId);
+      const { tripId, userId, name, description, photoUrl, address } = data;
+      const result = await this.tripService.addBucketItem(tripId, name, description, userId, photoUrl, address);
       return { success: true, message: 'Bucket item added', item: result };
     } catch (error: any) {
       this.logger.error(`gRPC AddBucketItem error: ${error.message}`, error.stack);
@@ -128,9 +145,9 @@ export class ItinerariesController {
   }
 
   @GrpcMethod('ItinerariesService', 'RemoveBucketItem')
-  async removeBucketItem(@Payload() data: { trip_id: string; userId: string; item_id: string }) {
+  async removeBucketItem(@Payload() data: { tripId: string; userId: string; itemId: string }) {
     try {
-      await this.tripService.removeBucketItem(data.trip_id, data.item_id, data.userId);
+      await this.tripService.removeBucketItem(data.tripId, data.itemId, data.userId);
       return { success: true, message: 'Bucket item removed' };
     } catch (error: any) {
       this.logger.error(`gRPC RemoveBucketItem error: ${error.message}`, error.stack);
@@ -142,10 +159,10 @@ export class ItinerariesController {
   }
 
   @GrpcMethod('ItinerariesService', 'ShareTrip')
-  async shareTrip(@Payload() data: { trip_id: string; userId: string }) {
+  async shareTrip(@Payload() data: { tripId: string; userId: string }) {
     try {
-      const token = await this.tripService.shareTrip(data.trip_id, data.userId);
-      return { success: true, message: 'Trip shared', share_token: token };
+      const token = await this.tripService.shareTrip(data.tripId, data.userId);
+      return { success: true, message: 'Trip shared', shareToken: token };
     } catch (error: any) {
       this.logger.error(`gRPC ShareTrip error: ${error.message}`, error.stack);
       throw new RpcException({
@@ -156,9 +173,9 @@ export class ItinerariesController {
   }
 
   @GrpcMethod('ItinerariesService', 'AddNote')
-  async addNote(@Payload() data: { trip_id: string; userId: string; day: number; content: string }) {
+  async addNote(@Payload() data: { tripId: string; userId: string; day: number; content: string }) {
     try {
-      const result = await this.tripService.addNote(data.trip_id, data.day, data.content, data.userId);
+      const result = await this.tripService.addNote(data.tripId, data.day, data.content, data.userId);
       return { success: true, message: 'Note added', note: result };
     } catch (error: any) {
       this.logger.error(`gRPC AddNote error: ${error.message}`, error.stack);
@@ -170,9 +187,9 @@ export class ItinerariesController {
   }
 
   @GrpcMethod('ItinerariesService', 'AddChecklistItem')
-  async addChecklistItem(@Payload() data: { trip_id: string; userId: string; day: number; text: string }) {
+  async addChecklistItem(@Payload() data: { tripId: string; userId: string; day: number; text: string }) {
     try {
-      const result = await this.tripService.addChecklistItem(data.trip_id, data.day, data.text, data.userId);
+      const result = await this.tripService.addChecklistItem(data.tripId, data.day, data.text, data.userId);
       return { success: true, message: 'Checklist item added', checklist: result };
     } catch (error: any) {
       this.logger.error(`gRPC AddChecklistItem error: ${error.message}`, error.stack);
@@ -184,12 +201,73 @@ export class ItinerariesController {
   }
 
   @GrpcMethod('ItinerariesService', 'UpdateChecklistItem')
-  async updateChecklistItem(@Payload() data: { trip_id: string; userId: string; day: number; item_id: string; completed: boolean }) {
+  async updateChecklistItem(@Payload() data: { tripId: string; userId: string; day: number; itemId: string; completed: boolean }) {
     try {
-      await this.tripService.updateChecklistItem(data.trip_id, data.day, data.item_id, data.completed, data.userId);
+      await this.tripService.updateChecklistItem(data.tripId, data.day, data.itemId, data.completed, data.userId);
       return { success: true, message: 'Checklist item updated' };
     } catch (error: any) {
       this.logger.error(`gRPC UpdateChecklistItem error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
+  @GrpcMethod('ItinerariesService', 'OptimizeDay')
+  async optimizeDay(@Payload() data: { tripId: string; userId: string; day: number }) {
+    try {
+      const { tripId, userId, day } = data;
+      console.log('Received optimizeDay request for tripId:', tripId, 'day:', day);
+      const result = await this.tripService.optimizeDayRoute(tripId, day, userId);
+      return { success: true, message: 'Day route optimized successfully', day: result };
+    } catch (error: any) {
+      this.logger.error(`gRPC OptimizeDay error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
+  @GrpcMethod('ItinerariesService', 'MoveBucketToItinerary')
+  async moveBucketToItinerary(@Payload() data: { tripId: string; userId: string; itemId: string; day: number; activityType?: string }) {
+    try {
+      const { tripId, userId, itemId, day, activityType } = data;
+      const result = await this.tripService.moveBucketToItinerary(tripId, itemId, day, userId, activityType);
+      return { success: true, message: 'Move successfully', activity: result };
+    } catch (error: any) {
+      this.logger.error(`gRPC MoveBucketToItinerary error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
+  @GrpcMethod('ItinerariesService', 'AutoFillLocation')
+  async autoFillLocation(@Payload() data: { tripId: string; userId: string; day: number; activityId: string; query: string }) {
+    try {
+      const { tripId, userId, day, activityId, query } = data;
+      const result = await this.tripService.autoFillLocation(tripId, day, activityId, query, userId);
+      return { success: true, message: 'Autofill successfully', location: result };
+    } catch (error: any) {
+      this.logger.error(`gRPC AutoFillLocation error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
+  @GrpcMethod('ItinerariesService', 'SearchLocations')
+  async searchLocations(@Payload() data: { tripId: string; userId: string } & SearchLocationsDto) {
+    try {
+      const { tripId, userId, query, limit } = data;
+      const result = await this.tripService.searchLocations(tripId, userId, query, limit);
+      return { success: true, suggestions: result };
+    } catch (error: any) {
+      this.logger.error(`gRPC SearchLocations error: ${error.message}`, error.stack);
       throw new RpcException({
         code: error instanceof BadRequestException ? 3 : 2,
         message: error.message,

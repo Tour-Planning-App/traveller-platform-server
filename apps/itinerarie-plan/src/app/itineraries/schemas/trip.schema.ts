@@ -20,6 +20,12 @@ export class Activity extends Document {
 
   @Prop()
   time: Date; // Start time
+
+  @Prop()
+  photoUrl: string;
+
+  @Prop()
+  placeId: string;
 }
 
 @Schema()
@@ -53,6 +59,12 @@ export class BucketItem extends Document {
 
   @Prop({ default: false })
   confirmed: boolean;
+
+  @Prop()
+  photoUrl: string;
+
+  @Prop()
+  address: string;
 }
 
 @Schema({ timestamps: true })
@@ -83,6 +95,15 @@ export class Trip extends Document {
 
   @Prop()
   shareToken: string;
+}
+
+export interface LocationSuggestion {
+  name: string;
+  description: string;
+  address: string;
+  photoUrl: string;
+  rating: number;
+  placeId: string;
 }
 
 export const TripSchema = SchemaFactory.createForClass(Trip);

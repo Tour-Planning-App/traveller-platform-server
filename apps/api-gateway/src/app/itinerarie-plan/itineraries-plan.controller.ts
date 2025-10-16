@@ -10,8 +10,8 @@ import { Role } from '../auth/decorators/role.enum';
 import { Logger } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
 import { HttpException } from '@nestjs/common';
-import { CreateItineraryDto, ItineraryResponseDto } from './dtos/itineraries.dto'; // Assume DTO file
-import { AddItineraryItemDto, CreateTripDto, UpdateTripDto } from './dtos/trip.dto';
+import { AddItineraryItemDto, CreateAITripDto, CreateTripDto, UpdateTripDto, SearchLocationsDto } from './dtos/trip.dto';
+import { LocationSuggestionDto } from './dtos/trip.dto';
 
 @ApiTags('Itineraries')
 @Controller('itineraries-plan')
@@ -22,73 +22,6 @@ export class ItinerariesPlanController {
   constructor(@Inject('ITINERARIES_PACKAGE') private client: ClientGrpcProxy) {
     this.itinerariesService = this.client.getService('ItinerariesService');
   }
-
-  // @Post('create')
-  // @UseGuards(JwtAuthGuard, SubscriptionGuard)
-  // @Roles(Role.TRAVELER)
-  // @SubscriptionCheck(1) // Requires Basic plan or higher
-  // @ApiBearerAuth()
-  // @ApiOperation({ summary: 'Create a new itinerary plan' })
-  // @ApiResponse({ status: 200, description: 'Itinerary created', type: ItineraryResponseDto })
-  // @ApiForbiddenResponse({ description: 'Insufficient plan level' })
-  // async createItinerary(@Body() dto: CreateItineraryDto, @Req() req: any) {
-  //   this.logger.log(`Creating itinerary for user: ${dto.userId}`);
-  //   try {
-  //     const response = await firstValueFrom(
-  //       this.itinerariesService.CreateItinerary(dto).pipe(
-  //         catchError((error) => {
-  //           this.logger.error(`CreateItinerary error: ${error.message}`, error.stack);
-  //           if (error.code === 2 || error.code === 'INTERNAL') {
-  //             throw new HttpException('Internal server error during itinerary creation', HttpStatus.INTERNAL_SERVER_ERROR);
-  //           } else if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
-  //             throw new HttpException('Invalid itinerary data', HttpStatus.BAD_REQUEST);
-  //           } else {
-  //             throw new HttpException('Failed to create itinerary', HttpStatus.BAD_REQUEST);
-  //           }
-  //         })
-  //       )
-  //     );
-  //     return response;
-  //   } catch (error: any) {
-  //     this.logger.error(`CreateItinerary failed: ${error.message}`, error.stack);
-  //     throw error;
-  //   }
-  // }
-
-  // @Get('my-itineraries')
-  // @UseGuards(JwtAuthGuard, SubscriptionGuard)
-  // @Roles(Role.TRAVELER)
-  // @SubscriptionCheck(0) // Any active plan (including Free)
-  // @ApiBearerAuth()
-  // @ApiOperation({ summary: 'Get user\'s itineraries' })
-  // @ApiResponse({ status: 200, description: 'Itineraries fetched', type: [ItineraryResponseDto] })
-  // @ApiForbiddenResponse({ description: 'Active subscription required' })
-  // async getItineraries(@Req() req: any) {
-  //   const userId = req.user.userId;
-  //   this.logger.log(`Fetching itineraries for user: ${userId}`);
-  //   try {
-  //     const response = await firstValueFrom(
-  //       this.itinerariesService.GetItineraries({ userId }).pipe(
-  //         catchError((error) => {
-  //           this.logger.error(`GetItineraries error: ${error.message}`, error.stack);
-  //           if (error.code === 2 || error.code === 'INTERNAL') {
-  //             throw new HttpException('Internal server error during fetch', HttpStatus.INTERNAL_SERVER_ERROR);
-  //           } else if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
-  //             throw new HttpException('Invalid user ID', HttpStatus.BAD_REQUEST);
-  //           } else {
-  //             throw new HttpException('Failed to fetch itineraries', HttpStatus.BAD_REQUEST);
-  //           }
-  //         })
-  //       )
-  //     );
-  //     return response;
-  //   } catch (error: any) {
-  //     this.logger.error(`GetItineraries failed: ${error.message}`, error.stack);
-  //     throw error;
-  //   }
-  // }
-
-
 
   @Post()
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
@@ -111,6 +44,41 @@ export class ItinerariesPlanController {
       );
       return result.trip;
     } catch (error: any) {
+      throw error;
+    }
+  }
+
+  @Post('ai') // Route for "Plan it for me"
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @Roles(Role.TRAVELER)
+  @SubscriptionCheck(1) // Requires Basic plan or higher
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a new AI-generated trip plan' })
+  @ApiResponse({ status: 201, description: 'AI Trip created', type: CreateTripDto }) // Assume Trip type imported
+  @ApiForbiddenResponse({ description: 'Insufficient plan level' })
+  async createAITrip(@Body() dto: CreateAITripDto, @Req() req: any) {
+    this.logger.log(`Creating AI itinerary for user: ${req.user.userId}, destination: ${dto.destination}`);
+    try {
+      const userId = req.user.userId;
+      const response = await firstValueFrom(
+        this.itinerariesService.CreateAITrip({ userId, ...dto }).pipe(
+          catchError((error) => {
+            this.logger.error(`CreateAITrip error: ${error.message}`, error.stack);
+            if (error.code === 2 || error.code === 'INTERNAL') {
+              throw new HttpException('Internal server error during AI plan creation', HttpStatus.INTERNAL_SERVER_ERROR);
+            } else if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
+              throw new HttpException('Invalid AI plan data', HttpStatus.BAD_REQUEST);
+            } else if (error.code === 7 || error.code === 'PERMISSION_DENIED') {
+              throw new HttpException('Subscription required for AI planning', HttpStatus.FORBIDDEN);
+            } else {
+              throw new HttpException('Failed to create AI plan', HttpStatus.BAD_REQUEST);
+            }
+          })
+        )
+      ) as any;
+      return response.trip; // Redirects to dashboard with pre-populated trip
+    } catch (error: any) {
+      this.logger.error(`CreateAITrip failed: ${error.message}`, error.stack);
       throw error;
     }
   }
@@ -216,7 +184,7 @@ export class ItinerariesPlanController {
     const userId = req.user.userId;
     try {
       const result = await firstValueFrom(
-        this.itinerariesService.AddItineraryItem({ trip_id: tripId, userId: userId, day: day.toString(), ...dto }).pipe(
+        this.itinerariesService.AddItineraryItem({ tripId: tripId, userId: userId, day: day.toString(), ...dto }).pipe(
           catchError((error) => {
             this.logger.error(`AddItineraryItem error: ${error.message}`);
             throw new HttpException('Failed to add itinerary item', HttpStatus.BAD_REQUEST);
@@ -239,7 +207,7 @@ export class ItinerariesPlanController {
     const userId = req.user.userId;
     try {
       const result = await firstValueFrom(
-        this.itinerariesService.RemoveItineraryItem({ trip_id: tripId, userId: userId, day: day.toString(), activity_id: activityId }).pipe(
+        this.itinerariesService.RemoveItineraryItem({ tripId: tripId, userId: userId, day: day.toString(), activityId: activityId }).pipe(
           catchError((error) => {
             this.logger.error(`RemoveItineraryItem error: ${error.message}`);
             throw new HttpException('Failed to remove itinerary item', HttpStatus.BAD_REQUEST);
@@ -258,11 +226,11 @@ export class ItinerariesPlanController {
   @SubscriptionCheck(0)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add to bucket list' })
-  async addBucketItem(@Param('id') tripId: string, @Body() { name, description }: { name: string; description: string }, @Req() req: any) {
+  async addBucketItem(@Param('id') tripId: string, @Body() { name, description, photoUrl, address }: { name: string; description: string; photoUrl?: string; address?: string }, @Req() req: any) {
     const userId = req.user.userId;
     try {
       const result = await firstValueFrom(
-        this.itinerariesService.AddBucketItem({ trip_id: tripId, userId: userId, name, description }).pipe(
+        this.itinerariesService.AddBucketItem({ tripId: tripId, userId: userId, name, description, photoUrl, address }).pipe(
           catchError((error) => {
             this.logger.error(`AddBucketItem error: ${error.message}`);
             throw new HttpException('Failed to add bucket item', HttpStatus.BAD_REQUEST);
@@ -285,7 +253,7 @@ export class ItinerariesPlanController {
     const userId = req.user.userId;
     try {
       const result = await firstValueFrom(
-        this.itinerariesService.RemoveBucketItem({ trip_id: tripId, userId: userId, item_id: itemId }).pipe(
+        this.itinerariesService.RemoveBucketItem({ tripId: tripId, userId: userId, itemId: itemId }).pipe(
           catchError((error) => {
             this.logger.error(`RemoveBucketItem error: ${error.message}`);
             throw new HttpException('Failed to remove bucket item', HttpStatus.BAD_REQUEST);
@@ -308,14 +276,14 @@ export class ItinerariesPlanController {
     const userId = req.user.userId;
     try {
       const result : any= await firstValueFrom(
-        this.itinerariesService.ShareTrip({ trip_id: tripId, userId: userId }).pipe(
+        this.itinerariesService.ShareTrip({ tripId: tripId, userId: userId }).pipe(
           catchError((error) => {
             this.logger.error(`ShareTrip error: ${error.message}`);
             throw new HttpException('Failed to share trip', HttpStatus.BAD_REQUEST);
           })
         )
       );
-      return { shareToken: result.share_token };
+      return { shareToken: result.shareToken };
     } catch (error: any) {
       throw error;
     }
@@ -331,7 +299,7 @@ export class ItinerariesPlanController {
     const userId = req.user.userId;
     try {
       const result = await firstValueFrom(
-        this.itinerariesService.AddNote({ trip_id: tripId, userId: userId, day: day.toString(), content }).pipe(
+        this.itinerariesService.AddNote({ tripId: tripId, userId: userId, day: day.toString(), content }).pipe(
           catchError((error) => {
             this.logger.error(`AddNote error: ${error.message}`);
             throw new HttpException('Failed to add note', HttpStatus.BAD_REQUEST);
@@ -354,7 +322,7 @@ export class ItinerariesPlanController {
     const userId = req.user.userId;
     try {
       const result = await firstValueFrom(
-        this.itinerariesService.AddChecklistItem({ trip_id: tripId, userId: userId, day: day.toString(), text }).pipe(
+        this.itinerariesService.AddChecklistItem({ tripId: tripId, userId: userId, day: day.toString(), text }).pipe(
           catchError((error) => {
             this.logger.error(`AddChecklistItem error: ${error.message}`);
             throw new HttpException('Failed to add checklist item', HttpStatus.BAD_REQUEST);
@@ -377,7 +345,7 @@ export class ItinerariesPlanController {
     const userId = req.user.userId;
     try {
       const result = await firstValueFrom(
-        this.itinerariesService.UpdateChecklistItem({ trip_id: tripId, userId: userId, day: day.toString(), item_id: itemId, completed }).pipe(
+        this.itinerariesService.UpdateChecklistItem({ tripId: tripId, userId: userId, day: day.toString(), itemId: itemId, completed }).pipe(
           catchError((error) => {
             this.logger.error(`UpdateChecklistItem error: ${error.message}`);
             throw new HttpException('Failed to update checklist item', HttpStatus.BAD_REQUEST);
@@ -385,6 +353,100 @@ export class ItinerariesPlanController {
         )
       );
       return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
+
+  @Put(':id/optimize/:day')
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @Roles(Role.TRAVELER)
+  @SubscriptionCheck(0)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Optimize route for a specific day' })
+  @ApiResponse({ status: 200, description: 'Day route optimized' })
+  async optimizeDay(@Param('id') tripId: string, @Param('day') day: number, @Req() req: any) {
+    const userId = req.user.userId;
+    try {
+      const result = await firstValueFrom(
+        this.itinerariesService.OptimizeDay({ tripId: tripId, userId, day: day.toString() }).pipe(
+          catchError((error) => {
+            this.logger.error(`OptimizeDay error: ${error.message}`);
+            throw new HttpException('Failed to optimize day route', HttpStatus.BAD_REQUEST);
+          })
+        )
+      ) as any;
+      return { ...result, day: result.day }; // Return updated day
+    } catch (error: any) {
+      throw error;
+    }
+  }
+
+  @Post(':id/move-bucket/:itemId/:day')
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @Roles(Role.TRAVELER)
+  @SubscriptionCheck(0)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Move bucket item to itinerary day' })
+  async moveBucketToItinerary(@Param('id') tripId: string, @Param('itemId') itemId: string, @Param('day') day: number, @Body() { activityType = 'activity' }: { activityType?: string }, @Req() req: any) {
+    const userId = req.user.userId;
+    try {
+      const result = await firstValueFrom(
+        this.itinerariesService.MoveBucketToItinerary({ tripId: tripId, userId: userId, itemId: itemId, day: day.toString(), activityType }).pipe(
+          catchError((error) => {
+            this.logger.error(`MoveBucketToItinerary error: ${error.message}`);
+            throw new HttpException('Failed to move bucket item to itinerary', HttpStatus.BAD_REQUEST);
+          })
+        )
+      );
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
+
+  @Post(':id/autofill/:day/:activityId')
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @Roles(Role.TRAVELER)
+  @SubscriptionCheck(0)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Auto-fill location for activity' })
+  async autoFillLocation(@Param('id') tripId: string, @Param('day') day: number, @Param('activityId') activityId: string, @Body() { query }: { query: string }, @Req() req: any) {
+    const userId = req.user.userId;
+    try {
+      const result = await firstValueFrom(
+        this.itinerariesService.AutoFillLocation({ tripId: tripId, userId: userId, day: day.toString(), activityId: activityId, query }).pipe(
+          catchError((error) => {
+            this.logger.error(`AutoFillLocation error: ${error.message}`);
+            throw new HttpException('Failed to auto-fill location', HttpStatus.BAD_REQUEST);
+          })
+        )
+      );
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  }
+
+  @Post(':id/search-locations')
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @Roles(Role.TRAVELER)
+  @SubscriptionCheck(0)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Search locations for trip' })
+  @ApiResponse({ status: 200, description: 'Location suggestions', type: [LocationSuggestionDto] })
+  async searchLocations(@Param('id') tripId: string, @Body() dto: SearchLocationsDto, @Req() req: any) {
+    const userId = req.user.userId;
+    try {
+      const result = await firstValueFrom(
+        this.itinerariesService.SearchLocations({ tripId: tripId, userId: userId, ...dto }).pipe(
+          catchError((error) => {
+            this.logger.error(`SearchLocations error: ${error.message}`);
+            throw new HttpException('Failed to search locations', HttpStatus.BAD_REQUEST);
+          })
+        )
+      ) as any;
+      return result.suggestions;
     } catch (error: any) {
       throw error;
     }

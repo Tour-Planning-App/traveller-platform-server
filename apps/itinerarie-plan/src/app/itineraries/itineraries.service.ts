@@ -1,15 +1,28 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, isValidObjectId, Types } from 'mongoose';
-import { Activity, Trip } from './schemas/trip.schema';
-import { CreateTripDto, UpdateTripDto, AddItineraryItemDto } from './dtos/trip.dto';
+import { Model, isValidObjectId } from 'mongoose';
+import { Activity, Trip, LocationSuggestion } from './schemas/trip.schema';
+import { CreateTripDto, UpdateTripDto, AddItineraryItemDto, CreateAITripDto } from './dtos/trip.dto';
+import { ChatOpenAI } from "@langchain/openai";
+import { PromptTemplate } from "@langchain/core/prompts";
+import { ConfigService } from '@nestjs/config';
+import { RoutesClient } from '@googlemaps/routing';
+import { Client } from '@googlemaps/google-maps-services-js';
 
 @Injectable()
 export class ItinerariesService {
+  private routesClient: RoutesClient;
+  private placesClient: Client;
   constructor(
     @InjectModel(Trip.name) private tripModel: Model<Trip>,
     @InjectModel(Activity.name) private activityModel: Model<Activity>,
-  ) {}
+    private configService: ConfigService, // For API key
+  ) {
+    this.routesClient = new RoutesClient({
+      apiKey: this.configService.get<string>('GOOGLE_MAPS_API_KEY') || '',
+    });
+    this.placesClient = new Client({});
+  }
 
   async createTrip(userId: string, createDto: CreateTripDto): Promise<Trip> {
     try {
@@ -39,6 +52,147 @@ export class ItinerariesService {
         throw error;
       }
       throw new BadRequestException(`Failed to create trip: ${error.message}`);
+    }
+  }
+
+  async createAITrip(userId: string, createDto: CreateAITripDto): Promise<Trip> {
+    try {
+      console.log('Creating AI trip for user:', userId, createDto);
+      // Validation
+      if (!userId || !isValidObjectId(userId)) {
+        throw new BadRequestException('Invalid user ID');
+      }
+      if (!createDto.name || !createDto.destination) {
+        throw new BadRequestException('Trip name and destination are required');
+      }
+      if (createDto.budget && createDto.budget < 0) {
+        throw new BadRequestException('Budget must be non-negative');
+      }
+      if (!createDto.interests || createDto.interests.length === 0) {
+        throw new BadRequestException('At least one interest is required');
+      }
+
+      // Generate dates if not provided (default 7-day trip, start 30 days from now)
+      let dates: string[] = createDto.dates || [];
+      if (dates.length === 0) {
+        const startDate = new Date('2025-10-16'); // Current date
+        startDate.setDate(startDate.getDate() + 30);
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(startDate);
+          d.setDate(d.getDate() + i);
+          dates.push(d.toISOString().split('T')[0]);
+        }
+      }
+      const numDays = dates.length;
+
+      // LLM Prompt for generation
+      const promptTemplate = PromptTemplate.fromTemplate(
+        `You are a travel expert. Create a detailed {numDays}-day itinerary for a trip to {destination} named "{name}".
+        Budget: ${createDto.budget || 'unlimited'} USD.
+        Interests: {interests}.
+        Special requests: {specialRequests}.
+
+        For each day, suggest 3-5 activities (mix of place, stay, food, activity types).
+        Each activity: type (place/stay/food/activity), name, description (1-2 sentences), location, time (HH:MM:SS format).
+
+        Also, suggest 5 bucket list items (name, description).
+
+        Output ONLY valid JSON:
+        {
+          "itinerary": [
+            {
+              "day": 1,
+              "activities": [
+                {
+                  "type": "place",
+                  "name": "Example Waterfall",
+                  "description": "A stunning cascade...",
+                  "location": "Ella",
+                  "time": "09:00:00"
+                }
+                // ... more
+              ]
+            }
+            // ... days
+          ],
+          "bucketList": [
+            {
+              "name": "Surfing Lesson",
+              "description": "Learn to surf on golden sands..."
+            }
+            // ... 5 items
+          ]
+        }`
+      );
+
+      const prompt = await promptTemplate.format({
+        numDays,
+        destination: createDto.destination,
+        name: createDto.name,
+        interests: createDto.interests.join(', '),
+        specialRequests: createDto.specialRequests || 'None'
+      });
+
+      // Invoke LLM (assume OPENAI_API_KEY in env)
+      const model = new ChatOpenAI({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        modelName: "gpt-4o-mini", // Cost-effective for planning
+        temperature: 0.7
+      });
+      const llmResponse = await model.invoke(prompt) as any;
+      
+      // Parse JSON (in production, add error handling/JSON mode)
+      let plan;
+      try {
+        plan = JSON.parse(llmResponse.content);
+      } catch {
+        throw new BadRequestException('Failed to parse AI plan');
+      }
+
+      // Create base trip
+      const trip = new this.tripModel({
+        userId,
+        name: createDto.name,
+        destination: createDto.destination,
+        dates,
+        budget: createDto.budget || 0,
+        itinerary: [],
+        bucketList: []
+      });
+      await trip.save();
+
+      // Add bucket list items
+      for (const itemData of plan.bucketList.slice(0, 5)) { // Limit to 5
+        await this.addBucketItem(trip._id.toString(), itemData.name, itemData.description || '', userId);
+      }
+
+      // Add itinerary items
+      for (const dayData of plan.itinerary) {
+        const day = dayData.day;
+        if (day < 1 || day > numDays) continue;
+        for (const actData of dayData.activities) {
+          const activityDto: AddItineraryItemDto = {
+            activity: {
+              type: actData.type,
+              name: actData.name,
+              description: actData.description || '',
+              rating: Math.floor(Math.random() * 5) + 1, // AI could provide, but mock
+              location: actData.location || '',
+              time: actData.time // string, converted later
+            }
+          };
+          await this.addItineraryItem(trip._id.toString(), day, activityDto, userId);
+        }
+      }
+
+      // Populate for full response
+      await trip.populate('itinerary.activities');
+      return trip;
+    } catch (error: any) {
+      if (error instanceof BadRequestException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to create AI trip: ${error.message}`);
     }
   }
 
@@ -151,6 +305,16 @@ export class ItinerariesService {
         throw new BadRequestException('Invalid activity type');
       }
 
+      if (activityDto.activity.time) {
+        try {
+          // Assume ISO time string like '09:00:00' → full ISO Date for today (time only)
+          const timeDate = new Date(`2025-01-01T${activityDto.activity.time}`); // Arbitrary date, time preserved
+          activityDto.activity.time = timeDate.toISOString();
+        } catch {
+          throw new BadRequestException('Invalid time format');
+        }
+      }
+
       const trip = await this.tripModel.findOne({ _id: tripId, userId });
       if (!trip) {
         throw new NotFoundException('Trip not found');
@@ -161,7 +325,10 @@ export class ItinerariesService {
         throw new BadRequestException('Day exceeds trip dates');
       }
 
-      const activity = new this.activityModel(activityDto.activity);
+      const activityData = activityDto.activity;
+      activityData.photoUrl = activityData.photoUrl || '';
+      activityData.placeId = activityData.placeId || '';
+      const activity = new this.activityModel(activityData);
       await activity.save();
 
       let itineraryDay = trip.itinerary.find(d => d.day === day) as any;
@@ -227,7 +394,7 @@ export class ItinerariesService {
     }
   }
 
-  async addBucketItem(tripId: string, name: string, description: string, userId: string): Promise<any> {
+  async addBucketItem(tripId: string, name: string, description: string, userId: string, photoUrl?: string, address?: string): Promise<any> {
     try {
       // Validation
       if (!isValidObjectId(tripId)) {
@@ -245,7 +412,13 @@ export class ItinerariesService {
         throw new NotFoundException('Trip not found');
       }
 
-      const item = { name: name.trim(), description: description?.trim() || '', confirmed: false } as any;
+      const item = { 
+        name: name.trim(), 
+        description: description?.trim() || '', 
+        confirmed: false,
+        photoUrl: photoUrl || '',
+        address: address || ''
+      } as any;
       trip.bucketList.push(item);
       await trip.save();
       return item;
@@ -436,5 +609,258 @@ export class ItinerariesService {
       }
       throw new BadRequestException(`Failed to update checklist item: ${error.message}`);
     }
+  }
+
+  async optimizeDayRoute(tripId: string, day: number, userId: string): Promise<any> {
+    try {
+      // Validation
+      if (!isValidObjectId(tripId)) {
+        throw new BadRequestException('Invalid trip ID');
+      }
+      if (!isValidObjectId(userId)) {
+        throw new BadRequestException('Invalid user ID');
+      }
+      if (!Number.isInteger(day) || day < 1) {
+        throw new BadRequestException('Day must be a positive integer');
+      }
+
+      const trip = await this.tripModel.findOne({ _id: tripId, userId }).populate('itinerary.activities').exec() as any;
+      if (!trip) {
+        throw new NotFoundException('Trip not found');
+      }
+
+      const itineraryDay = trip.itinerary.find(d => d.day === day) as any;
+      if (!itineraryDay) {
+        throw new NotFoundException('Day not found in itinerary');
+      }
+
+      const activities = itineraryDay.activities as Activity[]; // Populated
+      if (!activities || activities.length < 2) {
+        throw new BadRequestException('Insufficient activities for optimization');
+      }
+
+      // Filter activities with locations
+      const locationActivities = activities.filter(a => a.location);
+      if (locationActivities.length < 2) {
+        return itineraryDay; // No optimization needed
+      }
+
+      // Find stay (fixed origin/destination)
+      const stayActivity = locationActivities.find(a => a.type === 'stay');
+      const originIdx = stayActivity ? locationActivities.indexOf(stayActivity) : 0;
+      const originLocation = locationActivities[originIdx].location;
+
+      // Prepare intermediates (exclude origin)
+      const intermediateOriginalIndices: number[] = [];
+      const intermediates: { address: string }[] = [];
+      locationActivities.forEach((act, idx) => {
+        if (idx !== originIdx) {
+          intermediateOriginalIndices.push(idx);
+          intermediates.push({ address: act.location });
+        }
+      });
+
+      if (intermediates.length === 0) {
+        return itineraryDay;
+      }
+
+      // Call Google Routes API
+      const request = {
+        origin: { address: originLocation },
+        destination: { address: originLocation },
+        intermediates,
+        travelMode: 'DRIVE' as const,
+        optimizeWaypointOrder: true,
+        routingPreference: 'TRAFFIC_AWARE' as const,
+      };
+
+      const [response] = await this.routesClient.computeRoutes(request);
+      if (!response.routes || response.routes.length === 0) {
+        throw new BadRequestException('No optimized route found');
+      }
+
+      const optIndices = response.routes[0].optimizedIntermediateWaypointIndex || [];
+      if (optIndices.length !== intermediateOriginalIndices.length) {
+        throw new BadRequestException('Optimization failed');
+      }
+
+      // Reorder: origin + optimized intermediates
+      const reorderedLocationIndices = [originIdx, ...optIndices.map(idx => intermediateOriginalIndices[idx])];
+
+      // Create new order for all activities (location-based first in opt order, then non-location)
+      const nonLocationActivities = activities.filter(a => !a.location);
+      const newActivitiesOrder = [
+        ...reorderedLocationIndices.map(idx => locationActivities[idx]._id),
+        ...nonLocationActivities.map(a => a._id)
+      ];
+
+      // Reorder activities array
+      itineraryDay.activities = newActivitiesOrder.map(id => 
+        activities.find(a => a._id.toString() === id.toString())
+      );
+
+      trip.updatedAt = new Date();
+      await trip.save();
+
+      // Re-populate
+      await trip.populate('itinerary.activities');
+      return trip.itinerary.find(d => d.day === day) as any;
+    } catch (error: any) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to optimize route: ${error.message}`);
+    }
+  }
+
+  async moveBucketToItinerary(tripId: string, itemId: string, day: number, userId: string, activityType: string = 'activity'): Promise<Activity> {
+    // Validation (similar to existing)
+    if (!isValidObjectId(tripId)) {
+      throw new BadRequestException('Invalid trip ID');
+    }
+    if (!isValidObjectId(itemId)) {
+      throw new BadRequestException('Invalid item ID');
+    }
+    if (!isValidObjectId(userId)) {
+      throw new BadRequestException('Invalid user ID');
+    }
+    if (!Number.isInteger(day) || day < 1) {
+      throw new BadRequestException('Day must be a positive integer');
+    }
+    if (!['place', 'stay', 'food', 'activity'].includes(activityType)) {
+      throw new BadRequestException('Invalid activity type');
+    }
+
+    const trip = await this.tripModel.findOne({ _id: tripId, userId }).populate('bucketList').exec();
+    if (!trip) throw new NotFoundException('Trip not found');
+
+    const bucketIndex = trip.bucketList.findIndex(item => item._id.toString() === itemId);
+    if (bucketIndex === -1) throw new NotFoundException('Bucket item not found');
+
+    const bucketItem = trip.bucketList[bucketIndex] as any;
+    // Create activity from bucket
+    const activity = new this.activityModel({
+      type: activityType,
+      name: bucketItem.name,
+      description: bucketItem.description || '',
+      location: bucketItem.address || '',
+      photoUrl: bucketItem.photoUrl || '',
+      placeId: '',
+      time: undefined
+    });
+    await activity.save();
+
+    // Add to day's itinerary (reuse logic)
+    let itineraryDay = trip.itinerary.find(d => d.day === day) as any;
+    if (!itineraryDay) {
+      itineraryDay = { day, date: trip.dates[day - 1], activities: [], note: '', checklist: [] };
+      trip.itinerary.push(itineraryDay);
+    }
+    itineraryDay.activities.push(activity._id);
+
+    // Remove from bucket
+    trip.bucketList.splice(bucketIndex, 1);
+    await trip.save();
+
+    await trip.populate('itinerary.activities');
+    return activity;
+  }
+
+  async autoFillLocation(tripId: string, day: number, activityId: string, query: string, userId: string): Promise<string> {
+    // Validation
+    if (!isValidObjectId(tripId)) {
+      throw new BadRequestException('Invalid trip ID');
+    }
+    if (!isValidObjectId(activityId)) {
+      throw new BadRequestException('Invalid activity ID');
+    }
+    if (!isValidObjectId(userId)) {
+      throw new BadRequestException('Invalid user ID');
+    }
+    if (!Number.isInteger(day) || day < 1) {
+      throw new BadRequestException('Day must be a positive integer');
+    }
+    if (!query || query.trim().length === 0) {
+      throw new BadRequestException('Query is required');
+    }
+
+    const trip = await this.tripModel.findOne({ _id: tripId, userId }).populate('itinerary.activities').exec();
+    if (!trip) throw new NotFoundException('Trip not found');
+
+    const itineraryDay = trip.itinerary.find(d => d.day === day) as any;
+    if (!itineraryDay) throw new NotFoundException('Day not found');
+
+    const activity = (itineraryDay.activities as Activity[]).find(a => a._id.toString() === activityId) as any;
+    if (!activity) throw new NotFoundException('Activity not found');
+
+    // Call Google Places (Text Search)
+    const response = await this.placesClient.textSearch({
+      params: {
+        query: `${query} near ${trip.destination}`,  // Contextualize
+        key: this.configService.get<string>('GOOGLE_MAPS_API_KEY')
+      }
+    });
+
+    if (response.data.results && response.data.results.length > 0) {
+      const suggested = response.data.results[0];
+      const photoRef = suggested.photos?.[0]?.photo_reference;
+      const photoUrl = photoRef ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoRef}&key=${this.configService.get<string>('GOOGLE_MAPS_API_KEY')}` : '';
+      activity.location = suggested.formatted_address || suggested.name;
+      activity.photoUrl = photoUrl;
+      activity.placeId = suggested.place_id;
+      activity.description = suggested.name; // Simple summary
+      await activity.save();
+      await trip.save();
+      return suggested.formatted_address || suggested.name;
+    }
+    throw new BadRequestException('No location suggestions found');
+  }
+
+  async searchLocations(tripId: string, userId: string, query: string, limit: number = 5): Promise<LocationSuggestion[]> {
+    // Validation
+    if (!isValidObjectId(tripId)) {
+      throw new BadRequestException('Invalid trip ID');
+    }
+    if (!isValidObjectId(userId)) {
+      throw new BadRequestException('Invalid user ID');
+    }
+    if (!query || query.trim().length === 0) {
+      throw new BadRequestException('Query is required');
+    }
+    if (!Number.isInteger(limit) || limit < 1 || limit > 10) {
+      throw new BadRequestException('Limit must be between 1 and 10');
+    }
+
+    const trip = await this.tripModel.findOne({ _id: tripId, userId });
+    if (!trip) throw new NotFoundException('Trip not found');
+
+    // Call Google Places Text Search
+    const response = await this.placesClient.textSearch({
+      params: {
+        query: `${query} in ${trip.destination}`,
+        key: this.configService.get<string>('GOOGLE_MAPS_API_KEY')
+      }
+    });
+
+    if (!response.data.results || response.data.results.length === 0) {
+      return [];
+    }
+
+    const suggestions: LocationSuggestion[] = [];
+    const apiKey = this.configService.get<string>('GOOGLE_MAPS_API_KEY');
+    for (const place of response.data.results.slice(0, limit)) {
+      const photoRef = place.photos?.[0]?.photo_reference;
+      const photoUrl = photoRef ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoRef}&key=${apiKey}` : '';
+      suggestions.push({
+        name: place.name,
+        description: place.formatted_address || place.name, // Simple summary; could fetch details for better
+        address: place.formatted_address || '',
+        photoUrl,
+        rating: place.rating || 0,
+        placeId: place.place_id
+      });
+    }
+
+    return suggestions;
   }
 }

@@ -6,17 +6,17 @@ option go_package = "github.com/Tour-Planning-App/traveller-platform-server/prot
 
 message Trip {
   string id = 1;
-  string user_id = 2;
+  string userId = 2;
   string name = 3;
   string destination = 4;
   repeated string dates = 5; // ISO strings, e.g., ['2025-12-01', '2025-12-07']
   double budget = 6; // In user's currency
   repeated ItineraryDay itinerary = 7;
-  repeated BucketItem bucket_list = 8;
-  bool is_shared = 9;
-  string share_token = 10; // For sharing
-  google.protobuf.Timestamp created_at = 11;
-  google.protobuf.Timestamp updated_at = 12;
+  repeated BucketItem bucketList = 8;
+  bool isShared = 9;
+  string shareToken = 10; // For sharing
+  google.protobuf.Timestamp createdAt = 11;
+  google.protobuf.Timestamp updatedAt = 12;
 }
 
 message ItineraryDay {
@@ -36,6 +36,8 @@ message Activity {
   double rating = 5;
   string location = 6; // e.g., 'Colombo, Sri Lanka'
   google.protobuf.Timestamp time = 7; // Start time
+  string photoUrl = 8;
+  string placeId = 9;
 }
 
 message BucketItem {
@@ -43,6 +45,8 @@ message BucketItem {
   string name = 2;
   string description = 3;
   bool confirmed = 4; // Added to itinerary or not
+  string photoUrl = 5;
+  string address = 6;
 }
 
 message Note {
@@ -59,8 +63,17 @@ message ChecklistItem {
   bool completed = 3;
 }
 
+message LocationSuggestion {
+  string name = 1;
+  string description = 2;
+  string address = 3;
+  string photoUrl = 4;
+  double rating = 5;
+  string placeId = 6;
+}
+
 message CreateTripRequest {
-  string user_id = 1;
+  string userId = 1;
   string name = 2;
   string destination = 3;
   repeated string dates = 4;
@@ -96,7 +109,7 @@ message GetTripResponse {
 }
 
 message GetUserTripsRequest {
-  string user_id = 1;
+  string userId = 1;
 }
 
 message GetUserTripsResponse {
@@ -106,6 +119,7 @@ message GetUserTripsResponse {
 
 message DeleteTripRequest {
   string id = 1;
+  string userId = 2;
 }
 
 message DeleteTripResponse {
@@ -114,7 +128,7 @@ message DeleteTripResponse {
 }
 
 message AddItineraryItemRequest {
-  string trip_id = 1;
+  string tripId = 1;
   int32 day = 2;
   Activity activity = 3; // Add place/stay/food/activity
 }
@@ -126,8 +140,8 @@ message AddItineraryItemResponse {
 }
 
 message RemoveItineraryItemRequest {
-  string trip_id = 1;
-  string activity_id = 2;
+  string tripId = 1;
+  string activityId = 2;
   int32 day = 3;
 }
 
@@ -137,9 +151,11 @@ message RemoveItineraryItemResponse {
 }
 
 message AddBucketItemRequest {
-  string trip_id = 1;
+  string tripId = 1;
   string name = 2;
   string description = 3;
+  string photoUrl = 4;
+  string address = 5;
 }
 
 message AddBucketItemResponse {
@@ -149,8 +165,8 @@ message AddBucketItemResponse {
 }
 
 message RemoveBucketItemRequest {
-  string trip_id = 1;
-  string item_id = 2;
+  string tripId = 1;
+  string itemId = 2;
 }
 
 message RemoveBucketItemResponse {
@@ -159,17 +175,18 @@ message RemoveBucketItemResponse {
 }
 
 message ShareTripRequest {
-  string trip_id = 1;
+  string tripId = 1;
+  string userId = 2;
 }
 
 message ShareTripResponse {
   bool success = 1;
   string message = 2;
-  string share_token = 3;
+  string shareToken = 3;
 }
 
 message AddNoteRequest {
-  string trip_id = 1;
+  string tripId = 1;
   int32 day = 2;
   string content = 3;
 }
@@ -181,7 +198,7 @@ message AddNoteResponse {
 }
 
 message AddChecklistItemRequest {
-  string trip_id = 1;
+  string tripId = 1;
   int32 day = 2;
   string text = 3;
 }
@@ -193,9 +210,9 @@ message AddChecklistItemResponse {
 }
 
 message UpdateChecklistItemRequest {
-  string trip_id = 1;
+  string tripId = 1;
   int32 day = 2;
-  string item_id = 3;
+  string itemId = 3;
   bool completed = 4;
 }
 
@@ -204,8 +221,77 @@ message UpdateChecklistItemResponse {
   string message = 2;
 }
 
+message CreateAITripRequest {
+  string userId = 1;
+  string name = 2;
+  string destination = 3;
+  double budget = 4;
+  repeated string interests = 5;
+  string specialRequests = 6;
+  repeated string dates = 7;
+}
+
+message CreateAITripResponse {
+  bool success = 1;
+  string message = 2;
+  Trip trip = 3;
+}
+
+message OptimizeDayRequest {
+  string tripId = 1;
+  int32 day = 2;
+  string userId = 3;
+}
+
+message OptimizeDayResponse {
+  bool success = 1;
+  string message = 2;
+  ItineraryDay day = 3;
+}
+
+message MoveBucketToItineraryRequest {
+  string tripId = 1;
+  string itemId = 2;
+  int32 day = 3;
+  string activityType = 4;  // Default 'activity'
+  string userId = 5;
+}
+
+message MoveBucketToItineraryResponse {
+  bool success = 1;
+  string message = 2;
+  Activity activity = 3;  // New activity created
+}
+
+message AutoFillLocationRequest {
+  string tripId = 1;
+  int32 day = 2;
+  string activityId = 3;
+  string query = 4;  // e.g., "beach near Ella"
+  string userId = 5;
+}
+
+message AutoFillLocationResponse {
+  bool success = 1;
+  string message = 2;
+  string location = 3;
+}
+
+message SearchLocationsRequest {
+  string tripId = 1;
+  string userId = 2;
+  string query = 3;
+  int32 limit = 4;
+}
+
+message SearchLocationsResponse {
+  bool success = 1;
+  repeated LocationSuggestion suggestions = 2;
+}
+
 service TripService {
   rpc CreateTrip(CreateTripRequest) returns (CreateTripResponse);
+  rpc CreateAITrip(CreateAITripRequest) returns (CreateAITripResponse);
   rpc UpdateTrip(UpdateTripRequest) returns (UpdateTripResponse);
   rpc GetTrip(GetTripRequest) returns (GetTripResponse);
   rpc GetUserTrips(GetUserTripsRequest) returns (GetUserTripsResponse);
@@ -218,4 +304,8 @@ service TripService {
   rpc AddNote(AddNoteRequest) returns (AddNoteResponse);
   rpc AddChecklistItem(AddChecklistItemRequest) returns (AddChecklistItemResponse);
   rpc UpdateChecklistItem(UpdateChecklistItemRequest) returns (UpdateChecklistItemResponse);
+  rpc OptimizeDay(OptimizeDayRequest) returns (OptimizeDayResponse);
+  rpc MoveBucketToItinerary(MoveBucketToItineraryRequest) returns (MoveBucketToItineraryResponse);
+  rpc AutoFillLocation(AutoFillLocationRequest) returns (AutoFillLocationResponse);
+  rpc SearchLocations(SearchLocationsRequest) returns (SearchLocationsResponse);
 }

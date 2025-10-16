@@ -1,4 +1,4 @@
-import { IsString, IsArray, IsNumber, IsPositive, IsOptional,} from 'class-validator';
+import { IsString, IsArray, IsNumber, IsPositive, IsOptional, IsInt, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateTripDto {
@@ -6,8 +6,13 @@ export class CreateTripDto {
   @IsString()
   name: string;
 
+  @ApiProperty({ example: 'Sri Lanka' })
+  @IsString()
+  destination: string;
+
   @ApiProperty({ example: ['2025-12-01', '2025-12-07'] })
   @IsArray()
+  @IsString({ each: true })
   dates: string[];
 
   @ApiProperty({ example: 1500, description: 'In USD' })
@@ -23,6 +28,11 @@ export class UpdateTripDto {
   @IsOptional()
   name?: string;
 
+  @ApiProperty({ example: 'Updated Destination' })
+  @IsString()
+  @IsOptional()
+  destination?: string;
+
   @ApiProperty({ example: ['2025-12-01', '2025-12-08'] })
   @IsArray()
   @IsOptional()
@@ -36,13 +46,79 @@ export class UpdateTripDto {
 }
 
 export class AddItineraryItemDto {
-  @ApiProperty({ example: { type: 'place', name: 'Kithal Ella Waterfall', location: 'Ella' } })
+  @ApiProperty({ example: { type: 'place', name: 'Kithal Ella Waterfall', location: 'Ella', photoUrl: 'https://example.com/photo.jpg' } })
   activity: {
     type: 'place' | 'stay' | 'food' | 'activity';
     name: string;
     description?: string;
     rating?: number;
     location: string;
-    time?: string; // ISO time
+    time?: string; // ISO time string (e.g., '09:00:00')
+    photoUrl?: string;
+    placeId?: string;
   };
+}
+
+export class CreateAITripDto {
+  @ApiProperty({ example: 'My Sri Lanka Adventure' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ example: 'Sri Lanka' })
+  @IsString()
+  destination: string;
+
+  @ApiProperty({ example: [1500], description: 'In USD' })
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  budget?: number;
+
+  @ApiProperty({ example: ['Beaches', 'Waterfalls', 'Caves'] })
+  @IsArray()
+  @IsString({ each: true })
+  interests: string[];
+
+  @ApiProperty({ example: 'Vegetarian meals only', required: false })
+  @IsString()
+  @IsOptional()
+  specialRequests?: string;
+
+  @ApiProperty({ example: ['2025-12-01', '2025-12-07'], required: false })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  dates?: string[];
+}
+
+export class SearchLocationsDto {
+  @ApiProperty({ example: 'beach waterfall' })
+  @IsString()
+  query: string;
+
+  @ApiProperty({ example: 5, required: false })
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  limit?: number = 5;
+}
+
+export class LocationSuggestionDto {
+  @ApiProperty({ example: 'Sigiriya Rock Fortress' })
+  name: string;
+
+  @ApiProperty({ example: 'Ancient rock fortress in Sri Lanka' })
+  description: string;
+
+  @ApiProperty({ example: 'Sigiriya, Sri Lanka' })
+  address: string;
+
+  @ApiProperty({ example: 'https://maps.googleapis.com/maps/api/place/photo?...' })
+  photoUrl: string;
+
+  @ApiProperty({ example: 4.7 })
+  rating: number;
+
+  @ApiProperty({ example: 'ChIJ...' })
+  placeId: string;
 }
