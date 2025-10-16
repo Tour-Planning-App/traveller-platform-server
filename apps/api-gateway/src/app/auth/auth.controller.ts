@@ -233,11 +233,39 @@ export class AuthController {
   @ApiBearerAuth()
   @Get('personal-details')
   @ApiOperation({ summary: 'Get personal details' })
+  @ApiResponse({ status: 200, description: 'Get personal details completed' })
+  @ApiBadRequestResponse({ description: 'Invalid Get personal details data' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error during get personal details' })
   async getPersonalDetails(@Req() req: any) {
     // Implementation depends on user service; assume proxy
-    const userId = req?.user?.userId;
-    // Call user service GetUserById and return relevant fields
-    return userId;
+    // const userId = req?.user?.userId;
+    // // Call user service GetUserById and return relevant fields
+    // return userId;
+    try {
+      const userId = req?.user?.userId; // Extract from req.user.sub in production
+      if (!userId) return { success: false, message: 'User not authenticated' };
+
+      const result = await firstValueFrom(
+        this.authService.CompleteOnboarding({ userId}).pipe(
+          catchError((error) => {
+            this.logger.error(`CompleteOnboarding error: ${error.message}`, error.stack);
+            if (error.code === 2 || error.code === 'INTERNAL') {
+              throw new HttpException('Internal server error during onboarding', HttpStatus.INTERNAL_SERVER_ERROR);
+            } else if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
+              throw new HttpException('Invalid onboarding data', HttpStatus.BAD_REQUEST);
+            } else if (error.details && error.details.includes('User not found')) {
+              throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+            } else {
+              throw new HttpException('Onboarding failed', HttpStatus.BAD_REQUEST);
+            }
+          })
+        )
+      );
+      return result;
+    } catch (error:any) {
+      this.logger.error(`CompleteOnboarding failed: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
 }

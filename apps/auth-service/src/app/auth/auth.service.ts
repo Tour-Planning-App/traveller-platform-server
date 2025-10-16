@@ -401,4 +401,16 @@ async getPlan(planId: string): Promise<any> {
     }
   }
 
+  async getPersonalDetail(userId: string): Promise<any> {
+    try {
+      const user = await this.userModel.findById(userId).select('-password -__v -googleId -facebookId -linkedAccounts');
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+      return { success: true, user };
+    } catch (error: any) {
+      this.logger.error(`GetPersonalDetails error for ${userId}: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
 }

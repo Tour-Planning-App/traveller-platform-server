@@ -149,4 +149,19 @@ export class AuthController {
     }
   }
 
+  @GrpcMethod('AuthService', 'GetPersonalDetails')
+  async getPersonalDetail(@Payload() data: { userId: string }) {
+    try {
+      const { userId } = data;
+      const result = await this.authService.getPersonalDetail(userId);
+      return result;
+    } catch (error: any) {
+      this.logger.error(`gRPC UpdateSubscription error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
 }
