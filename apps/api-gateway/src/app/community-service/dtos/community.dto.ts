@@ -235,13 +235,13 @@ export class DeletePostResponseDto {
 }
 
 export class LikePostDto {
-  @ApiProperty({ example: 'post123' })
-  @IsString()
-  postId: string;
+  // @ApiProperty({ example: 'post123' })
+  // @IsString()
+  // postId: string;
 
-  @ApiProperty({ example: 'user123' })
-  @IsString()
-  userId: string;
+  // @ApiProperty({ example: 'user123' })
+  // @IsString()
+  // userId: string;
 
   @ApiProperty({ example: true })
   @IsBoolean()

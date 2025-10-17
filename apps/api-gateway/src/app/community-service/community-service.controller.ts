@@ -306,12 +306,12 @@ export class CommunityServiceController {
   @ApiBadRequestResponse({ description: 'Invalid post ID' })
   @ApiNotFoundResponse({ description: 'Post not found' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error during like update' })
-  async likePost(@Param('id') id: string, @Body() dto: Omit<LikePostDto, 'postId'>, @Req() req: any) {
+  async likePost(@Param('id') id: string, @Body() dto: LikePostDto, @Req() req: any) {
     try {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };
 
-      const data: LikePostDto = { ...dto, postId: id, userId: userId } as any;
+      const data = { ...dto, postId: id, userId: userId } as any;
 
       const result = await firstValueFrom(
         this.communityService.LikePost(data).pipe(
