@@ -45,9 +45,9 @@ export class SubscriptionGuard implements CanActivate {
         throw new ForbiddenException('No subscription found');
       }
       const subscription = subResult.subscription;
-      if (!subscription || subscription.status !== 'active') {
-        throw new ForbiddenException('Active subscription required');
-      }
+      // if (!subscription || subscription.status !== 'active') {
+      //   throw new ForbiddenException('Active subscription required');
+      // }
 
       // Fetch plan level
       const planResult = await firstValueFrom(
