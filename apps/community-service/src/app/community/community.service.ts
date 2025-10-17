@@ -27,7 +27,7 @@ import {
   SearchUsersDto, SearchUsersResponseDto,
   // Import all other DTOs
 } from './dtos/post.dto'; // Assuming all in one file or import accordingly
-
+import { Types } from 'mongoose'; // Ensure this is imported at the top
 @Injectable()
 export class CommunityService {
   private readonly logger = new Logger(CommunityService.name);
@@ -169,19 +169,22 @@ export class CommunityService {
       if (!post) {
         throw new NotFoundException('Post not found');
       }
-
+console.log('LikePost data:', data);
       const existingLikeIndex = post.likes.findIndex(l => l.userId === data.userId);
       if (data.like) {
+        console.log('Liking the post');
         if (existingLikeIndex === -1) {
-          post.likes.push({ userId: data.userId, createdAt: new Date().toISOString() });
+          post.likes.push(new Types.ObjectId(data.userId));
           post.likeCount += 1;
         }
       } else {
+        console.log('Unliking the post');
         if (existingLikeIndex !== -1) {
           post.likes.splice(existingLikeIndex, 1);
           post.likeCount -= 1;
         }
       }
+      console.log('Updated likes:', post.likes);
       await post.save();
 
       // Emit Kafka event for like notification

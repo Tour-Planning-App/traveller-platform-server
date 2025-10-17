@@ -125,6 +125,7 @@ export class CommunityController {
   @GrpcMethod('CommunityService', 'LikePost')
   async likePost(@Payload() data: LikePostDto): Promise<LikePostResponseDto> {
     try {
+      console.log('LikePost gRPC called with data:', data);
       const result = await this.communityService.likePost(data);
       return {
         success: result.success,
