@@ -272,99 +272,161 @@ export class CommunityService {
   }
 
   // New method: Get likers with details
+  // async getPostLikers(data: GetPostLikersDto): Promise<GetPostLikersResponseDto> {
+  //   try {
+  //     const post = await this.postModel.findById(data.postId).populate({
+  //       path: 'likes',
+  //       select: 'name profileImage username',
+  //       model: 'User',  // Assuming User model
+  //     }).exec();
+
+  //     if (!post) {
+  //       throw new NotFoundException('Post not found');
+  //     }
+
+  //     let likers = post.likes as any[];  // Populated users
+  //     const total = likers.length;
+
+  //     // Paginate
+  //     if (data.limit) {
+  //       likers = likers.slice(data.offset || 0, (data.offset || 0) + (data.limit || 10));
+  //     }
+
+  //     // Compute isFollowing for current user
+  //     const likerSummaries = await Promise.all(likers.map(async (liker: any) => {
+  //       let isFollowing = false;
+  //       if (data.currentUserId) {
+  //         const follow = await this.followModel.findOne({
+  //           followerId: new Types.ObjectId(data.currentUserId),
+  //           followeeId: liker._id,
+  //         });
+  //         isFollowing = !!follow;
+  //       }
+  //       return {
+  //         id: liker._id.toString(),
+  //         name: liker.name,
+  //         username: liker.username || '',
+  //         profileImage: liker.profileImage,
+  //         isFollowing,
+  //       };
+  //     }));
+
+  //     return { success: true, likers: likerSummaries, total };
+  //   } catch (error) {
+  //     this.logger.error(`GetPostLikers error: ${error.message}`);
+  //     throw new BadRequestException('Failed to fetch likers');
+  //   }
+  // }
   async getPostLikers(data: GetPostLikersDto): Promise<GetPostLikersResponseDto> {
-    try {
-      const post = await this.postModel.findById(data.postId).populate({
-        path: 'likes',
-        select: 'name profileImage username',
-        model: 'User',  // Assuming User model
-      }).exec();
+  try {
+    const post = await this.postModel.findById(data.postId);
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
 
-      if (!post) {
-        throw new NotFoundException('Post not found');
-      }
+    const likeIds = post.likes;  // Array of ObjectId (no populate)
+    const total = likeIds.length;
 
-      let likers = post.likes as any[];  // Populated users
-      const total = likers.length;
+    // Paginate IDs first (efficient)
+    const paginatedIds = likeIds.slice(data.offset || 0, (data.offset || 0) + (data.limit || 10));
 
-      // Paginate
-      if (data.limit) {
-        likers = likers.slice(data.offset || 0, (data.offset || 0) + (data.limit || 10));
-      }
+    // Fetch user details via gRPC for each
+    const likerPromises = paginatedIds.map(async (likeId: Types.ObjectId) => {
+      try {
+        const userResponse = await firstValueFrom(
+          this.userService.GetUserById({ id: likeId.toString() })
+        ) as any;
+        const user = userResponse.data || userResponse.user;  // Adjust based on UserService response
 
-      // Compute isFollowing for current user
-      const likerSummaries = await Promise.all(likers.map(async (liker: any) => {
         let isFollowing = false;
-        if (data.currentUserId) {
+        if (data.currentUserId && user) {
           const follow = await this.followModel.findOne({
             followerId: new Types.ObjectId(data.currentUserId),
-            followeeId: liker._id,
+            followeeId: new Types.ObjectId(user.id),
           });
           isFollowing = !!follow;
         }
+
         return {
-          id: liker._id.toString(),
-          name: liker.name,
-          username: liker.username || '',
-          profileImage: liker.profileImage,
+          id: user?.id || likeId.toString(),
+          name: user?.name || 'Unknown User',
+          username: user?.username || '',
+          profileImage: user?.profileImage || '',
           isFollowing,
         };
-      }));
+      } catch (fetchError) {
+        this.logger.warn(`Failed to fetch user ${likeId}: ${fetchError.message}`);
+        return {
+          id: likeId.toString(),
+          name: 'Unknown User',
+          username: '',
+          profileImage: '',
+          isFollowing: false,
+        };
+      }
+    });
 
-      return { success: true, likers: likerSummaries, total };
-    } catch (error) {
-      this.logger.error(`GetPostLikers error: ${error.message}`);
-      throw new BadRequestException('Failed to fetch likers');
-    }
+    const likerSummaries = await Promise.all(likerPromises);
+
+    return { success: true, likers: likerSummaries, total };
+  } catch (error: any) {
+    this.logger.error(`GetPostLikers error: ${error.message}`);
+    throw new BadRequestException('Failed to fetch likers');
   }
+}
 
   // New method: Get comments with details
-  async getPostComments(data: GetPostCommentsDto): Promise<GetPostCommentsResponseDto> {
-    try {
-      const comments = await this.commentModel
-        .find({ postId: new Types.ObjectId(data.postId) })
-        .populate('userId', 'name profileImage username')
-        .sort({ createdAt: -1 })
-        .limit(data.limit || 10)
-        .skip(data.offset || 0)
-        .exec() as any[];
+async getPostComments(data: GetPostCommentsDto): Promise<GetPostCommentsResponseDto> {
+  try {
+    const comments = await this.commentModel
+      .find({ postId: new Types.ObjectId(data.postId) })
+      .sort({ createdAt: -1 })
+      .limit(data.limit || 10)
+      .skip(data.offset || 0)
+      .exec() as any;  // No populate
 
-      const total = await this.commentModel.countDocuments({ postId: new Types.ObjectId(data.postId) });
+    const total = await this.commentModel.countDocuments({ postId: new Types.ObjectId(data.postId) });
 
-      const detailedComments = await Promise.all(comments.map(async (comment: any) => {
-        let isFollowing = false;
-        if (data.currentUserId) {
-          const follow = await this.followModel.findOne({
-            followerId: new Types.ObjectId(data.currentUserId),
-            followeeId: comment.userId._id,
-          });
-          isFollowing = !!follow;
-        }
-        return {
-          comment: {
-            id: comment._id.toString(),
-            postId: data.postId,
-            userId: comment.userId._id.toString(),
-            text: comment.text,
-            createdAt: comment.createdAt.toISOString(),
-          },
-          user: {
-            id: comment.userId._id.toString(),
-            name: comment.userId.name,
-            username: comment.userId.username || '',
-            profileImage: comment.userId.profileImage,
-            isFollowing: false,  // Placeholder; set above
-          },
-          isFollowing,
-        };
-      }));
+    const detailedComments = await Promise.all(comments.map(async (comment) => {
+      // Fetch user via gRPC
+      const userResponse = await firstValueFrom(
+        this.userService.GetUserById({ id: comment.userId.toString() })
+      ) as any;
+      const user = userResponse.data || userResponse.user;
 
-      return { success: true, comments: detailedComments, total };
-    } catch (error) {
-      this.logger.error(`GetPostComments error: ${error.message}`);
-      throw new BadRequestException('Failed to fetch comments');
-    }
+      let isFollowing = false;
+      if (data.currentUserId && user) {
+        const follow = await this.followModel.findOne({
+          followerId: new Types.ObjectId(data.currentUserId),
+          followeeId: new Types.ObjectId(user.id),
+        });
+        isFollowing = !!follow;
+      }
+
+      return {
+        comment: {
+          id: comment._id.toString(),
+          postId: data.postId,
+          userId: comment.userId.toString(),
+          text: comment.text,
+          createdAt: comment.createdAt,  // Keep as Date object for gRPC Timestamp serialization
+        },
+        user: {
+          id: user?.id || comment.userId.toString(),
+          name: user?.name || 'Unknown User',
+          username: user?.username || '',
+          profileImage: user?.profileImage || '',
+        },
+        isFollowing,
+      };
+    }));
+
+    return { success: true, comments: detailedComments, total } as any;
+  } catch (error: any) {
+    this.logger.error(`GetPostComments error: ${error.message}`);
+    throw new BadRequestException('Failed to fetch comments');
   }
+}
 
   async followUser(data: FollowUserDto): Promise<FollowUserResponseDto> {
     try {
