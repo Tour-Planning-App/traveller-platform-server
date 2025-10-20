@@ -348,12 +348,12 @@ export class CommunityServiceController {
   @ApiBadRequestResponse({ description: 'Invalid comment data' })
   @ApiNotFoundResponse({ description: 'Post not found' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error during comment addition' })
-  async commentPost(@Param('id') id: string, @Body() dto: Omit<CommentPostDto, 'postId'>, @Req() req: any) {
+  async commentPost(@Param('id') id: string, @Body() dto: CommentPostDto, @Req() req: any) {
     try {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };
 
-      const data: CommentPostDto = { ...dto, postId: id, userId: userId } as any;
+      const data: any = { ...dto, postId: id, userId: userId };
 
       const result = await firstValueFrom(
         this.communityService.CommentPost(data).pipe(

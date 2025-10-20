@@ -242,6 +242,7 @@ export class CommunityService {
         postId: new Types.ObjectId(data.postId),
         userId: new Types.ObjectId(data.userId),
         text: data.comment,
+        createdAt: new Date(),
       }) as any;
       await newComment.save();
 
@@ -257,7 +258,7 @@ export class CommunityService {
         postId: data.postId,
         userId: data.userId,
         text: data.comment,
-        createdAt: newComment.createdAt.toISOString(),
+        createdAt: newComment.createdAt,
       };
 
       // Emit Kafka event...
