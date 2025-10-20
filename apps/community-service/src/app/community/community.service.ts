@@ -185,7 +185,7 @@ export class CommunityService {
         }
       } else {
         console.log('Unliking the post');
-        if (existingLikeIndex !== -1) {
+        if (existingLikeIndex === -1) {
           post.likes.splice(existingLikeIndex, 1);
           post.likeCount -= 1;
         }
