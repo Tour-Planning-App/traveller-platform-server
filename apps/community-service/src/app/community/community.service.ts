@@ -5,6 +5,7 @@ import { Model } from 'mongoose';
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { Post } from './schemas/post.schema';
+import { Comment } from './schemas/comment.schema';
 import { Notification } from './schemas/notification.schema';
 import { Follow } from './schemas/follow.schema';
 import {
@@ -25,6 +26,10 @@ import {
   UpdateProfileDto, UpdateProfileResponseDto,
   SearchPostsDto, SearchPostsResponseDto,
   SearchUsersDto, SearchUsersResponseDto,
+  GetPostLikersDto,
+  GetPostLikersResponseDto,
+  GetPostCommentsDto,
+  GetPostCommentsResponseDto,
   // Import all other DTOs
 } from './dtos/post.dto'; // Assuming all in one file or import accordingly
 import { Types } from 'mongoose'; // Ensure this is imported at the top
@@ -37,6 +42,7 @@ export class CommunityService {
     @InjectModel(Post.name) private postModel: Model<Post>,
     @InjectModel(Notification.name) private notificationModel: Model<Notification>,
     @InjectModel(Follow.name) private followModel: Model<Follow>,
+    @InjectModel(Comment.name) private commentModel: Model<Comment>,
     @Inject('USER_PACKAGE') private userClient: ClientGrpcProxy,
   ) {
     this.userService = this.userClient.getService('UserService');
@@ -169,7 +175,7 @@ export class CommunityService {
       if (!post) {
         throw new NotFoundException('Post not found');
       }
-console.log('LikePost data:', data);
+      console.log('LikePost data:', data);
       const existingLikeIndex = post.likes.findIndex(l => l.userId === data.userId);
       if (data.like) {
         console.log('Liking the post');
@@ -197,6 +203,33 @@ console.log('LikePost data:', data);
     }
   }
 
+  // async commentPost(data: CommentPostDto): Promise<CommentPostResponseDto> {
+  //   try {
+  //     const post = await this.postModel.findById(data.postId);
+  //     if (!post) {
+  //       throw new NotFoundException('Post not found');
+  //     }
+
+  //     // Assuming a separate Comment model; for simplicity, add to post.comments array
+  //     const newComment = {
+  //       id: new Date().getTime().toString(), // Simple ID
+  //       userId: data.userId,
+  //       text: data.comment,
+  //       createdAt: new Date().toISOString(),
+  //     } as any;
+  //     post.comments.push(newComment);
+  //     await post.save();
+
+  //     // Emit Kafka event for comment notification
+  //     // this.kafkaClient.emit('post.commented', { postId: data.postId, userId: data.userId, commentId: newComment.id });
+
+  //     return { success: true, message: 'Comment added', comment: newComment };
+  //   } catch (error) {
+  //     this.logger.error(`CommentPost error: ${error.message}`);
+  //     throw new BadRequestException('Failed to add comment');
+  //   }
+  // }
+
   async commentPost(data: CommentPostDto): Promise<CommentPostResponseDto> {
     try {
       const post = await this.postModel.findById(data.postId);
@@ -204,23 +237,131 @@ console.log('LikePost data:', data);
         throw new NotFoundException('Post not found');
       }
 
-      // Assuming a separate Comment model; for simplicity, add to post.comments array
-      const newComment = {
-        id: new Date().getTime().toString(), // Simple ID
-        userId: data.userId,
+      // Create new Comment document
+      const newComment = new this.commentModel({
+        postId: new Types.ObjectId(data.postId),
+        userId: new Types.ObjectId(data.userId),
         text: data.comment,
-        createdAt: new Date().toISOString(),
-      } as any;
-      post.comments.push(newComment);
+      }) as any;
+      await newComment.save();
+
+      // Add ref to post
+      post.comments.push(newComment._id);
       await post.save();
 
-      // Emit Kafka event for comment notification
-      // this.kafkaClient.emit('post.commented', { postId: data.postId, userId: data.userId, commentId: newComment.id });
+      // Populate for response
+      await newComment.populate('userId', 'name profileImage username');
 
-      return { success: true, message: 'Comment added', comment: newComment };
+      const commentData = {
+        id: newComment._id.toString(),
+        postId: data.postId,
+        userId: data.userId,
+        text: data.comment,
+        createdAt: newComment.createdAt.toISOString(),
+      };
+
+      // Emit Kafka event...
+      // this.kafkaClient.emit('post.commented', { postId: data.postId, userId: data.userId, commentId: newComment._id });
+
+      return { success: true, message: 'Comment added', comment: commentData };
     } catch (error) {
       this.logger.error(`CommentPost error: ${error.message}`);
       throw new BadRequestException('Failed to add comment');
+    }
+  }
+
+  // New method: Get likers with details
+  async getPostLikers(data: GetPostLikersDto): Promise<GetPostLikersResponseDto> {
+    try {
+      const post = await this.postModel.findById(data.postId).populate({
+        path: 'likes',
+        select: 'name profileImage username',
+        model: 'User',  // Assuming User model
+      }).exec();
+
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+
+      let likers = post.likes as any[];  // Populated users
+      const total = likers.length;
+
+      // Paginate
+      if (data.limit) {
+        likers = likers.slice(data.offset || 0, (data.offset || 0) + (data.limit || 10));
+      }
+
+      // Compute isFollowing for current user
+      const likerSummaries = await Promise.all(likers.map(async (liker: any) => {
+        let isFollowing = false;
+        if (data.currentUserId) {
+          const follow = await this.followModel.findOne({
+            followerId: new Types.ObjectId(data.currentUserId),
+            followeeId: liker._id,
+          });
+          isFollowing = !!follow;
+        }
+        return {
+          id: liker._id.toString(),
+          name: liker.name,
+          username: liker.username || '',
+          profileImage: liker.profileImage,
+          isFollowing,
+        };
+      }));
+
+      return { success: true, likers: likerSummaries, total };
+    } catch (error) {
+      this.logger.error(`GetPostLikers error: ${error.message}`);
+      throw new BadRequestException('Failed to fetch likers');
+    }
+  }
+
+  // New method: Get comments with details
+  async getPostComments(data: GetPostCommentsDto): Promise<GetPostCommentsResponseDto> {
+    try {
+      const comments = await this.commentModel
+        .find({ postId: new Types.ObjectId(data.postId) })
+        .populate('userId', 'name profileImage username')
+        .sort({ createdAt: -1 })
+        .limit(data.limit || 10)
+        .skip(data.offset || 0)
+        .exec() as any[];
+
+      const total = await this.commentModel.countDocuments({ postId: new Types.ObjectId(data.postId) });
+
+      const detailedComments = await Promise.all(comments.map(async (comment: any) => {
+        let isFollowing = false;
+        if (data.currentUserId) {
+          const follow = await this.followModel.findOne({
+            followerId: new Types.ObjectId(data.currentUserId),
+            followeeId: comment.userId._id,
+          });
+          isFollowing = !!follow;
+        }
+        return {
+          comment: {
+            id: comment._id.toString(),
+            postId: data.postId,
+            userId: comment.userId._id.toString(),
+            text: comment.text,
+            createdAt: comment.createdAt.toISOString(),
+          },
+          user: {
+            id: comment.userId._id.toString(),
+            name: comment.userId.name,
+            username: comment.userId.username || '',
+            profileImage: comment.userId.profileImage,
+            isFollowing: false,  // Placeholder; set above
+          },
+          isFollowing,
+        };
+      }));
+
+      return { success: true, comments: detailedComments, total };
+    } catch (error) {
+      this.logger.error(`GetPostComments error: ${error.message}`);
+      throw new BadRequestException('Failed to fetch comments');
     }
   }
 

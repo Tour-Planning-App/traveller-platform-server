@@ -22,6 +22,10 @@ import {
   UpdateProfileDto, UpdateProfileResponseDto,
   SearchPostsDto, SearchPostsResponseDto,
   SearchUsersDto, SearchUsersResponseDto,
+  GetPostCommentsDto,
+  GetPostCommentsResponseDto,
+  GetPostLikersDto,
+  GetPostLikersResponseDto,
   // Import all DTOs
 } from './dtos/community.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -370,6 +374,88 @@ export class CommunityServiceController {
       return result;
     } catch (error: any) {
       this.logger.error(`CommentPost failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  @Get('posts/:id/likes')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+@ApiOperation({ summary: 'Get post likers with details (name, avatar, follow status)' })
+@ApiResponse({ status: 200, description: 'Likers fetched', type: GetPostLikersResponseDto })
+@ApiBadRequestResponse({ description: 'Invalid post ID' })
+@ApiNotFoundResponse({ description: 'Post not found' })
+async getPostLikers(
+  @Param('id') id: string,
+  @Query() query: Omit<GetPostLikersDto, 'postId'>,
+  @Req() req: any,
+) {
+  try {
+    const currentUserId = req?.user?.userId;
+    if (!currentUserId) return { success: false, message: 'User not authenticated' };
+
+    const data: GetPostLikersDto = { postId: id, currentUserId, ...query } as any;
+
+    const result = await firstValueFrom(
+      this.communityService.GetPostLikers(data).pipe(
+        catchError((error) => {
+          this.logger.error(`GetPostLikers error: ${error.message}`, error.stack);
+          if (error.code === 2 || error.code === 'INTERNAL') {
+            throw new HttpException('Internal server error during likers fetch', HttpStatus.INTERNAL_SERVER_ERROR);
+          } else if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
+            throw new HttpException('Invalid post ID', HttpStatus.BAD_REQUEST);
+          } else if (error.details && error.details.includes('Post not found')) {
+            throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
+          } else {
+            throw new HttpException('Likers fetch failed', HttpStatus.BAD_REQUEST);
+          }
+        })
+      )
+    );
+    return result;
+  } catch (error: any) {
+    this.logger.error(`GetPostLikers failed: ${error.message}`, error.stack);
+    throw error;
+  }
+}
+
+  @Get('posts/:id/comments')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get post comments with commenter details (name, avatar, follow status)' })
+  @ApiResponse({ status: 200, description: 'Comments fetched', type: GetPostCommentsResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid post ID' })
+  @ApiNotFoundResponse({ description: 'Post not found' })
+  async getPostComments(
+    @Param('id') id: string,
+    @Query() query: Omit<GetPostCommentsDto, 'postId'>,
+    @Req() req: any,
+  ) {
+    try {
+      const currentUserId = req?.user?.userId;
+      if (!currentUserId) return { success: false, message: 'User not authenticated' };
+
+      const data: GetPostCommentsDto = { postId: id, currentUserId, ...query } as any;
+
+      const result = await firstValueFrom(
+        this.communityService.GetPostComments(data).pipe(
+          catchError((error) => {
+            this.logger.error(`GetPostComments error: ${error.message}`, error.stack);
+            if (error.code === 2 || error.code === 'INTERNAL') {
+              throw new HttpException('Internal server error during comments fetch', HttpStatus.INTERNAL_SERVER_ERROR);
+            } else if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
+              throw new HttpException('Invalid post ID', HttpStatus.BAD_REQUEST);
+            } else if (error.details && error.details.includes('Post not found')) {
+              throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
+            } else {
+              throw new HttpException('Comments fetch failed', HttpStatus.BAD_REQUEST);
+            }
+          })
+        )
+      );
+      return result;
+    } catch (error: any) {
+      this.logger.error(`GetPostComments failed: ${error.message}`, error.stack);
       throw error;
     }
   }

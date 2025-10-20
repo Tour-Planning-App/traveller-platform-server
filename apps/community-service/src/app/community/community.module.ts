@@ -9,6 +9,7 @@ import { Follow, FollowSchema } from './schemas/follow.schema';
 import { join } from 'path';
 import { MediaService } from './media.service'; // New import
 import { MulterModule } from '@nestjs/platform-express'; // For file uploads
+import { Comment, CommentSchema } from './schemas/comment.schema';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { MulterModule } from '@nestjs/platform-express'; // For file uploads
       { name: Post.name, schema: PostSchema },
       { name: Notification.name, schema: NotificationSchema },
       { name: Follow.name, schema: FollowSchema },
+      { name: Comment.name, schema: CommentSchema }, // New Comment schema
     ]),
     ClientsModule.register([
       {

@@ -32,6 +32,10 @@ service CommunityService {
   rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
 
   rpc UploadMedia(UploadMediaRequest) returns (UploadMediaResponse);
+
+  rpc GetPostLikers(GetPostLikersRequest) returns (GetPostLikersResponse);
+  rpc GetPostComments(GetPostCommentsRequest) returns (GetPostCommentsResponse);
+
 }
 message UploadMediaRequest {
   string userId = 1;
@@ -257,9 +261,41 @@ message Like {
 
 message Comment {
   string id = 1;
-  string userId = 2;
-  string text = 3;
-  google.protobuf.Timestamp createdAt = 4;
+  string postId = 2;  // Added for quick queries
+  string userId = 3;
+  string text = 4;
+  google.protobuf.Timestamp createdAt = 5;
+}
+message DetailedComment {
+  Comment comment = 1;
+  UserSummary user = 2;
+  bool isFollowing = 3;
+}
+
+message GetPostLikersRequest {
+  string postId = 1;
+  string currentUserId = 2;  // Optional, for isFollowing
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message GetPostLikersResponse {
+  bool success = 1;
+  repeated UserSummary likers = 2;
+  int32 total = 3;
+}
+
+message GetPostCommentsRequest {
+  string postId = 1;
+  string currentUserId = 2;  // Optional, for isFollowing
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message GetPostCommentsResponse {
+  bool success = 1;
+  repeated DetailedComment comments = 2;
+  int32 total = 3;
 }
 
 message UserSummary {

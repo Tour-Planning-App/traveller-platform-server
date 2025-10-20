@@ -19,6 +19,10 @@ import {
   UpdateProfileDto, UpdateProfileResponseDto,
   SearchPostsDto, SearchPostsResponseDto,
   SearchUsersDto, SearchUsersResponseDto,
+  GetPostLikersDto,
+  GetPostLikersResponseDto,
+  GetPostCommentsDto,
+  GetPostCommentsResponseDto,
   // Import all other DTOs
 } from './dtos/post.dto';
 import { GrpcMethod, Payload, RpcException } from '@nestjs/microservices';
@@ -355,4 +359,43 @@ export class CommunityController {
       });
     }
   }
+
+
+  @GrpcMethod('CommunityService', 'GetPostLikers')
+async getPostLikers(@Payload() data: GetPostLikersDto): Promise<GetPostLikersResponseDto> {
+  try {
+    const result = await this.communityService.getPostLikers(data);
+    return {
+      success: result.success,
+      likers: result.likers,
+      total: result.total,
+    };
+  } catch (error: any) {
+    this.logger.error(`gRPC GetPostLikers error: ${error.message}`, error.stack);
+    throw new RpcException({
+      code: error instanceof BadRequestException ? 3 : 2,
+      message: error.message,
+    });
+  }
+}
+
+@GrpcMethod('CommunityService', 'GetPostComments')
+async getPostComments(@Payload() data: GetPostCommentsDto): Promise<GetPostCommentsResponseDto> {
+  try {
+    const result = await this.communityService.getPostComments(data);
+    return {
+      success: result.success,
+      comments: result.comments,
+      total: result.total,
+    };
+  } catch (error: any) {
+    this.logger.error(`gRPC GetPostComments error: ${error.message}`, error.stack);
+    throw new RpcException({
+      code: error instanceof BadRequestException ? 3 : 2,
+      message: error.message,
+    });
+  }
+}
+
+  
 }

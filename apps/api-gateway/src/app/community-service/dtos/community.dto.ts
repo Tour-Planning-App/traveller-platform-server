@@ -13,10 +13,38 @@ export class LikeDto {
   createdAt: string;
 }
 
+export class UserSummaryDto {
+  @ApiProperty({ example: 'user123' })
+  @IsString()
+  id: string;
+
+  @ApiProperty({ example: 'Jacob Black' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ example: '@jacobblack' })
+  @IsString()
+  @IsOptional()
+  username?: string;
+
+  @ApiProperty({ example: 'https://example.com/profile.jpg' })
+  @IsString()
+  @IsOptional()
+  profileImage?: string;
+
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  isFollowing: boolean;
+}
+
 export class CommentDto {
   @ApiProperty({ example: 'comment123' })
   @IsString()
   id: string;
+
+  @ApiProperty({ example: 'post123' })
+  @IsString()
+  postId: string;
 
   @ApiProperty({ example: 'user123' })
   @IsString()
@@ -30,6 +58,97 @@ export class CommentDto {
   @ApiProperty({ example: '2023-10-01T00:00:00Z' })
   @IsString()
   createdAt: string;
+}
+
+export class DetailedCommentDto {
+  @ApiProperty({ type: CommentDto })
+  @ValidateNested()
+  @Type(() => CommentDto)
+  comment: CommentDto;
+
+  @ApiProperty({ type: UserSummaryDto })
+  @ValidateNested()
+  @Type(() => UserSummaryDto)
+  user: UserSummaryDto;
+
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  @IsOptional()
+  isFollowing?: boolean;
+}
+
+export class GetPostCommentsDto {
+  @ApiProperty({ example: 'post123' })
+  @IsString()
+  postId: string;
+
+  @ApiProperty({ example: 'user123' }) // Current user for isFollowing
+  @IsString()
+  @IsOptional()
+  currentUserId?: string;
+
+  @ApiProperty({ example: 10 })
+  @IsNumber()
+  @IsOptional()
+  limit?: number;
+
+  @ApiProperty({ example: 0 })
+  @IsNumber()
+  @IsOptional()
+  offset?: number;
+}
+
+export class GetPostCommentsResponseDto {
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  success: boolean;
+
+  @ApiProperty({ type: [DetailedCommentDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DetailedCommentDto)
+  comments: DetailedCommentDto[];
+
+  @ApiProperty({ example: 5 })
+  @IsNumber()
+  total: number;
+}
+
+export class GetPostLikersDto {
+  @ApiProperty({ example: 'post123' })
+  @IsString()
+  postId: string;
+
+  @ApiProperty({ example: 'user123' }) // Current user for isFollowing
+  @IsString()
+  @IsOptional()
+  currentUserId?: string;
+
+  @ApiProperty({ example: 10 })
+  @IsNumber()
+  @IsOptional()
+  limit?: number;
+
+  @ApiProperty({ example: 0 })
+  @IsNumber()
+  @IsOptional()
+  offset?: number;
+}
+
+export class GetPostLikersResponseDto {
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  success: boolean;
+
+  @ApiProperty({ type: [UserSummaryDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UserSummaryDto)
+  likers: UserSummaryDto[];
+
+  @ApiProperty({ example: 150 })
+  @IsNumber()
+  total: number;
 }
 
 export class PostDto {
@@ -84,9 +203,9 @@ export class PostDto {
 }
 
 export class CreatePostDto {
-  // @ApiProperty({ example: 'user123' })
-  // @IsString()
-  // userId: string;
+  @ApiProperty({ example: 'user123' })
+  @IsString()
+  userId: string;
 
   @ApiProperty({ example: 'Amazing trip to Sri Lanka!' })
   @IsString()
@@ -120,10 +239,10 @@ export class CreatePostResponseDto {
 }
 
 export class GetPostsDto {
-  // @ApiProperty({ example: 'user123', required: false })
-  // @IsString()
-  // @IsOptional()
-  // userId?: string;
+  @ApiProperty({ example: 'user123', required: false })
+  @IsString()
+  @IsOptional()
+  userId?: string;
 
   @ApiProperty({ example: 'popular', enum: ['popular', 'following'] })
   @IsString()
@@ -235,13 +354,13 @@ export class DeletePostResponseDto {
 }
 
 export class LikePostDto {
-  // @ApiProperty({ example: 'post123' })
-  // @IsString()
-  // postId: string;
+  @ApiProperty({ example: 'post123' })
+  @IsString()
+  postId: string;
 
-  // @ApiProperty({ example: 'user123' })
-  // @IsString()
-  // userId: string;
+  @ApiProperty({ example: 'user123' })
+  @IsString()
+  userId: string;
 
   @ApiProperty({ example: true })
   @IsBoolean()
@@ -292,29 +411,7 @@ export class CommentPostResponseDto {
   comment: CommentDto;
 }
 
-export class UserSummaryDto {
-  @ApiProperty({ example: 'user123' })
-  @IsString()
-  id: string;
 
-  @ApiProperty({ example: 'Jacob Black' })
-  @IsString()
-  name: string;
-
-  @ApiProperty({ example: '@jacobblack' })
-  @IsString()
-  @IsOptional()
-  username?: string;
-
-  @ApiProperty({ example: 'https://example.com/profile.jpg' })
-  @IsString()
-  @IsOptional()
-  profileImage?: string;
-
-  @ApiProperty({ example: true })
-  @IsBoolean()
-  isFollowing: boolean;
-}
 
 export class NotificationDto {
   @ApiProperty({ example: 'notif123' })
@@ -656,5 +753,7 @@ export class SearchUsersResponseDto {
   @IsNumber()
   total: number;
 }
+
+
 
 // ... (continue for all other DTOs: FollowUserDto, etc.)
