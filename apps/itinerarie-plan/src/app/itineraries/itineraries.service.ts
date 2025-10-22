@@ -251,7 +251,7 @@ export class ItinerariesService {
   async getUserTrips(userId: string): Promise<Trip[]> {
     try {
       // Validation
-      if (!isValidObjectId(userId)) {
+      if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
 
@@ -270,7 +270,7 @@ export class ItinerariesService {
       if (!isValidObjectId(id)) {
         throw new BadRequestException('Invalid trip ID');
       }
-      if (!isValidObjectId(userId)) {
+      if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
 
@@ -292,7 +292,7 @@ export class ItinerariesService {
       if (!isValidObjectId(tripId)) {
         throw new BadRequestException('Invalid trip ID');
       }
-      if (!isValidObjectId(userId)) {
+      if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
       if (!Number.isInteger(day) || day < 1) {
@@ -360,7 +360,7 @@ export class ItinerariesService {
       if (!isValidObjectId(activityId)) {
         throw new BadRequestException('Invalid activity ID');
       }
-      if (!isValidObjectId(userId)) {
+      if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
       if (!Number.isInteger(day) || day < 1) {
@@ -400,7 +400,7 @@ export class ItinerariesService {
       if (!isValidObjectId(tripId)) {
         throw new BadRequestException('Invalid trip ID');
       }
-      if (!isValidObjectId(userId)) {
+      if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
       if (!name || name.trim().length === 0) {
@@ -439,7 +439,7 @@ export class ItinerariesService {
       if (!isValidObjectId(itemId)) {
         throw new BadRequestException('Invalid item ID');
       }
-      if (!isValidObjectId(userId)) {
+      if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
 
@@ -469,7 +469,7 @@ export class ItinerariesService {
       if (!isValidObjectId(tripId)) {
         throw new BadRequestException('Invalid trip ID');
       }
-      if (!isValidObjectId(userId)) {
+      if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
 
@@ -496,7 +496,7 @@ export class ItinerariesService {
       if (!isValidObjectId(tripId)) {
         throw new BadRequestException('Invalid trip ID');
       }
-      if (!isValidObjectId(userId)) {
+      if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
       if (!Number.isInteger(day) || day < 1) {
@@ -533,7 +533,7 @@ export class ItinerariesService {
       if (!isValidObjectId(tripId)) {
         throw new BadRequestException('Invalid trip ID');
       }
-      if (!isValidObjectId(userId)) {
+      if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
       if (!Number.isInteger(day) || day < 1) {
@@ -576,7 +576,7 @@ export class ItinerariesService {
       if (!isValidObjectId(itemId)) {
         throw new BadRequestException('Invalid item ID');
       }
-      if (!isValidObjectId(userId)) {
+      if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
       if (!Number.isInteger(day) || day < 1) {
@@ -617,7 +617,7 @@ export class ItinerariesService {
       if (!isValidObjectId(tripId)) {
         throw new BadRequestException('Invalid trip ID');
       }
-      if (!isValidObjectId(userId)) {
+      if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
       if (!Number.isInteger(day) || day < 1) {
@@ -721,7 +721,7 @@ export class ItinerariesService {
     if (!isValidObjectId(itemId)) {
       throw new BadRequestException('Invalid item ID');
     }
-    if (!isValidObjectId(userId)) {
+    if (!userId || !isValidObjectId(userId)) {
       throw new BadRequestException('Invalid user ID');
     }
     if (!Number.isInteger(day) || day < 1) {
@@ -774,9 +774,9 @@ export class ItinerariesService {
     if (!isValidObjectId(activityId)) {
       throw new BadRequestException('Invalid activity ID');
     }
-    if (!isValidObjectId(userId)) {
-      throw new BadRequestException('Invalid user ID');
-    }
+      if (!userId || !isValidObjectId(userId)) {
+        throw new BadRequestException('Invalid user ID');
+      }
     if (!Number.isInteger(day) || day < 1) {
       throw new BadRequestException('Day must be a positive integer');
     }
@@ -821,9 +821,9 @@ export class ItinerariesService {
     if (!isValidObjectId(tripId)) {
       throw new BadRequestException('Invalid trip ID');
     }
-    if (!isValidObjectId(userId)) {
-      throw new BadRequestException('Invalid user ID');
-    }
+      if (!userId || !isValidObjectId(userId)) {
+        throw new BadRequestException('Invalid user ID');
+      }
     if (!query || query.trim().length === 0) {
       throw new BadRequestException('Query is required');
     }
