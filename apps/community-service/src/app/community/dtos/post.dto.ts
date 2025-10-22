@@ -1,4 +1,4 @@
-// dtos/post.dto.ts
+// dtos/post.dto.ts (updated with searchQuery and currentUserId in GetPostsDto, enhanced PostDto for public feed)
 import { IsString, IsOptional, IsArray, IsNumber, IsBoolean, IsNotEmpty, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -151,6 +151,7 @@ export class GetPostLikersResponseDto {
   total: number;
 }
 
+// Updated PostDto for feed: added user summary, commentsCount; likes and comments arrays optional for feed efficiency
 export class PostDto {
   @ApiProperty({ example: 'post123' })
   @IsString()
@@ -159,6 +160,12 @@ export class PostDto {
   @ApiProperty({ example: 'user123' })
   @IsString()
   userId: string;
+
+  @ApiProperty({ type: UserSummaryDto })
+  @ValidateNested()
+  @Type(() => UserSummaryDto)
+  @IsOptional()
+  user?: UserSummaryDto;
 
   @ApiProperty({ example: 'Amazing trip to Sri Lanka!' })
   @IsString()
@@ -178,6 +185,11 @@ export class PostDto {
   @ApiProperty({ example: 150 })
   @IsNumber()
   likeCount: number;
+
+  @ApiProperty({ example: 5 })
+  @IsNumber()
+  @IsOptional()
+  commentsCount?: number;
 
   @ApiProperty({ type: [LikeDto] })
   @IsArray()
@@ -263,6 +275,11 @@ export class GetPostsDto {
   @IsString()
   @IsOptional()
   searchQuery?: string;
+
+  @ApiProperty({ example: 'currentUser123', required: false })
+  @IsString()
+  @IsOptional()
+  currentUserId?: string; // For computing isFollowing
 }
 
 export class GetPostsResponseDto {
@@ -410,8 +427,6 @@ export class CommentPostResponseDto {
   @Type(() => CommentDto)
   comment: CommentDto;
 }
-
-
 
 export class NotificationDto {
   @ApiProperty({ example: 'notif123' })
@@ -753,7 +768,3 @@ export class SearchUsersResponseDto {
   @IsNumber()
   total: number;
 }
-
-
-
-// ... (continue for all other DTOs: FollowUserDto, etc.)

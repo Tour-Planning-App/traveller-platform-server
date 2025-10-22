@@ -68,6 +68,7 @@ message GetPostsRequest {
   int32 limit = 3;
   int32 offset = 4;
   string searchQuery = 5; // Optional search
+  string currentUserId = 6;
 }
 
 message GetPostsResponse {
@@ -252,6 +253,7 @@ message Post {
   repeated Comment comments = 8;
   google.protobuf.Timestamp createdAt = 9;
   google.protobuf.Timestamp updatedAt = 10;
+  UserSummary user = 11;
 }
 
 message Like {

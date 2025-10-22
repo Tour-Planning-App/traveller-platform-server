@@ -111,10 +111,11 @@ export class CommunityService {
   //   }
   // }
 
-  async getPosts(data: any): Promise<GetPostsResponseDto> {
+  async getPosts(data: any): Promise<any> {
     try {
       let query: any = {};
-      if (data.userId) query.userId = new Types.ObjectId(data.userId);
+      console.log(data)
+      // if (data.userId) query.userId = data.userId;
       if (data.feedType === 'following') {
         // Fetch following users via follow model and aggregate
         const following = await this.followModel.find({ followerId: new Types.ObjectId(data.userId) }).select('followeeId');
@@ -143,7 +144,7 @@ export class CommunityService {
         .select('-likes -comments') // Omit heavy fields for feed
         .lean() // Use lean for performance
         .exec();
-
+console.log(posts)
       const total = await this.postModel.countDocuments(query);
 
       // Fetch unique user details via gRPC
@@ -161,6 +162,7 @@ export class CommunityService {
             name: user.name || 'Unknown User',
             username: user.username || '',
             profileImage: user.profileImage || '',
+            isFollowing : user.isFollowing
           });
         }
       });
@@ -192,7 +194,7 @@ export class CommunityService {
           isFollowing: false,
         },
       }));
-
+console.log(enhancedPosts)
       // Add isFollowing if currentUserId provided
       if (data.currentUserId) {
         const followeeIds = uniqueUserIds.map(id => new Types.ObjectId(id));

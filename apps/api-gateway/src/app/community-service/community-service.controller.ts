@@ -153,6 +153,47 @@ export class CommunityServiceController {
     }
   }
 
+  @Get('public/posts')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get public community post feed (latest first, searchable)' })
+  @ApiResponse({ status: 200, description: 'Public posts fetched successfully', type: GetPostsResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error during public posts fetch' })
+  async getPublicPosts(@Query() query: any, @Req() req: any) {
+    try {
+      const userId = req?.user?.userId;
+      const data: any = {
+        userId: userId, // No specific user
+        feedType: undefined, // Default to latest (createdAt desc)
+        limit: query.limit ? parseInt(query.limit, 10) : 10,
+        offset: query.offset ? parseInt(query.offset, 10) : 0,
+        searchQuery: query.q || query.search || '', // Support ?q= or ?search=
+        currentUserId: userId, // Public: no current user, isFollowing=false
+      };
+
+      const result = await firstValueFrom(
+        this.communityService.GetPosts(data).pipe(
+          catchError((error: any) => {
+            this.logger.error(`GetPublicPosts error: ${error.message}`, error.stack);
+            if (error.code === 2 || error.code === 'INTERNAL') {
+              throw new HttpException('Internal server error during public posts fetch', HttpStatus.INTERNAL_SERVER_ERROR);
+            } else if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
+              throw new HttpException('Invalid query parameters', HttpStatus.BAD_REQUEST);
+            } else {
+              throw new HttpException('Public posts fetch failed', HttpStatus.BAD_REQUEST);
+            }
+          })
+        )
+      );
+      return result;
+    } catch (error: any) {
+      this.logger.error(`GetPublicPosts failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+
   @Get('posts')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
