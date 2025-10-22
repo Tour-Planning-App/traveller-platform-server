@@ -91,6 +91,7 @@ message UpdateTripRequest {
   string name = 2;
   repeated string dates = 3; // For edit dates
   double budget = 4; // For edit budget
+  string userId = 5;
 }
 
 message UpdateTripResponse {
