@@ -76,18 +76,59 @@ export class CommunityService {
     }
   }
 
-  async getPosts(data: GetPostsDto): Promise<GetPostsResponseDto> {
+  // async getPosts(data: GetPostsDto): Promise<GetPostsResponseDto> {
+  //   try {
+  //     let query: any = {};
+  //     if (data.userId) query.userId = data.userId;
+  //     if (data.feedType === 'following') {
+  //       // Fetch following users via follow model and aggregate
+  //       const following = await this.followModel.find({ followerId: data.userId }).select('followeeId');
+  //       const followeeIds = following.map(f => f.followeeId);
+  //       if (followeeIds.length === 0) {
+  //         return { success: true, posts: [], total: 0 };
+  //       }
+  //       query.userId = { $in: followeeIds };
+  //     }
+  //     // For popular, sort by likeCount descending, then createdAt
+  //     const sortQuery = data.feedType === 'popular' 
+  //       ? { likeCount: -1, createdAt: -1 } 
+  //       : { createdAt: -1 } as any;
+
+  //     const posts = await this.postModel
+  //       .find(query)
+  //       .sort(sortQuery)
+  //       .limit(data.limit || 10)
+  //       .skip(data.offset || 0)
+  //       .populate('userId', 'name profileImage') // Assuming ref to user in schema
+  //       .exec();
+
+  //     const total = await this.postModel.countDocuments(query);
+
+  //     return { success: true, posts, total } as any;
+  //   } catch (error) {
+  //     this.logger.error(`GetPosts error: ${error.message}`);
+  //     throw new BadRequestException('Failed to fetch posts');
+  //   }
+  // }
+
+  async getPosts(data: any): Promise<GetPostsResponseDto> {
     try {
       let query: any = {};
-      if (data.userId) query.userId = data.userId;
+      if (data.userId) query.userId = new Types.ObjectId(data.userId);
       if (data.feedType === 'following') {
         // Fetch following users via follow model and aggregate
-        const following = await this.followModel.find({ followerId: data.userId }).select('followeeId');
-        const followeeIds = following.map(f => f.followeeId);
+        const following = await this.followModel.find({ followerId: new Types.ObjectId(data.userId) }).select('followeeId');
+        const followeeIds = following.map(f => new Types.ObjectId(f.followeeId));
         if (followeeIds.length === 0) {
           return { success: true, posts: [], total: 0 };
         }
         query.userId = { $in: followeeIds };
+      }
+      if (data.searchQuery) {
+        query.$or = [
+          { caption: { $regex: data.searchQuery, $options: 'i' } },
+          { tags: { $elemMatch: { $regex: data.searchQuery, $options: 'i' } } },
+        ];
       }
       // For popular, sort by likeCount descending, then createdAt
       const sortQuery = data.feedType === 'popular' 
@@ -99,12 +140,86 @@ export class CommunityService {
         .sort(sortQuery)
         .limit(data.limit || 10)
         .skip(data.offset || 0)
-        .populate('userId', 'name profileImage') // Assuming ref to user in schema
+        .select('-likes -comments') // Omit heavy fields for feed
+        .lean() // Use lean for performance
         .exec();
 
       const total = await this.postModel.countDocuments(query);
 
-      return { success: true, posts, total } as any;
+      // Fetch unique user details via gRPC
+      const uniqueUserIds = [...new Set(posts.map((p: any) => p.userId))];
+      const userPromises = uniqueUserIds.map((id: string) => 
+        firstValueFrom(this.userService.GetUserById({ id })).catch(() => null)
+      );
+      const userResponses = await Promise.all(userPromises);
+      const usersMap = new Map<string, any>();
+      userResponses.forEach((resp: any, index: number) => {
+        if (resp && (resp.data || resp.user)) {
+          const user = resp.data || resp.user;
+          usersMap.set(uniqueUserIds[index], {
+            id: user.id || user._id?.toString() || uniqueUserIds[index],
+            name: user.name || 'Unknown User',
+            username: user.username || '',
+            profileImage: user.profileImage || '',
+          });
+        }
+      });
+
+      // Fetch comments counts
+      const postIds = posts.map((p: any) => new Types.ObjectId(p._id));
+      const commentsCountsAgg = await this.commentModel.aggregate([
+        { $match: { postId: { $in: postIds } } },
+        { $group: { _id: '$postId', count: { $sum: 1 } } },
+      ]).exec();
+      const countsMap = new Map(commentsCountsAgg.map((c: any) => [c._id.toString(), c.count]));
+
+      // Enhance posts
+      let enhancedPosts: any[] = posts.map((post: any) => ({
+        id: post._id.toString(),
+        userId: post.userId,
+        caption: post.caption,
+        imageUrl: post.imageUrl,
+        tags: post.tags,
+        likeCount: post.likeCount,
+        commentsCount: countsMap.get(post._id.toString()) || 0,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt,
+        user: usersMap.get(post.userId) || {
+          id: post.userId,
+          name: 'Unknown User',
+          username: '',
+          profileImage: '',
+          isFollowing: false,
+        },
+      }));
+
+      // Add isFollowing if currentUserId provided
+      if (data.currentUserId) {
+        const followeeIds = uniqueUserIds.map(id => new Types.ObjectId(id));
+        const follows = await this.followModel.find({
+          followerId: new Types.ObjectId(data.currentUserId),
+          followeeId: { $in: followeeIds },
+        }).select('followeeId').exec();
+        const followedSet = new Set(follows.map((f: any) => f.followeeId.toString()));
+        enhancedPosts = enhancedPosts.map((post: any) => ({
+          ...post,
+          user: {
+            ...post.user,
+            isFollowing: followedSet.has(post.user.id),
+          },
+        }));
+      } else {
+        // Public: isFollowing false
+        enhancedPosts = enhancedPosts.map((post: any) => ({
+          ...post,
+          user: {
+            ...post.user,
+            isFollowing: false,
+          },
+        }));
+      }
+
+      return { success: true, posts: enhancedPosts, total } as any;
     } catch (error) {
       this.logger.error(`GetPosts error: ${error.message}`);
       throw new BadRequestException('Failed to fetch posts');
@@ -175,8 +290,13 @@ export class CommunityService {
       if (!post) {
         throw new NotFoundException('Post not found');
       }
+      const userIdObj = new Types.ObjectId(data.userId);
+      console.log('UserId ObjectId:', userIdObj);
+      console.log('Post Likes before operation:', post.likes);
+      const existingLikeIndex = post.likes.findIndex(l => l.equals(userIdObj));
       console.log('LikePost data:', data);
-      const existingLikeIndex = post.likes.findIndex(l => l.userId === data.userId);
+      console.log('Existing likes before operation:', post.likes , existingLikeIndex);
+      //const existingLikeIndex = post.likes.findIndex(l => l.userId === data.userId);
       if (data.like) {
         console.log('Liking the post');
         if (existingLikeIndex === -1) {
@@ -185,7 +305,7 @@ export class CommunityService {
         }
       } else {
         console.log('Unliking the post');
-        if (existingLikeIndex === -1) {
+        if (existingLikeIndex !== -1) {
           post.likes.splice(existingLikeIndex, 1);
           post.likeCount -= 1;
         }
