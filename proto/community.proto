@@ -249,11 +249,12 @@ message Post {
   string imageUrl = 4;
   repeated string tags = 5;
   int32 likeCount = 6;
-  repeated Like likes = 7;
-  repeated Comment comments = 8;
-  google.protobuf.Timestamp createdAt = 9;
-  google.protobuf.Timestamp updatedAt = 10;
-  UserSummary user = 11;
+  int32 commentsCount = 7;
+  repeated Like likes = 8;
+  repeated Comment comments = 9;
+  google.protobuf.Timestamp createdAt = 10;
+  google.protobuf.Timestamp updatedAt = 11;
+  UserSummary user = 12;
 }
 
 message Like {
