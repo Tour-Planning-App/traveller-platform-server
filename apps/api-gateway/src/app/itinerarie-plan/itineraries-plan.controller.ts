@@ -51,7 +51,7 @@ export class ItinerariesPlanController {
   @Post('ai') // Route for "Plan it for me"
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
   @Roles(Role.TRAVELER)
-  @SubscriptionCheck(1) // Requires Basic plan or higher
+  @SubscriptionCheck(0) // Requires Basic plan or higher
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new AI-generated trip plan' })
   @ApiResponse({ status: 201, description: 'AI Trip created', type: CreateTripDto }) // Assume Trip type imported
@@ -177,7 +177,7 @@ export class ItinerariesPlanController {
   @Post(':id/itinerary/:day')
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
   @Roles(Role.TRAVELER)
-  @SubscriptionCheck(1) // Basic+ for adding itinerary
+  @SubscriptionCheck(0) // Basic+ for adding itinerary
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add item to itinerary day' })
   async addItineraryItem(@Param('id') tripId: string, @Param('day') day: number, @Body() dto: AddItineraryItemDto, @Req() req: any) {
@@ -269,7 +269,7 @@ export class ItinerariesPlanController {
   @Post(':id/share')
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
   @Roles(Role.TRAVELER)
-  @SubscriptionCheck(1) // Basic+ for sharing
+  @SubscriptionCheck(0) // Basic+ for sharing
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Share trip' })
   async shareTrip(@Param('id') tripId: string, @Req() req: any) {
