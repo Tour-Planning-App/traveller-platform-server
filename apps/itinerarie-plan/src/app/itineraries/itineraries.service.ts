@@ -202,7 +202,7 @@ export class ItinerariesService {
       if (!isValidObjectId(id)) {
         throw new BadRequestException('Invalid trip ID');
       }
-      if (!isValidObjectId(userId)) {
+      if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
       if (updateDto.dates && (!updateDto.dates || updateDto.dates.length === 0)) {
