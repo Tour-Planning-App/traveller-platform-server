@@ -39,7 +39,7 @@ message Activity {
   string location = 6; // e.g., 'Colombo, Sri Lanka'
   google.protobuf.Timestamp time = 7; // Start time
   repeated Note notes = 8;
-  repeated ChecklistItem checklist = 9;
+  repeated Checklist checklists = 9;
 }
 
 message BucketItem {
@@ -49,18 +49,20 @@ message BucketItem {
   bool confirmed = 4; // Added to itinerary or not
 }
 
-// message NoteList {
-//   string content = 1;
-//   string createdAt = 2;
-// }
+message NoteList {
+  repeated Note notes = 1;
+}
 
 message Note {
-  string content = 1;
-  string createdAt = 2;
+  string title = 1;
+  string content = 2;
+  google.protobuf.Timestamp createdAt = 3;
 }
 
 message Checklist {
-  repeated ChecklistItem items = 1;
+  string id = 1;
+  string title = 2;
+  repeated ChecklistItem items = 3;
 }
 
 message ChecklistItem {
@@ -189,9 +191,10 @@ message ShareTripResponse {
 
 message AddNoteRequest {
   string tripId = 1;
-  string userId =2;
-  string activityId = 3; // Changed from day
-  string content = 4;
+  string userId = 2;
+  string activityId = 3;
+  string title = 4;
+  string content = 5;
 }
 
 message AddNoteResponse {
@@ -202,9 +205,10 @@ message AddNoteResponse {
 
 message AddChecklistItemRequest {
   string tripId = 1;
-  string userId =2;
+  string userId = 2;
   string activityId = 3;
-  string text = 4;
+  string title = 4;
+  string text = 5;
 }
 
 message AddChecklistItemResponse {
@@ -215,10 +219,11 @@ message AddChecklistItemResponse {
 
 message UpdateChecklistItemRequest {
   string tripId = 1;
-  string userId =2;
+  string userId = 2;
   string activityId = 3;
-  string itemId = 4;
-  bool completed = 5;
+  string checklistTitle = 4; // To identify which checklist
+  string itemId = 5;
+  bool completed = 6;
 }
 
 message UpdateChecklistItemResponse {

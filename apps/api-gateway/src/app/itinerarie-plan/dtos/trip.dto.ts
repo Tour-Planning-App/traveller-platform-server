@@ -1,4 +1,4 @@
-import { IsString, IsArray, IsNumber, IsPositive, IsOptional, IsInt, Min } from 'class-validator';
+import { IsString, IsArray, IsNumber, IsPositive, IsOptional, IsInt, Min, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateTripDto {
@@ -59,6 +59,61 @@ export class AddItineraryItemDto {
     notes?: [],
     checklist?: []
   };
+}
+
+export class AddNoteDto {
+  @ApiProperty({ example: 'Preparation Note' })
+  @IsString()
+  title: string;
+
+  @ApiProperty({ example: 'Pack sunscreen and hat for this activity' })
+  @IsString()
+  content: string;
+}
+
+export class AddNoteResponseDto {
+  @ApiProperty({ example: true })
+  success: boolean;
+
+  @ApiProperty({ example: 'Note added' })
+  message: string;
+
+  @ApiProperty()
+  note: { title: string; content: string; createdAt: string };
+}
+export class AddChecklistItemDto {
+  @ApiProperty({ example: 'Preparation Checklist' })
+  @IsString()
+  title: string;
+
+  @ApiProperty({ example: 'Book surf lesson for this activity' })
+  @IsString()
+  text: string;
+}
+
+export class AddChecklistItemResponseDto {
+  @ApiProperty({ example: true })
+  success: boolean;
+
+  @ApiProperty({ example: 'Checklist item added' })
+  message: string;
+
+  @ApiProperty()
+  checklist: { id: string; title: string; items: { id: string; text: string; completed: boolean }[] };
+}
+
+export class UpdateChecklistItemDto {
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  completed: boolean;
+}
+
+export class UpdateChecklistItemResponseDto {
+  @ApiProperty({ example: true })
+  success: boolean;
+
+  @ApiProperty({ example: 'Checklist item updated' })
+  message: string;
 }
 
 export class CreateAITripDto {

@@ -246,7 +246,7 @@ async createAITrip(userId: string, createDto: CreateAITripDto): Promise<Trip> {
               rating: Math.floor(Math.random() * 5) + 1, // AI could provide, but mock
               location: actData.location || '',
               time: actData.time, // string, converted later
-              checklist: undefined,
+              checklists: undefined,
               notes: undefined
             }
           };
@@ -309,6 +309,7 @@ async createAITrip(userId: string, createDto: CreateAITripDto): Promise<Trip> {
         throw new NotFoundException('Trip not found');
       }
       console.log(trip)
+
       return trip;
     } catch (error: any) {
       if (error instanceof BadRequestException || error instanceof NotFoundException) {
@@ -356,7 +357,7 @@ async createAITrip(userId: string, createDto: CreateAITripDto): Promise<Trip> {
     }
   }
 
-async addItineraryItem(tripId: string, day: number, activityDto: AddItineraryItemDto, userId: string): Promise<any> {
+  async addItineraryItem(tripId: string, day: number, activityDto: AddItineraryItemDto, userId: string): Promise<any> {
     try {
       // Validation
       if (!isValidObjectId(tripId)) {
@@ -398,9 +399,9 @@ async addItineraryItem(tripId: string, day: number, activityDto: AddItineraryIte
       const activityData = activityDto.activity;
       activityData.photoUrl = activityData.photoUrl || '';
       activityData.placeId = activityData.placeId || '';
-      // Notes and checklist start empty in new Activity
+      // Notes and checklists start empty in new Activity
       activityData.notes = [];
-      activityData.checklist = [];
+      activityData.checklists = [];
       const activity = new this.activityModel(activityData);
       await activity.save();
 
@@ -563,8 +564,7 @@ async addItineraryItem(tripId: string, day: number, activityDto: AddItineraryIte
     }
   }
 
-// Updated addNote - now adds to a specific activity's notes (endpoint change required: /trips/:tripId/activities/:activityId/notes)
-  async addNote(tripId: string, activityId: string, content: string, userId: string): Promise<{ content: string; createdAt: Date }> {
+  async addNote(tripId: string, activityId: string, title: string, content: string, userId: string): Promise<{ title: string; content: string; createdAt: Date }> {
     try {
       // Validation
       if (!isValidObjectId(tripId)) {
@@ -576,8 +576,8 @@ async addItineraryItem(tripId: string, day: number, activityDto: AddItineraryIte
       if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
-      if (!content || content.trim().length === 0) {
-        throw new BadRequestException('Note content is required');
+      if (!title || !content || title.trim().length === 0 || content.trim().length === 0) {
+        throw new BadRequestException('Note title and content are required');
       }
 
       const trip = await this.tripModel.findOne({ _id: tripId, userId }).populate('itinerary.activities');
@@ -596,6 +596,7 @@ async addItineraryItem(tripId: string, day: number, activityDto: AddItineraryIte
       }
 
       const newNote = { 
+        title: title.trim(), 
         content: content.trim(), 
         createdAt: new Date() 
       };
@@ -611,8 +612,7 @@ async addItineraryItem(tripId: string, day: number, activityDto: AddItineraryIte
     }
   }
 
-// Updated addChecklistItem - now adds to a specific activity's checklist (endpoint change required: /trips/:tripId/activities/:activityId/checklist)
-  async addChecklistItem(tripId: string, activityId: string, text: string, userId: string): Promise<{ id: Types.ObjectId; text: string; completed: boolean }[]> {
+  async addChecklistItem(tripId: string, activityId: string, checklistTitle: string, text: string, userId: string): Promise<{ id: Types.ObjectId; title: string; items: { id: Types.ObjectId; text: string; completed: boolean }[] }> {
     try {
       // Validation
       if (!isValidObjectId(tripId)) {
@@ -624,8 +624,8 @@ async addItineraryItem(tripId: string, day: number, activityDto: AddItineraryIte
       if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
-      if (!text || text.trim().length === 0) {
-        throw new BadRequestException('Checklist item text is required');
+      if (!checklistTitle || !text || checklistTitle.trim().length === 0 || text.trim().length === 0) {
+        throw new BadRequestException('Checklist title and item text are required');
       }
 
       const trip = await this.tripModel.findOne({ _id: tripId, userId }).populate('itinerary.activities');
@@ -643,14 +643,31 @@ async addItineraryItem(tripId: string, day: number, activityDto: AddItineraryIte
         throw new NotFoundException('Activity not found');
       }
 
-      const newItem = { 
-        text: text.trim(), 
-        completed: false 
-      };
-      activity.checklist.push(newItem);
+      // Check if checklist with this title already exists
+      let existingChecklist = activity.checklists.find((cl: any) => cl.title === checklistTitle.trim());
+      if (existingChecklist) {
+        // Add to existing checklist
+        const newItem = { 
+          text: text.trim(), 
+          completed: false 
+        };
+        existingChecklist.items.push(newItem);
+      } else {
+        // Create new checklist
+        const newChecklist = { 
+          title: checklistTitle.trim(),
+          items: [{ 
+            text: text.trim(), 
+            completed: false 
+          }]
+        };
+        activity.checklists.push(newChecklist);
+      }
       await activity.save();
       await trip.save(); // Save trip to update references if needed
-      return activity.checklist;
+      // Return the updated checklist
+      const updatedChecklist = activity.checklists.find((cl: any) => cl.title === checklistTitle.trim());
+      return updatedChecklist;
     } catch (error: any) {
       if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;
@@ -659,8 +676,7 @@ async addItineraryItem(tripId: string, day: number, activityDto: AddItineraryIte
     }
   }
 
-// Updated updateChecklistItem - now updates a specific item's checklist in an activity (endpoint change required: /trips/:tripId/activities/:activityId/checklist/:itemId)
-  async updateChecklistItem(tripId: string, activityId: string, itemId: string, completed: boolean, userId: string): Promise<void> {
+  async updateChecklistItem(tripId: string, activityId: string, checklistTitle: string, itemId: string, completed: boolean, userId: string): Promise<void> {
     try {
       // Validation
       if (!isValidObjectId(tripId)) {
@@ -678,6 +694,9 @@ async addItineraryItem(tripId: string, day: number, activityDto: AddItineraryIte
       if (typeof completed !== 'boolean') {
         throw new BadRequestException('Completed must be a boolean');
       }
+      if (!checklistTitle || checklistTitle.trim().length === 0) {
+        throw new BadRequestException('Checklist title is required');
+      }
 
       const trip = await this.tripModel.findOne({ _id: tripId, userId }).populate('itinerary.activities');
       if (!trip) {
@@ -694,7 +713,12 @@ async addItineraryItem(tripId: string, day: number, activityDto: AddItineraryIte
         throw new BadRequestException('Activity not found');
       }
 
-      const item = activity.checklist?.find(i => i._id?.toString() === itemId);
+      const checklist = activity.checklists?.find(cl => cl.title === checklistTitle.trim());
+      if (!checklist) {
+        throw new BadRequestException('Checklist not found');
+      }
+
+      const item = checklist.items?.find(i => i._id?.toString() === itemId);
       if (!item) {
         throw new BadRequestException('Checklist item not found');
       }

@@ -10,7 +10,7 @@ import { Role } from '../auth/decorators/role.enum';
 import { Logger } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
 import { HttpException } from '@nestjs/common';
-import { AddItineraryItemDto, CreateAITripDto, CreateTripDto, UpdateTripDto, SearchLocationsDto } from './dtos/trip.dto';
+import { AddItineraryItemDto, CreateAITripDto, CreateTripDto, UpdateTripDto, SearchLocationsDto, AddNoteResponseDto, AddNoteDto, AddChecklistItemResponseDto, AddChecklistItemDto, UpdateChecklistItemResponseDto, UpdateChecklistItemDto } from './dtos/trip.dto';
 import { LocationSuggestionDto } from './dtos/trip.dto';
 
 @ApiTags('Itineraries')
@@ -179,6 +179,63 @@ export class ItinerariesPlanController {
   @Roles(Role.TRAVELER)
   @SubscriptionCheck(0) // Basic+ for adding itinerary
   @ApiBearerAuth()
+  @ApiBody({
+    description: 'Activity details to add to the itinerary day',
+    type: 'object',
+    schema: {
+      type: 'object',
+      required: ['activity'],
+      properties: {
+        activity: {
+          type: 'object',
+          required: ['type', 'name'],
+          properties: {
+            type: {
+              type: 'string',
+              enum: ['place', 'stay', 'food', 'activity'],
+              description: 'Type of activity',
+              example: 'place',
+            },
+            name: {
+              type: 'string',
+              description: 'Name of the activity',
+              example: 'Kithal Ella Waterfall',
+            },
+            description: {
+              type: 'string',
+              description: 'Description of the activity (optional)',
+              example: 'A stunning waterfall in Ella',
+            },
+            rating: {
+              type: 'number',
+              description: 'Rating of the activity (0-5, optional)',
+              example: 4.5,
+            },
+            location: {
+              type: 'string',
+              description: 'Location of the activity (optional)',
+              example: 'Ella',
+            },
+            time: {
+              type: 'string',
+              description: 'Start time (ISO time string, optional)',
+              example: '09:00:00',
+            },
+            photoUrl: {
+              type: 'string',
+              description: 'Photo URL (optional)',
+              example: 'https://example.com/photo.jpg',
+            },
+            placeId: {
+              type: 'string',
+              description: 'Google Places ID (optional)',
+              example: 'ChIJ...',
+            },
+          },
+        },
+      },
+    },
+  })
   @ApiOperation({ summary: 'Add item to itinerary day' })
   async addItineraryItem(@Param('id') tripId: string, @Param('day') day: number, @Body() dto: any, @Req() req: any) {
     const userId = req.user.userId;
@@ -326,12 +383,17 @@ export class ItinerariesPlanController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add note to activity' })
   @ApiBody({
-    description: 'Note content details',
+    description: 'Note details',
     type: 'object',
     schema: {
       type: 'object',
-      required: ['content'],
+      required: ['title', 'content'],
       properties: {
+        title: {
+          type: 'string',
+          description: 'Title of the note',
+          example: 'Preparation Note',
+        },
         content: {
           type: 'string',
           description: 'The content of the note for the activity',
@@ -340,14 +402,14 @@ export class ItinerariesPlanController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Note added successfully' })
+  @ApiResponse({ status: 201, description: 'Note added successfully', type: AddNoteResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid note data' })
   @ApiNotFoundResponse({ description: 'Trip or activity not found' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error during note addition' })
   async addNote(
     @Param('tripId') tripId: string,
     @Param('activityId') activityId: string,
-    @Body() dto: { content: string },
+    @Body() dto: AddNoteDto,
     @Req() req: any
   ) {
     const userId = req.user.userId;
@@ -366,20 +428,25 @@ export class ItinerariesPlanController {
     }
   }
 
-  // Similar for addChecklistItem (endpoint: /trips/:tripId/activities/:activityId/checklist)
-  @Post('trips/:tripId/activities/:activityId/checklist')
+  // Example for addChecklistItem (endpoint: /trips/:tripId/activities/:activityId/checklists)
+  @Post('trips/:tripId/activities/:activityId/checklists')
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
   @Roles(Role.TRAVELER)
   @SubscriptionCheck(0)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Add checklist item to activity' })
+  @ApiOperation({ summary: 'Add checklist item to activity checklist' })
   @ApiBody({
     description: 'Checklist item details',
     type: 'object',
     schema: {
       type: 'object',
-      required: ['text'],
+      required: ['title', 'text'],
       properties: {
+        title: {
+          type: 'string',
+          description: 'Title of the checklist',
+          example: 'Preparation Checklist',
+        },
         text: {
           type: 'string',
           description: 'The text/description of the checklist item',
@@ -388,14 +455,14 @@ export class ItinerariesPlanController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Checklist item added successfully' })
+  @ApiResponse({ status: 201, description: 'Checklist item added successfully', type: AddChecklistItemResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid checklist item data' })
   @ApiNotFoundResponse({ description: 'Trip or activity not found' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error during checklist addition' })
   async addChecklistItem(
     @Param('tripId') tripId: string,
     @Param('activityId') activityId: string,
-    @Body() dto: { text: string },
+    @Body() dto: AddChecklistItemDto,
     @Req() req: any
   ) {
     const userId = req.user.userId;
@@ -414,13 +481,13 @@ export class ItinerariesPlanController {
     }
   }
 
-  // Similar for updateChecklistItem (endpoint: /trips/:tripId/activities/:activityId/checklist/:itemId)
-  @Put('trips/:tripId/activities/:activityId/checklist/:itemId')
+  // Example for updateChecklistItem (endpoint: /trips/:tripId/activities/:activityId/checklists/:checklistTitle/items/:itemId)
+  @Put('trips/:tripId/activities/:activityId/checklists/:checklistTitle/items/:itemId')
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
   @Roles(Role.TRAVELER)
   @SubscriptionCheck(0)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update checklist item in activity' })
+  @ApiOperation({ summary: 'Update checklist item in activity checklist' })
   @ApiBody({
     description: 'Checklist item update details',
     type: 'object',
@@ -436,21 +503,22 @@ export class ItinerariesPlanController {
       },
     },
   })
-  @ApiResponse({ status: 200, description: 'Checklist item updated successfully' })
+  @ApiResponse({ status: 200, description: 'Checklist item updated successfully', type: UpdateChecklistItemResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid checklist item data' })
-  @ApiNotFoundResponse({ description: 'Trip, activity, or item not found' })
+  @ApiNotFoundResponse({ description: 'Trip, activity, checklist, or item not found' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error during checklist update' })
   async updateChecklistItem(
     @Param('tripId') tripId: string,
     @Param('activityId') activityId: string,
+    @Param('checklistTitle') checklistTitle: string,
     @Param('itemId') itemId: string,
-    @Body() dto: { completed: boolean },
+    @Body() dto: UpdateChecklistItemDto,
     @Req() req: any
   ) {
     const userId = req.user.userId;
     try {
       const result = await firstValueFrom(
-        this.itinerariesService.UpdateChecklistItem({ tripId, userId, activityId, itemId, ...dto }).pipe(
+        this.itinerariesService.UpdateChecklistItem({ tripId, userId, activityId, checklistTitle, itemId, ...dto }).pipe(
           catchError((error) => {
             this.logger.error(`UpdateChecklistItem error: ${error.message}`);
             throw new HttpException('Failed to update checklist item', HttpStatus.BAD_REQUEST);

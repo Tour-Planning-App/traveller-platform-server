@@ -57,7 +57,7 @@ export class AddItineraryItemDto {
     photoUrl?: string;
     placeId?: string;
     notes?: [],
-    checklist?: []
+    checklists?: []
   };
 }
 

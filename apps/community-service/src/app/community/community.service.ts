@@ -692,7 +692,7 @@ async getPostComments(data: GetPostCommentsDto): Promise<GetPostCommentsResponse
       if (!user.data) {
         throw new NotFoundException('User not found');
       }
-
+console.log(user)
       // Fetch post count, followers, following
       const postCount = await this.postModel.countDocuments({ userId: data.userId });
       const followerCount = await this.followModel.countDocuments({ followeeId: data.userId });
@@ -710,14 +710,14 @@ async getPostComments(data: GetPostCommentsDto): Promise<GetPostCommentsResponse
         id: data.userId,
         userId: data.userId,
         bio: user.data.bio || '', // Assuming user has bio
-        name : user.name,
+        name : user.data.name,
         profileImage: user.data.profileImage,
         postCount: postCount,
         followerCount: followerCount,
         followingCount: followingCount,
         posts,
       };
-
+console.log(profile)
       return { success: true, profile } as any;
     } catch (error) {
       this.logger.error(`GetProfile error: ${error.message}`);
