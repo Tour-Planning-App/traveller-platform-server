@@ -38,6 +38,8 @@ message Activity {
   double rating = 5;
   string location = 6; // e.g., 'Colombo, Sri Lanka'
   google.protobuf.Timestamp time = 7; // Start time
+  repeated Note notes = 8;
+  repeated ChecklistItem checklist = 9;
 }
 
 message BucketItem {
@@ -188,7 +190,7 @@ message ShareTripResponse {
 message AddNoteRequest {
   string tripId = 1;
   string userId =2;
-  int32 day = 3;
+  string activityId = 3; // Changed from day
   string content = 4;
 }
 
@@ -201,7 +203,7 @@ message AddNoteResponse {
 message AddChecklistItemRequest {
   string tripId = 1;
   string userId =2;
-  int32 day = 3;
+  string activityId = 3;
   string text = 4;
 }
 
@@ -214,7 +216,7 @@ message AddChecklistItemResponse {
 message UpdateChecklistItemRequest {
   string tripId = 1;
   string userId =2;
-  int32 day = 3;
+  string activityId = 3;
   string itemId = 4;
   bool completed = 5;
 }

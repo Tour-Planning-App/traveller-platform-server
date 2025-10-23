@@ -173,47 +173,90 @@ export class ItinerariesController {
     }
   }
 
-  @GrpcMethod('ItinerariesService', 'AddNote')
-  async addNote(@Payload() data: { tripId: string; userId: string; day: number; content: string }) {
-    try {
-      const result = await this.tripService.addNote(data.tripId, data.day, data.content, data.userId);
-      return { success: true, message: 'Note added', note: result };
-    } catch (error: any) {
-      this.logger.error(`gRPC AddNote error: ${error.message}`, error.stack);
-      throw new RpcException({
-        code: error instanceof BadRequestException ? 3 : 2,
-        message: error.message,
-      });
+  // Updated gRPC Controller - Adjust payloads for AddNote, AddChecklistItem, UpdateChecklistItem
+    @GrpcMethod('ItinerariesService', 'AddNote')
+    async addNote(@Payload() data: { tripId: string; userId: string; activityId: string; content: string }) {
+      try {
+        const result = await this.tripService.addNote(data.tripId, data.activityId, data.content, data.userId);
+        return { success: true, message: 'Note added', note: result };
+      } catch (error: any) {
+        this.logger.error(`gRPC AddNote error: ${error.message}`, error.stack);
+        throw new RpcException({
+          code: error instanceof BadRequestException ? 3 : 2,
+          message: error.message,
+        });
+      }
     }
-  }
 
-  @GrpcMethod('ItinerariesService', 'AddChecklistItem')
-  async addChecklistItem(@Payload() data: { tripId: string; userId: string; day: number; text: string }) {
-    try {
-      const result = await this.tripService.addChecklistItem(data.tripId, data.day, data.text, data.userId);
-      return { success: true, message: 'Checklist item added', checklist: result };
-    } catch (error: any) {
-      this.logger.error(`gRPC AddChecklistItem error: ${error.message}`, error.stack);
-      throw new RpcException({
-        code: error instanceof BadRequestException ? 3 : 2,
-        message: error.message,
-      });
+    @GrpcMethod('ItinerariesService', 'AddChecklistItem')
+    async addChecklistItem(@Payload() data: { tripId: string; userId: string; activityId: string; text: string }) {
+      try {
+        const result = await this.tripService.addChecklistItem(data.tripId, data.activityId, data.text, data.userId);
+        return { success: true, message: 'Checklist item added', checklist: result };
+      } catch (error: any) {
+        this.logger.error(`gRPC AddChecklistItem error: ${error.message}`, error.stack);
+        throw new RpcException({
+          code: error instanceof BadRequestException ? 3 : 2,
+          message: error.message,
+        });
+      }
     }
-  }
 
-  @GrpcMethod('ItinerariesService', 'UpdateChecklistItem')
-  async updateChecklistItem(@Payload() data: { tripId: string; userId: string; day: number; itemId: string; completed: boolean }) {
-    try {
-      await this.tripService.updateChecklistItem(data.tripId, data.day, data.itemId, data.completed, data.userId);
-      return { success: true, message: 'Checklist item updated' };
-    } catch (error: any) {
-      this.logger.error(`gRPC UpdateChecklistItem error: ${error.message}`, error.stack);
-      throw new RpcException({
-        code: error instanceof BadRequestException ? 3 : 2,
-        message: error.message,
-      });
+    @GrpcMethod('ItinerariesService', 'UpdateChecklistItem')
+    async updateChecklistItem(@Payload() data: { tripId: string; userId: string; activityId: string; itemId: string; completed: boolean }) {
+      try {
+        await this.tripService.updateChecklistItem(data.tripId, data.activityId, data.itemId, data.completed, data.userId);
+        return { success: true, message: 'Checklist item updated' };
+      } catch (error: any) {
+        this.logger.error(`gRPC UpdateChecklistItem error: ${error.message}`, error.stack);
+        throw new RpcException({
+          code: error instanceof BadRequestException ? 3 : 2,
+          message: error.message,
+        });
+      }
     }
-  }
+
+  // @GrpcMethod('ItinerariesService', 'AddNote')
+  // async addNote(@Payload() data: { tripId: string; userId: string; day: number; content: string }) {
+  //   try {
+  //     const result = await this.tripService.addNote(data.tripId, data.day, data.content, data.userId);
+  //     return { success: true, message: 'Note added', note: result };
+  //   } catch (error: any) {
+  //     this.logger.error(`gRPC AddNote error: ${error.message}`, error.stack);
+  //     throw new RpcException({
+  //       code: error instanceof BadRequestException ? 3 : 2,
+  //       message: error.message,
+  //     });
+  //   }
+  // }
+
+  // @GrpcMethod('ItinerariesService', 'AddChecklistItem')
+  // async addChecklistItem(@Payload() data: { tripId: string; userId: string; day: number; text: string }) {
+  //   try {
+  //     const result = await this.tripService.addChecklistItem(data.tripId, data.day, data.text, data.userId);
+  //     return { success: true, message: 'Checklist item added', checklist: result };
+  //   } catch (error: any) {
+  //     this.logger.error(`gRPC AddChecklistItem error: ${error.message}`, error.stack);
+  //     throw new RpcException({
+  //       code: error instanceof BadRequestException ? 3 : 2,
+  //       message: error.message,
+  //     });
+  //   }
+  // }
+
+  // @GrpcMethod('ItinerariesService', 'UpdateChecklistItem')
+  // async updateChecklistItem(@Payload() data: { tripId: string; userId: string; day: number; itemId: string; completed: boolean }) {
+  //   try {
+  //     await this.tripService.updateChecklistItem(data.tripId, data.day, data.itemId, data.completed, data.userId);
+  //     return { success: true, message: 'Checklist item updated' };
+  //   } catch (error: any) {
+  //     this.logger.error(`gRPC UpdateChecklistItem error: ${error.message}`, error.stack);
+  //     throw new RpcException({
+  //       code: error instanceof BadRequestException ? 3 : 2,
+  //       message: error.message,
+  //     });
+  //   }
+  // }
 
   @GrpcMethod('ItinerariesService', 'OptimizeDay')
   async optimizeDay(@Payload() data: { tripId: string; userId: string; day: number }) {

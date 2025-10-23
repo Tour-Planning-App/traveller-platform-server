@@ -1,3 +1,4 @@
+// Updated schemas/itineraries.schema.ts (already provided in previous response, no changes needed)
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
@@ -26,6 +27,19 @@ export class Activity extends Document {
 
   @Prop()
   placeId: string;
+
+  @Prop({ type: [{ 
+    content: { type: String, required: true }, 
+    createdAt: { type: Date, default: Date.now } 
+  }], default: [] })
+  notes: { content: string; createdAt: Date }[];
+
+  @Prop({ type: [{ 
+      id: { type: Types.ObjectId, auto: true }, 
+      text: { type: String, required: true }, 
+      completed: { type: Boolean, default: false } 
+    }] })
+  checklist: { id: Types.ObjectId; text: string; completed: boolean }[];
 }
 
 @Schema()
@@ -41,19 +55,6 @@ export class ItineraryDay extends Document {
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Activity' }] })
   activities: Types.ObjectId[];
-
-  @Prop({ type: [{ 
-    content: { type: String, required: true }, 
-    createdAt: { type: Date, default: Date.now } 
-  }], default: [] })
-  notes: { content: string; createdAt: Date }[];
-
-  @Prop({ type: [{ 
-      id: { type: Types.ObjectId, auto: true }, 
-      text: { type: String, required: true }, 
-      completed: { type: Boolean, default: false } 
-    }] })
-    checklist: { id: Types.ObjectId; text: string; completed: boolean }[];
 }
 
 @Schema()

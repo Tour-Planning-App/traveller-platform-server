@@ -34,65 +34,58 @@ export class ItinerariesService {
       if (!createDto.name || !createDto.destination) {
         throw new BadRequestException('Trip name and destination are required');
       }
-      if (!createDto.dates || createDto.dates.length === 0) {
-        throw new BadRequestException('At least one date is required');
+      if (!createDto.dates || createDto.dates.length !== 2) {
+        throw new BadRequestException('Exactly two dates are required: start and end date in YYYY-MM-DD format');
       }
       if (createDto.budget && createDto.budget < 0) {
         throw new BadRequestException('Budget must be non-negative');
       }
 
-      // Validate dates are valid ISO date strings (YYYY-MM-DD format)
-     // Validate start and end dates are valid ISO date strings (YYYY-MM-DD format)
-    const [startDateStr, endDateStr] = createDto.dates;
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-    if (isNaN(startDate.getTime()) ) {
-      throw new BadRequestException('Start and end dates must be valid ISO date strings (YYYY-MM-DD format)');
-    }
-    if (startDate > endDate) {
-      throw new BadRequestException('Start date must be before or equal to end date');
-    }
+      // Validate start and end dates are valid ISO date strings (YYYY-MM-DD format)
+      const [startDateStr, endDateStr] = createDto.dates;
+      const startDate = new Date(startDateStr);
+      const endDate = new Date(endDateStr);
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || startDateStr !== startDate.toISOString().split('T')[0] || endDateStr !== endDate.toISOString().split('T')[0]) {
+        throw new BadRequestException('Start and end dates must be valid ISO date strings (YYYY-MM-DD format)');
+      }
+      if (startDate > endDate) {
+        throw new BadRequestException('Start date must be before or equal to end date');
+      }
+
+      // Generate all dates from start to end inclusive
+      const dates: string[] = [];
+      const currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        dates.push(currentDate.toISOString().split('T')[0]);
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
 
       // Gate: Requires basic+ subscription (uncomment if SubscriptionService exists)
       // const hasAccess = await this.subscriptionService.checkAccess(userId, 'create_trip', 1);
       // if (!hasAccess) throw new ForbiddenException('Subscription required to create trips');
 
-    // Generate all dates from start to end inclusive
-        const dates: string[] = [];
-        const currentDate = new Date(startDate);
-        while (currentDate <= endDate) {
-          dates.push(currentDate.toISOString().split('T')[0]);
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
+      // Automatically generate ItineraryDay objects based on all dates (matching updated ItineraryDay sub-schema - no notes/checklist here)
+      const itinerary = dates.map((date, index) => ({
+        day: index + 1, // number, required
+        date: date, // string (ISO), required
+        name: `Day ${index + 1}: ${createDto.destination}`, // string, optional
+        activities: [] // array of ObjectId refs to Activity, starts empty (notes/checklist will be in activities)
+      }));
 
-    // Gate: Requires basic+ subscription (uncomment if SubscriptionService exists)
-    // const hasAccess = await this.subscriptionService.checkAccess(userId, 'create_trip', 1);
-    // if (!hasAccess) throw new BadRequestException('Subscription required to create trips');
+      // Initialize bucketList as empty array (matching BucketItem sub-schema)
+      const bucketList: any[] = [];
 
-    // Automatically generate ItineraryDay objects based on all dates (matching ItineraryDay sub-schema)
-    const itinerary = dates.map((date, index) => ({
-      day: index + 1, // number, required
-      date: date, // string (ISO), required
-      name: `Day ${index + 1}: ${createDto.destination}`, // string, optional
-      activities: [], // array of ObjectId refs to Activity, starts empty
-      notes: [], // array of {content: string, createdAt: Date}, starts empty
-      checklist: [] // array of {id: ObjectId, text: string, completed: boolean}, starts empty
-    }));
-
-    // Initialize bucketList as empty array (matching BucketItem sub-schema)
-    const bucketList: any[] = [];
-
-    const tripData = { 
-      userId, // required string
-      name: createDto.name, // required string
-      destination: createDto.destination, // required string
-      dates: createDto.dates, // array of string (ISO dates)
-      budget: createDto.budget || 0, // number, default 0
-      itinerary,
-      bucketList, // array of BucketItem subdocs, starts empty
-      isShared: false, // boolean, default false
-      shareToken: undefined // string, optional
-    };
+      const tripData = { 
+        userId, // required string
+        name: createDto.name, // required string
+        destination: createDto.destination, // required string
+        dates, // array of all string (ISO dates)
+        budget: createDto.budget || 0, // number, default 0
+        itinerary, // array of ItineraryDay subdocs
+        bucketList, // array of BucketItem subdocs, starts empty
+        isShared: false, // boolean, default false
+        shareToken: undefined // string, optional
+      };
 
       const trip = new this.tripModel(tripData);
       return await trip.save();
@@ -104,7 +97,7 @@ export class ItinerariesService {
     }
   }
 
-  async createAITrip(userId: string, createDto: CreateAITripDto): Promise<Trip> {
+async createAITrip(userId: string, createDto: CreateAITripDto): Promise<Trip> {
     try {
       console.log('Creating AI trip for user:', userId, createDto);
       // Validation
@@ -208,14 +201,12 @@ export class ItinerariesService {
         throw new BadRequestException('Failed to parse AI plan');
       }
 
-      // Automatically generate ItineraryDay objects based on dates (matching ItineraryDay sub-schema)
+      // Automatically generate ItineraryDay objects based on dates (matching updated ItineraryDay sub-schema - no notes/checklist here)
       const itinerary = dates.map((date, index) => ({
         day: index + 1, // number, required
         date: date, // string (ISO), required
         name: `Day ${index + 1}: ${createDto.destination}`, // string, optional
-        activities: [], // array of ObjectId refs to Activity, starts empty
-        notes: [], // array of {content: string, createdAt: Date}, starts empty
-        checklist: [] // array of {id: ObjectId, text: string, completed: boolean}, starts empty
+        activities: [] // array of ObjectId refs to Activity, starts empty (notes/checklist will be in activities)
       }));
 
       // Initialize bucketList as empty array (matching BucketItem sub-schema)
@@ -254,7 +245,9 @@ export class ItinerariesService {
               description: actData.description || '',
               rating: Math.floor(Math.random() * 5) + 1, // AI could provide, but mock
               location: actData.location || '',
-              time: actData.time // string, converted later
+              time: actData.time, // string, converted later
+              checklist: undefined,
+              notes: undefined
             }
           };
           await this.addItineraryItem(trip._id.toString(), day, activityDto, userId);
@@ -363,7 +356,7 @@ export class ItinerariesService {
     }
   }
 
-  async addItineraryItem(tripId: string, day: number, activityDto: AddItineraryItemDto, userId: string): Promise<any> {
+async addItineraryItem(tripId: string, day: number, activityDto: AddItineraryItemDto, userId: string): Promise<any> {
     try {
       // Validation
       if (!isValidObjectId(tripId)) {
@@ -405,12 +398,15 @@ export class ItinerariesService {
       const activityData = activityDto.activity;
       activityData.photoUrl = activityData.photoUrl || '';
       activityData.placeId = activityData.placeId || '';
+      // Notes and checklist start empty in new Activity
+      activityData.notes = [];
+      activityData.checklist = [];
       const activity = new this.activityModel(activityData);
       await activity.save();
 
       let itineraryDay = trip.itinerary.find(d => d.day === day) as any;
       if (!itineraryDay) {
-        itineraryDay = { day, date: trip.dates[day - 1], activities: [], note: '', checklist: [] };
+        itineraryDay = { day, date: trip.dates[day - 1], activities: [], name: `Day ${day}: ${trip.destination}` };
         trip.itinerary.push(itineraryDay);
       }
       itineraryDay.activities.push(activity._id);
@@ -567,38 +563,45 @@ export class ItinerariesService {
     }
   }
 
-  async addNote(tripId: string, day: number, content: string, userId: string): Promise<{ content: string; createdAt: Date }> {
+// Updated addNote - now adds to a specific activity's notes (endpoint change required: /trips/:tripId/activities/:activityId/notes)
+  async addNote(tripId: string, activityId: string, content: string, userId: string): Promise<{ content: string; createdAt: Date }> {
     try {
       // Validation
       if (!isValidObjectId(tripId)) {
         throw new BadRequestException('Invalid trip ID');
       }
+      if (!isValidObjectId(activityId)) {
+        throw new BadRequestException('Invalid activity ID');
+      }
       if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
-      }
-      if (!Number.isInteger(day) || day < 1) {
-        throw new BadRequestException('Day must be a positive integer');
       }
       if (!content || content.trim().length === 0) {
         throw new BadRequestException('Note content is required');
       }
 
-      const trip = await this.tripModel.findOne({ _id: tripId, userId });
+      const trip = await this.tripModel.findOne({ _id: tripId, userId }).populate('itinerary.activities');
       if (!trip) {
         throw new NotFoundException('Trip not found');
       }
 
-      const itineraryDay = trip.itinerary.find(d => d.day === day);
-      if (!itineraryDay) {
-        throw new BadRequestException('Day not found in itinerary');
+      // Find the activity across all days
+      let activity: any = null;
+      for (const day of trip.itinerary) {
+        activity = day.activities.find((act: any) => act._id.toString() === activityId);
+        if (activity) break;
+      }
+      if (!activity) {
+        throw new NotFoundException('Activity not found');
       }
 
       const newNote = { 
         content: content.trim(), 
         createdAt: new Date() 
       };
-      itineraryDay.notes.push(newNote);
-      await trip.save();
+      activity.notes.push(newNote);
+      await activity.save();
+      await trip.save(); // Save trip to update references if needed
       return newNote;
     } catch (error: any) {
       if (error instanceof BadRequestException || error instanceof NotFoundException) {
@@ -608,41 +611,46 @@ export class ItinerariesService {
     }
   }
 
-  async addChecklistItem(tripId: string, day: number, text: string, userId: string): Promise<{ items: any[] }> {
+// Updated addChecklistItem - now adds to a specific activity's checklist (endpoint change required: /trips/:tripId/activities/:activityId/checklist)
+  async addChecklistItem(tripId: string, activityId: string, text: string, userId: string): Promise<{ id: Types.ObjectId; text: string; completed: boolean }[]> {
     try {
       // Validation
       if (!isValidObjectId(tripId)) {
         throw new BadRequestException('Invalid trip ID');
       }
+      if (!isValidObjectId(activityId)) {
+        throw new BadRequestException('Invalid activity ID');
+      }
       if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
-      }
-      if (!Number.isInteger(day) || day < 1) {
-        throw new BadRequestException('Day must be a positive integer');
       }
       if (!text || text.trim().length === 0) {
         throw new BadRequestException('Checklist item text is required');
       }
 
-      const trip = await this.tripModel.findOne({ _id: tripId, userId });
+      const trip = await this.tripModel.findOne({ _id: tripId, userId }).populate('itinerary.activities');
       if (!trip) {
         throw new NotFoundException('Trip not found');
       }
 
-      const itineraryDay = trip.itinerary.find(d => d.day === day);
-      if (!itineraryDay) {
-        throw new BadRequestException('Day not found in itinerary');
+      // Find the activity across all days
+      let activity: any = null;
+      for (const day of trip.itinerary) {
+        activity = day.activities.find((act: any) => act._id.toString() === activityId);
+        if (activity) break;
+      }
+      if (!activity) {
+        throw new NotFoundException('Activity not found');
       }
 
-      if (!itineraryDay.checklist) {
-        itineraryDay.checklist = [];
-      }
-      itineraryDay.checklist.push({
-        text: text.trim(), completed: false,
-        id: new Types.ObjectId()
-      });
-      await trip.save();
-      return { items: itineraryDay.checklist };
+      const newItem = { 
+        text: text.trim(), 
+        completed: false 
+      };
+      activity.checklist.push(newItem);
+      await activity.save();
+      await trip.save(); // Save trip to update references if needed
+      return activity.checklist;
     } catch (error: any) {
       if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;
@@ -651,11 +659,15 @@ export class ItinerariesService {
     }
   }
 
-  async updateChecklistItem(tripId: string, day: number, itemId: string, completed: boolean, userId: string): Promise<void> {
+// Updated updateChecklistItem - now updates a specific item's checklist in an activity (endpoint change required: /trips/:tripId/activities/:activityId/checklist/:itemId)
+  async updateChecklistItem(tripId: string, activityId: string, itemId: string, completed: boolean, userId: string): Promise<void> {
     try {
       // Validation
       if (!isValidObjectId(tripId)) {
         throw new BadRequestException('Invalid trip ID');
+      }
+      if (!isValidObjectId(activityId)) {
+        throw new BadRequestException('Invalid activity ID');
       }
       if (!isValidObjectId(itemId)) {
         throw new BadRequestException('Invalid item ID');
@@ -663,30 +675,33 @@ export class ItinerariesService {
       if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
-      if (!Number.isInteger(day) || day < 1) {
-        throw new BadRequestException('Day must be a positive integer');
-      }
       if (typeof completed !== 'boolean') {
         throw new BadRequestException('Completed must be a boolean');
       }
 
-      const trip = await this.tripModel.findOne({ _id: tripId, userId });
+      const trip = await this.tripModel.findOne({ _id: tripId, userId }).populate('itinerary.activities');
       if (!trip) {
         throw new NotFoundException('Trip not found');
       }
 
-      const itineraryDay = trip.itinerary.find(d => d.day === day) as any;
-      if (!itineraryDay) {
-        throw new BadRequestException('Day not found in itinerary');
+      // Find the activity across all days
+      let activity: any = null;
+      for (const day of trip.itinerary) {
+        activity = day.activities.find((act: any) => act._id.toString() === activityId);
+        if (activity) break;
+      }
+      if (!activity) {
+        throw new BadRequestException('Activity not found');
       }
 
-      const item = itineraryDay.checklist?.find(i => i._id?.toString() === itemId);
+      const item = activity.checklist?.find(i => i._id?.toString() === itemId);
       if (!item) {
         throw new BadRequestException('Checklist item not found');
       }
 
       item.completed = completed;
-      await trip.save();
+      await activity.save();
+      await trip.save(); // Save trip to update references if needed
     } catch (error: any) {
       if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;

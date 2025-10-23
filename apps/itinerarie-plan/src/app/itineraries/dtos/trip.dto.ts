@@ -56,6 +56,8 @@ export class AddItineraryItemDto {
     time?: string; // ISO time string (e.g., '09:00:00')
     photoUrl?: string;
     placeId?: string;
+    notes?: [],
+    checklist?: []
   };
 }
 
