@@ -3,7 +3,7 @@ syntax = "proto3";
 package itineraries;
 
 import "google/protobuf/timestamp.proto";
-
+import "google/protobuf/struct.proto";
 option go_package = "github.com/Tour-Planning-App/traveller-platform-server/proto/trip";
 
 message Trip {
@@ -109,6 +109,7 @@ message GetUserTripsResponse {
 
 message DeleteTripRequest {
   string id = 1;
+  string userId =2;
 }
 
 message DeleteTripResponse {
@@ -117,9 +118,10 @@ message DeleteTripResponse {
 }
 
 message AddItineraryItemRequest {
-  string trip_id = 1;
-  int32 day = 2;
-  Activity activity = 3; // Add place/stay/food/activity
+  string tripId = 1;
+  string userId =2;
+  int32 day = 3;
+  Activity activity = 4; // Add place/stay/food/activity
 }
 
 message AddItineraryItemResponse {
@@ -129,9 +131,10 @@ message AddItineraryItemResponse {
 }
 
 message RemoveItineraryItemRequest {
-  string trip_id = 1;
-  string activity_id = 2;
-  int32 day = 3;
+  string tripId = 1;
+  string userId =2;
+  string activityId = 3;
+  int32 day = 4;
 }
 
 message RemoveItineraryItemResponse {
@@ -140,9 +143,12 @@ message RemoveItineraryItemResponse {
 }
 
 message AddBucketItemRequest {
-  string trip_id = 1;
-  string name = 2;
-  string description = 3;
+  string tripId = 1;
+  string userId =2;
+  string name = 3;
+  string description = 4;
+  string photoUrl = 5;
+  string address = 6;
 }
 
 message AddBucketItemResponse {
@@ -152,8 +158,9 @@ message AddBucketItemResponse {
 }
 
 message RemoveBucketItemRequest {
-  string trip_id = 1;
-  string item_id = 2;
+  string tripId = 1;
+  string userId =2;
+  string itemId = 3;
 }
 
 message RemoveBucketItemResponse {
@@ -162,7 +169,8 @@ message RemoveBucketItemResponse {
 }
 
 message ShareTripRequest {
-  string trip_id = 1;
+  string tripId = 1;
+  string userId =2;
 }
 
 message ShareTripResponse {
@@ -172,9 +180,10 @@ message ShareTripResponse {
 }
 
 message AddNoteRequest {
-  string trip_id = 1;
-  int32 day = 2;
-  string content = 3;
+  string tripId = 1;
+  string userId =2;
+  int32 day = 3;
+  string content = 4;
 }
 
 message AddNoteResponse {
@@ -184,9 +193,10 @@ message AddNoteResponse {
 }
 
 message AddChecklistItemRequest {
-  string trip_id = 1;
-  int32 day = 2;
-  string text = 3;
+  string tripId = 1;
+  string userId =2;
+  int32 day = 3;
+  string text = 4;
 }
 
 message AddChecklistItemResponse {
@@ -196,15 +206,73 @@ message AddChecklistItemResponse {
 }
 
 message UpdateChecklistItemRequest {
-  string trip_id = 1;
-  int32 day = 2;
-  string item_id = 3;
-  bool completed = 4;
+  string tripId = 1;
+  string userId =2;
+  int32 day = 3;
+  string itemId = 4;
+  bool completed = 5;
 }
 
 message UpdateChecklistItemResponse {
   bool success = 1;
   string message = 2;
+}
+
+message OptimizeDayRequest{
+  string tripId = 1;
+  string userId =2;
+  int32 day = 3;
+}
+
+message OptimizeDayResponse{
+  bool success = 1;
+  string message = 2;
+  google.protobuf.Struct day = 3;
+}
+
+message MoveBucketToItineraryRequest{
+  string tripId = 1;
+  string userId =2;
+  string itemId =3;
+  int32 day = 4;
+  string activityType =5;
+}
+
+message MoveBucketToItineraryResponse{
+  bool success = 1;
+  string message = 2;
+  Activity activity = 3;
+}
+
+message AutoFillLocationRequest{
+  string tripId = 1;
+  string userId =2;
+  int32 day = 3;
+  string activityId =4;
+  string query = 5;
+}
+
+message AutoFillLocationResponse{
+  bool success = 1;
+  string message = 2;
+  google.protobuf.Struct location = 3;
+}
+
+message SearchLocationsRequest{
+  string tripId = 1;
+  string userId =2;
+  SearchLocations searchLocations =3;
+}
+
+message SearchLocationsResponse{
+  bool success = 1;
+  string message = 2;
+  google.protobuf.Struct suggestions = 3;
+}
+
+message SearchLocations {
+ string query = 1;
+ int32 limit = 2;
 }
 
 service ItinerariesService {
@@ -221,4 +289,9 @@ service ItinerariesService {
   rpc AddNote(AddNoteRequest) returns (AddNoteResponse);
   rpc AddChecklistItem(AddChecklistItemRequest) returns (AddChecklistItemResponse);
   rpc UpdateChecklistItem(UpdateChecklistItemRequest) returns (UpdateChecklistItemResponse);
+  rpc OptimizeDay(OptimizeDayRequest) returns (OptimizeDayResponse);
+  rpc MoveBucketToItinerary(MoveBucketToItineraryRequest) returns (MoveBucketToItineraryResponse);
+  rpc AutoFillLocation(AutoFillLocationRequest) returns (AutoFillLocationResponse);
+  rpc SearchLocations(SearchLocationsRequest) returns (SearchLocationsResponse);
+
 }

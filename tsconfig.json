@@ -29,6 +29,9 @@
     },
     {
       "path": "./apps/tips-service"
+    },
+    {
+      "path": "./apps/tools-service"
     }
   ]
 }

@@ -1,7 +1,7 @@
 import { Body, Controller, Post, Get, UseGuards, Inject, Req, Put, Param, Delete } from '@nestjs/common';
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import { firstValueFrom, catchError } from 'rxjs';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiForbiddenResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiForbiddenResponse, ApiBody, ApiBadGatewayResponse, ApiNotFoundResponse, ApiInternalServerErrorResponse, ApiBadRequestResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SubscriptionGuard } from '../auth/guards/subscription.guard';
 import { SubscriptionCheck } from '../auth/decorators/public.decorator';
@@ -225,6 +225,36 @@ export class ItinerariesPlanController {
   @Roles(Role.TRAVELER)
   @SubscriptionCheck(0)
   @ApiBearerAuth()
+  @ApiBody({
+  description: 'Bucket item details',
+  type: 'object', // Or use a simple inline schema
+  schema: {
+    type: 'object',
+    required: ['name', 'description'], // Mark required fields
+    properties: {
+      name: {
+        type: 'string',
+        description: 'Name of the bucket list item',
+        example: 'Surfing Lesson',
+      },
+      description: {
+        type: 'string',
+        description: 'Description of the bucket list item',
+        example: 'Learn to surf on golden sands',
+      },
+      photoUrl: {
+        type: 'string',
+        description: 'Optional photo URL',
+        example: 'https://example.com/photo.jpg',
+      },
+      address: {
+        type: 'string',
+        description: 'Optional address/location',
+        example: 'Bentota Beach',
+      },
+    },
+  },
+})
   @ApiOperation({ summary: 'Add to bucket list' })
   async addBucketItem(@Param('id') tripId: string, @Body() { name, description, photoUrl, address }: { name: string; description: string; photoUrl?: string; address?: string }, @Req() req: any) {
     const userId = req.user.userId;
@@ -295,6 +325,21 @@ export class ItinerariesPlanController {
   @SubscriptionCheck(0)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add note to day' })
+  @ApiBody({
+    description: 'Note content details',
+    type: 'object',
+    schema: {
+      type: 'object',
+      required: ['content'],
+      properties: {
+        content: {
+          type: 'string',
+          description: 'The content of the note for the day',
+          example: 'Pack sunscreen and hat for beach day',
+        },
+      },
+    },
+  })
   async addNote(@Param('id') tripId: string, @Param('day') day: number, @Body() { content }: { content: string }, @Req() req: any) {
     const userId = req.user.userId;
     try {
@@ -312,12 +357,31 @@ export class ItinerariesPlanController {
     }
   }
 
-  @Post(':id/checklist/:day')
+ @Post(':id/checklist/:day')
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
   @Roles(Role.TRAVELER)
   @SubscriptionCheck(0)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add checklist item to day' })
+  @ApiBody({
+    description: 'Checklist item details',
+    type: 'object',
+    schema: {
+      type: 'object',
+      required: ['text'],
+      properties: {
+        text: {
+          type: 'string',
+          description: 'The text/description of the checklist item',
+          example: 'Book surf lesson',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Checklist item added successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid checklist item data' })
+  @ApiNotFoundResponse({ description: 'Trip or day not found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error during checklist addition' })
   async addChecklistItem(@Param('id') tripId: string, @Param('day') day: number, @Body() { text }: { text: string }, @Req() req: any) {
     const userId = req.user.userId;
     try {
@@ -341,6 +405,25 @@ export class ItinerariesPlanController {
   @SubscriptionCheck(0)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update checklist item' })
+  @ApiBody({
+    description: 'Checklist item update details',
+    type: 'object',
+    schema: {
+      type: 'object',
+      required: ['completed'],
+      properties: {
+        completed: {
+          type: 'boolean',
+          description: 'Whether the checklist item is completed',
+          example: true,
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Checklist item updated successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid checklist item data' })
+  @ApiNotFoundResponse({ description: 'Trip, day, or item not found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error during checklist update' })
   async updateChecklistItem(@Param('id') tripId: string, @Param('day') day: number, @Param('itemId') itemId: string, @Body() { completed }: { completed: boolean }, @Req() req: any) {
     const userId = req.user.userId;
     try {
@@ -387,6 +470,21 @@ export class ItinerariesPlanController {
   @Roles(Role.TRAVELER)
   @SubscriptionCheck(0)
   @ApiBearerAuth()
+  @ApiBody({
+    description: 'Activity type details for the moved item',
+    type: 'object',
+    schema: {
+      type: 'object',
+      properties: {
+        activityType: {
+          type: 'string',
+          description: 'The type of activity to categorize the bucket item as (defaults to "activity")',
+          example: 'place',
+          enum: ['place', 'stay', 'food', 'activity'],
+        },
+      },
+    },
+  })
   @ApiOperation({ summary: 'Move bucket item to itinerary day' })
   async moveBucketToItinerary(@Param('id') tripId: string, @Param('itemId') itemId: string, @Param('day') day: number, @Body() { activityType = 'activity' }: { activityType?: string }, @Req() req: any) {
     const userId = req.user.userId;
@@ -410,6 +508,21 @@ export class ItinerariesPlanController {
   @Roles(Role.TRAVELER)
   @SubscriptionCheck(0)
   @ApiBearerAuth()
+  @ApiBody({
+    description: 'Search query for auto-filling the location',
+    type: 'object',
+    schema: {
+      type: 'object',
+      required: ['query'],
+      properties: {
+        query: {
+          type: 'string',
+          description: 'The search query to find and auto-fill the location (e.g., "beach waterfall near Ella")',
+          example: 'beach waterfall near Ella',
+        },
+      },
+    },
+  })
   @ApiOperation({ summary: 'Auto-fill location for activity' })
   async autoFillLocation(@Param('id') tripId: string, @Param('day') day: number, @Param('activityId') activityId: string, @Body() { query }: { query: string }, @Req() req: any) {
     const userId = req.user.userId;

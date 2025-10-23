@@ -11,6 +11,8 @@ import { UserModule } from './user/user.module';
 import { ItinerariesPlanModule } from './itinerarie-plan/itineraries-plan.module';
 import { CommunityServiceModule } from './community-service/community-service.module';
 import { TipsServiceModule } from './tips-service/tips-service.module';
+import { ToolsServiceService } from './tools-service/tools-service.service';
+import { ToolsServiceModule } from './tools-service/tools-service.module';
 
 @Module({
   imports: [
@@ -78,7 +80,7 @@ import { TipsServiceModule } from './tips-service/tips-service.module';
           protoPath: join(__dirname, 'proto/tips.proto'),
           url: 'localhost:50056', // Assume port for itineraries service
         },
-        }
+      },
       // {
       //   name: 'TRIP_PACKAGE',
       //   transport: Transport.GRPC,
@@ -102,8 +104,9 @@ import { TipsServiceModule } from './tips-service/tips-service.module';
     ItinerariesPlanModule,
     CommunityServiceModule,
     TipsServiceModule,
+    ToolsServiceModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, ToolsServiceService],
 })
 export class AppModule {}
