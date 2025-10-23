@@ -329,4 +329,5 @@ message Profile {
   int32 followerCount = 6;
   int32 followingCount = 7;
   repeated Post posts = 8;
+  string name = 9;
 }

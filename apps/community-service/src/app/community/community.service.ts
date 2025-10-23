@@ -710,6 +710,7 @@ async getPostComments(data: GetPostCommentsDto): Promise<GetPostCommentsResponse
         id: data.userId,
         userId: data.userId,
         bio: user.data.bio || '', // Assuming user has bio
+        name : user.name,
         profileImage: user.data.profileImage,
         postCount: postCount,
         followerCount: followerCount,
