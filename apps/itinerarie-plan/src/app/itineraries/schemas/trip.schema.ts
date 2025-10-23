@@ -42,11 +42,18 @@ export class ItineraryDay extends Document {
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Activity' }] })
   activities: Types.ObjectId[];
 
-  @Prop()
-  note: string;
+  @Prop({ type: [{ 
+    content: { type: String, required: true }, 
+    createdAt: { type: Date, default: Date.now } 
+  }], default: [] })
+  notes: { content: string; createdAt: Date }[];
 
-  @Prop({ type: [{ text: String, completed: { type: Boolean, default: false } }] })
-  checklist: { text: string; completed: boolean }[];
+  @Prop({ type: [{ 
+      id: { type: Types.ObjectId, auto: true }, 
+      text: { type: String, required: true }, 
+      completed: { type: Boolean, default: false } 
+    }] })
+    checklist: { id: Types.ObjectId; text: string; completed: boolean }[];
 }
 
 @Schema()

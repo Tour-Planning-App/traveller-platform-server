@@ -180,11 +180,11 @@ export class ItinerariesPlanController {
   @SubscriptionCheck(0) // Basic+ for adding itinerary
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add item to itinerary day' })
-  async addItineraryItem(@Param('id') tripId: string, @Param('day') day: number, @Body() dto: AddItineraryItemDto, @Req() req: any) {
+  async addItineraryItem(@Param('id') tripId: string, @Param('day') day: number, @Body() dto: any, @Req() req: any) {
     const userId = req.user.userId;
     try {
       const result = await firstValueFrom(
-        this.itinerariesService.AddItineraryItem({ tripId: tripId, userId: userId, day: day.toString(), ...dto }).pipe(
+        this.itinerariesService.AddItineraryItem({ tripId: tripId, userId: userId, day: day, ...dto }).pipe(
           catchError((error) => {
             this.logger.error(`AddItineraryItem error: ${error.message}`);
             throw new HttpException('Failed to add itinerary item', HttpStatus.BAD_REQUEST);

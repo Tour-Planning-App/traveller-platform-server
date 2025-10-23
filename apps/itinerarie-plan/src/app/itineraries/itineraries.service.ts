@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, isValidObjectId } from 'mongoose';
+import { Model, Types, isValidObjectId } from 'mongoose';
 import { Activity, Trip, LocationSuggestion } from './schemas/trip.schema';
 import { CreateTripDto, UpdateTripDto, AddItineraryItemDto, CreateAITripDto } from './dtos/trip.dto';
 import { ChatOpenAI } from "@langchain/openai";
@@ -41,11 +41,60 @@ export class ItinerariesService {
         throw new BadRequestException('Budget must be non-negative');
       }
 
+      // Validate dates are valid ISO date strings (YYYY-MM-DD format)
+     // Validate start and end dates are valid ISO date strings (YYYY-MM-DD format)
+    const [startDateStr, endDateStr] = createDto.dates;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+    if (isNaN(startDate.getTime()) ) {
+      throw new BadRequestException('Start and end dates must be valid ISO date strings (YYYY-MM-DD format)');
+    }
+    if (startDate > endDate) {
+      throw new BadRequestException('Start date must be before or equal to end date');
+    }
+
       // Gate: Requires basic+ subscription (uncomment if SubscriptionService exists)
       // const hasAccess = await this.subscriptionService.checkAccess(userId, 'create_trip', 1);
       // if (!hasAccess) throw new ForbiddenException('Subscription required to create trips');
 
-      const trip = new this.tripModel({ userId, ...createDto });
+    // Generate all dates from start to end inclusive
+        const dates: string[] = [];
+        const currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+          dates.push(currentDate.toISOString().split('T')[0]);
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+    // Gate: Requires basic+ subscription (uncomment if SubscriptionService exists)
+    // const hasAccess = await this.subscriptionService.checkAccess(userId, 'create_trip', 1);
+    // if (!hasAccess) throw new BadRequestException('Subscription required to create trips');
+
+    // Automatically generate ItineraryDay objects based on all dates (matching ItineraryDay sub-schema)
+    const itinerary = dates.map((date, index) => ({
+      day: index + 1, // number, required
+      date: date, // string (ISO), required
+      name: `Day ${index + 1}: ${createDto.destination}`, // string, optional
+      activities: [], // array of ObjectId refs to Activity, starts empty
+      notes: [], // array of {content: string, createdAt: Date}, starts empty
+      checklist: [] // array of {id: ObjectId, text: string, completed: boolean}, starts empty
+    }));
+
+    // Initialize bucketList as empty array (matching BucketItem sub-schema)
+    const bucketList: any[] = [];
+
+    const tripData = { 
+      userId, // required string
+      name: createDto.name, // required string
+      destination: createDto.destination, // required string
+      dates: createDto.dates, // array of string (ISO dates)
+      budget: createDto.budget || 0, // number, default 0
+      itinerary,
+      bucketList, // array of BucketItem subdocs, starts empty
+      isShared: false, // boolean, default false
+      shareToken: undefined // string, optional
+    };
+
+      const trip = new this.tripModel(tripData);
       return await trip.save();
     } catch (error: any) {
       if (error instanceof BadRequestException || error instanceof ForbiddenException) {
@@ -75,7 +124,7 @@ export class ItinerariesService {
       // Generate dates if not provided (default 7-day trip, start 30 days from now)
       let dates: string[] = createDto.dates || [];
       if (dates.length === 0) {
-        const startDate = new Date('2025-10-16'); // Current date
+        const startDate = new Date(); // Use current date dynamically
         startDate.setDate(startDate.getDate() + 30);
         for (let i = 0; i < 7; i++) {
           const d = new Date(startDate);
@@ -83,6 +132,16 @@ export class ItinerariesService {
           dates.push(d.toISOString().split('T')[0]);
         }
       }
+
+      // Validate dates are valid ISO date strings (YYYY-MM-DD format)
+      const validDates = dates.filter(date => {
+        const dateObj = new Date(date);
+        return !isNaN(dateObj.getTime()) && dateObj.toISOString().split('T')[0] === date;
+      });
+      if (validDates.length !== dates.length) {
+        throw new BadRequestException('All dates must be valid ISO date strings (YYYY-MM-DD format)');
+      }
+
       const numDays = dates.length;
 
       // LLM Prompt for generation
@@ -149,16 +208,33 @@ export class ItinerariesService {
         throw new BadRequestException('Failed to parse AI plan');
       }
 
-      // Create base trip
-      const trip = new this.tripModel({
-        userId,
-        name: createDto.name,
-        destination: createDto.destination,
-        dates,
-        budget: createDto.budget || 0,
-        itinerary: [],
-        bucketList: []
-      });
+      // Automatically generate ItineraryDay objects based on dates (matching ItineraryDay sub-schema)
+      const itinerary = dates.map((date, index) => ({
+        day: index + 1, // number, required
+        date: date, // string (ISO), required
+        name: `Day ${index + 1}: ${createDto.destination}`, // string, optional
+        activities: [], // array of ObjectId refs to Activity, starts empty
+        notes: [], // array of {content: string, createdAt: Date}, starts empty
+        checklist: [] // array of {id: ObjectId, text: string, completed: boolean}, starts empty
+      }));
+
+      // Initialize bucketList as empty array (matching BucketItem sub-schema)
+      const bucketList: any[] = [];
+
+      // Create base trip with generated itinerary skeleton
+      const tripData = { 
+        userId, // required string
+        name: createDto.name, // required string
+        destination: createDto.destination, // required string
+        dates, // array of string (ISO dates)
+        budget: createDto.budget || 0, // number, default 0
+        itinerary, // array of ItineraryDay subdocs
+        bucketList, // array of BucketItem subdocs, starts empty
+        isShared: false, // boolean, default false
+        shareToken: undefined // string, optional
+      };
+
+      const trip = new this.tripModel(tripData);
       await trip.save();
 
       // Add bucket list items
@@ -228,7 +304,7 @@ export class ItinerariesService {
     }
   }
 
-  async getTrip(id: string): Promise<Trip> {
+  async getTrip(id: string): Promise<any> {
     try {
       // Validation
       if (!isValidObjectId(id)) {
@@ -239,6 +315,7 @@ export class ItinerariesService {
       if (!trip) {
         throw new NotFoundException('Trip not found');
       }
+      console.log(trip)
       return trip;
     } catch (error: any) {
       if (error instanceof BadRequestException || error instanceof NotFoundException) {
@@ -490,7 +567,7 @@ export class ItinerariesService {
     }
   }
 
-  async addNote(tripId: string, day: number, content: string, userId: string): Promise<{ content: string }> {
+  async addNote(tripId: string, day: number, content: string, userId: string): Promise<{ content: string; createdAt: Date }> {
     try {
       // Validation
       if (!isValidObjectId(tripId)) {
@@ -516,9 +593,13 @@ export class ItinerariesService {
         throw new BadRequestException('Day not found in itinerary');
       }
 
-      itineraryDay.note = content.trim();
+      const newNote = { 
+        content: content.trim(), 
+        createdAt: new Date() 
+      };
+      itineraryDay.notes.push(newNote);
       await trip.save();
-      return { content: itineraryDay.note };
+      return newNote;
     } catch (error: any) {
       if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;
@@ -556,7 +637,10 @@ export class ItinerariesService {
       if (!itineraryDay.checklist) {
         itineraryDay.checklist = [];
       }
-      itineraryDay.checklist.push({ text: text.trim(), completed: false });
+      itineraryDay.checklist.push({
+        text: text.trim(), completed: false,
+        id: new Types.ObjectId()
+      });
       await trip.save();
       return { items: itineraryDay.checklist };
     } catch (error: any) {

@@ -52,7 +52,7 @@ export class AddItineraryItemDto {
     name: string;
     description?: string;
     rating?: number;
-    location: string;
+    location?: string;
     time?: string; // ISO time string (e.g., '09:00:00')
     photoUrl?: string;
     placeId?: string;

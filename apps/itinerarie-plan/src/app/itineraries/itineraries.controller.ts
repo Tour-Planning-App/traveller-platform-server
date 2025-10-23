@@ -62,6 +62,7 @@ export class ItinerariesController {
   async getTrip(@Payload() data: { id: string }) {
     try {
       const result = await this.tripService.getTrip(data.id);
+      console.log(result)
       return { success: true, trip: result };
     } catch (error: any) {
       this.logger.error(`gRPC GetTrip error: ${error.message}`, error.stack);

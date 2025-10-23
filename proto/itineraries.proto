@@ -26,8 +26,8 @@ message ItineraryDay {
   string date = 2; // ISO date
   string name = 3; // e.g., 'Day 1: Arrival in Colombo'
   repeated Activity activities = 4;
-  Note note = 5;
-  Checklist checklist = 6;
+  repeated Note notes = 5;
+  repeated ChecklistItem checklist = 6;
 }
 
 message Activity {
@@ -47,8 +47,14 @@ message BucketItem {
   bool confirmed = 4; // Added to itinerary or not
 }
 
+// message NoteList {
+//   string content = 1;
+//   string createdAt = 2;
+// }
+
 message Note {
   string content = 1;
+  string createdAt = 2;
 }
 
 message Checklist {
