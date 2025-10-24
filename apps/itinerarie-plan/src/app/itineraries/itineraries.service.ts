@@ -731,6 +731,8 @@ async addChecklistItem(tripId: string, activityId: string, checklistTitle: strin
         throw new BadRequestException('Activity not found');
       }
 
+      console.log(activity)
+
       const checklist = activity.checklists?.find(cl => cl.title === checklistTitle.trim());
       if (!checklist) {
         throw new BadRequestException('Checklist not found');

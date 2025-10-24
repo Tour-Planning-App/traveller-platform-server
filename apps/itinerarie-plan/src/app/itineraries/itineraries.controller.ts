@@ -207,6 +207,7 @@ export class ItinerariesController {
   @GrpcMethod('ItinerariesService', 'UpdateChecklistItem')
   async updateChecklistItem(@Payload() data: { tripId: string; userId: string; activityId: string; checklistTitle: string; itemId: string; completed: boolean }) {
     try {
+      console.log(data)
       await this.tripService.updateChecklistItem(data.tripId, data.activityId, data.checklistTitle, data.itemId, data.completed, data.userId);
       return { success: true, message: 'Checklist item updated' };
     } catch (error: any) {
