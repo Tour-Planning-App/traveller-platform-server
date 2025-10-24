@@ -45,7 +45,7 @@ export class ItinerariesService {
       const [startDateStr, endDateStr] = createDto.dates;
       const startDate = new Date(startDateStr);
       const endDate = new Date(endDateStr);
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || startDateStr !== startDate.toISOString().split('T')[0] || endDateStr !== endDate.toISOString().split('T')[0]) {
+      if (isNaN(startDate.getTime()) ) {
         throw new BadRequestException('Start and end dates must be valid ISO date strings (YYYY-MM-DD format)');
       }
       if (startDate > endDate) {

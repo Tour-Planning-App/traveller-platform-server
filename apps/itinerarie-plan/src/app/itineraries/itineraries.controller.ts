@@ -177,6 +177,7 @@ export class ItinerariesController {
   @GrpcMethod('ItinerariesService', 'AddNote')
   async addNote(@Payload() data: { tripId: string; userId: string; activityId: string; title: string; content: string }) {
     try {
+      console.log(data)
       const result = await this.tripService.addNote(data.tripId, data.activityId, data.title, data.content, data.userId);
       return { success: true, message: 'Note added', note: result };
     } catch (error: any) {
