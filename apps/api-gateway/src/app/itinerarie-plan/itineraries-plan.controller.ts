@@ -429,34 +429,36 @@ export class ItinerariesPlanController {
   }
 
   // Example for addChecklistItem (endpoint: /trips/:tripId/activities/:activityId/checklists)
+// Updated HTTP Controller - Adjust body to accept array of texts
   @Post('trips/:tripId/activities/:activityId/checklists')
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
   @Roles(Role.TRAVELER)
   @SubscriptionCheck(0)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Add checklist item to activity checklist' })
+  @ApiOperation({ summary: 'Add checklist item(s) to activity checklist' })
   @ApiBody({
-    description: 'Checklist item details',
+    description: 'Checklist details with multiple items',
     type: 'object',
     schema: {
       type: 'object',
-      required: ['title', 'text'],
+      required: ['title', 'texts'],
       properties: {
         title: {
           type: 'string',
           description: 'Title of the checklist',
           example: 'Preparation Checklist',
         },
-        text: {
-          type: 'string',
-          description: 'The text/description of the checklist item',
-          example: 'Book surf lesson for this activity',
+        texts: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of text items to add',
+          example: ['Book surf lesson', 'Pack sunscreen', 'Confirm reservation'],
         },
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Checklist item added successfully', type: AddChecklistItemResponseDto })
-  @ApiBadRequestResponse({ description: 'Invalid checklist item data' })
+  @ApiResponse({ status: 201, description: 'Checklist items added successfully', type: AddChecklistItemResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid checklist data' })
   @ApiNotFoundResponse({ description: 'Trip or activity not found' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error during checklist addition' })
   async addChecklistItem(
@@ -471,7 +473,7 @@ export class ItinerariesPlanController {
         this.itinerariesService.AddChecklistItem({ tripId, userId, activityId, ...dto }).pipe(
           catchError((error) => {
             this.logger.error(`AddChecklistItem error: ${error.message}`);
-            throw new HttpException('Failed to add checklist item', HttpStatus.BAD_REQUEST);
+            throw new HttpException('Failed to add checklist items', HttpStatus.BAD_REQUEST);
           })
         )
       );

@@ -208,7 +208,7 @@ message AddChecklistItemRequest {
   string userId = 2;
   string activityId = 3;
   string title = 4;
-  string text = 5;
+  repeated string texts = 5;
 }
 
 message AddChecklistItemResponse {

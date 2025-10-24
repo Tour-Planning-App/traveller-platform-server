@@ -190,9 +190,10 @@ export class ItinerariesController {
   }
 
   @GrpcMethod('ItinerariesService', 'AddChecklistItem')
-  async addChecklistItem(@Payload() data: { tripId: string; userId: string; activityId: string; title: string; text: string }) {
+  async addChecklistItem(@Payload() data: { tripId: string; userId: string; activityId: string; title: string; texts: any }) {
     try {
-      const result = await this.tripService.addChecklistItem(data.tripId, data.activityId, data.title, data.text, data.userId);
+      console.log(data)
+      const result = await this.tripService.addChecklistItem(data.tripId, data.activityId, data.title, data.texts, data.userId);
       return { success: true, message: 'Checklist item added', checklist: result };
     } catch (error: any) {
       this.logger.error(`gRPC AddChecklistItem error: ${error.message}`, error.stack);

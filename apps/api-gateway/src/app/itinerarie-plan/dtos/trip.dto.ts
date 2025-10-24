@@ -86,16 +86,22 @@ export class AddChecklistItemDto {
   @IsString()
   title: string;
 
-  @ApiProperty({ example: 'Book surf lesson for this activity' })
-  @IsString()
-  text: string;
+  @ApiProperty({ 
+    type: 'array', 
+    items: { type: 'string' },
+    description: 'Array of text items to add to the checklist. If title exists, appends; else creates new.',
+    example: ['Book surf lesson', 'Pack sunscreen', 'Confirm reservation']
+  })
+  @IsArray()
+  @IsString({ each: true })
+  texts: string[];
 }
 
 export class AddChecklistItemResponseDto {
   @ApiProperty({ example: true })
   success: boolean;
 
-  @ApiProperty({ example: 'Checklist item added' })
+  @ApiProperty({ example: 'Checklist items added' })
   message: string;
 
   @ApiProperty()
