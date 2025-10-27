@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Put, Delete, Param, Query, Req, UseGuards, HttpException, HttpStatus, Inject, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import { firstValueFrom, catchError } from 'rxjs';
-import { ApiBearerAuth, ApiBadRequestResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOperation, ApiResponse, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBadRequestResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOperation, ApiResponse, ApiTags, ApiConsumes, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Logger } from '@nestjs/common';
 import {
@@ -156,6 +156,34 @@ export class CommunityServiceController {
   @Get('public/posts')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @ApiQuery({
+    name: 'limit',
+    type: Number,
+    required: false,
+    description: 'Number of posts to fetch per page (default: 10, max recommended: 50)',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'offset',
+    type: Number,
+    required: false,
+    description: 'Offset for pagination (starting index, default: 0)',
+    example: 0,
+  })
+  @ApiQuery({
+    name: 'q',
+    type: String,
+    required: false,
+    description: 'Search query for filtering posts by content (default: empty string for all posts)',
+    example: 'travel adventure',
+  })
+  @ApiQuery({
+    name: 'search',
+    type: String,
+    required: false,
+    description: 'Alternative search query parameter (alias for "q", default: empty string)',
+    example: 'travel adventure',
+  })
   @ApiOperation({ summary: 'Get public community post feed (latest first, searchable)' })
   @ApiResponse({ status: 200, description: 'Public posts fetched successfully', type: GetPostsResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
