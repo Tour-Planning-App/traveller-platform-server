@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package tools;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/Tour-Planning-App/traveller-platform-server/proto/tools";
+
+message ConvertCurrencyRequest {
+  double amount = 1;        // Amount to convert (assumed in LKR)
+  string target_currency = 2; // e.g., "USD", "GBP"
+}
+
+message ConvertCurrencyResponse {
+  bool success = 1;
+  string message = 2;
+  double converted_amount = 3; // Converted value, e.g., 100.00 USD
+  double exchange_rate = 4;    // Rate used, e.g., 1 USD = 301.08 LKR
+  string from_currency = 5;    // Always "LKR"
+  string to_currency = 6;
+}
+
+message TranslatePhraseRequest {
+  string phrase = 1;           // Text to translate, e.g., "Hi just arrived in Sri Lanka..."
+  string target_language = 2;  // e.g., "si" for Sinhala
+  string source_language = 3;  // Optional, default "en"
+}
+
+message TranslatePhraseResponse {
+  bool success = 1;
+  string message = 2;
+  string translated_phrase = 3;
+  string source_language = 4;
+  string target_language = 5;
+}
+
+message GetLanguagesRequest {
+  // No params needed
+}
+
+message GetLanguagesResponse {
+  bool success = 1;
+  string message = 2;
+  repeated Language languages = 3;
+}
+
+message Language {
+  string code = 1; // e.g., "si"
+  string name = 2; // e.g., "Sinhala"
+}
+
+service ToolsService {
+  rpc ConvertCurrency(ConvertCurrencyRequest) returns (ConvertCurrencyResponse);
+  rpc TranslatePhrase(TranslatePhraseRequest) returns (TranslatePhraseResponse);
+  rpc GetLanguages(GetLanguagesRequest) returns (GetLanguagesResponse);
+}

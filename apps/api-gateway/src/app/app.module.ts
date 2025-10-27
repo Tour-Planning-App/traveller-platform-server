@@ -81,6 +81,15 @@ import { ToolsServiceModule } from './tools-service/tools-service.module';
           url: 'localhost:50056', // Assume port for itineraries service
         },
       },
+      {
+        name: 'TOOLS_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'tools',
+          protoPath: join(__dirname, 'proto/tool.proto'),
+          url: 'localhost:50057', // Assume port for itineraries service
+        },
+      },
       // {
       //   name: 'TRIP_PACKAGE',
       //   transport: Transport.GRPC,
