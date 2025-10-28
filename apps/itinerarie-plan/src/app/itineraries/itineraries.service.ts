@@ -274,8 +274,8 @@ async createAITrip(userId: string, createDto: CreateAITripDto): Promise<Trip> {
       if (!userId || !isValidObjectId(userId)) {
         throw new BadRequestException('Invalid user ID');
       }
-      if (updateDto.dates && (!updateDto.dates || updateDto.dates.length === 0)) {
-        throw new BadRequestException('Dates array cannot be empty');
+      if (updateDto.dates && (!updateDto.dates || updateDto.dates.length !== 2)) {
+        throw new BadRequestException('Exactly two dates are required for update: start and end date in YYYY-MM-DD format');
       }
       if (updateDto.budget !== undefined && updateDto.budget < 0) {
         throw new BadRequestException('Budget must be non-negative');
@@ -286,7 +286,44 @@ async createAITrip(userId: string, createDto: CreateAITripDto): Promise<Trip> {
         throw new NotFoundException('Trip not found');
       }
 
-      Object.assign(trip, updateDto);
+      // Handle dates update (regenerate full dates and itinerary like in createTrip)
+      if (updateDto.dates) {
+        const [startDateStr, endDateStr] = updateDto.dates;
+        const startDate = new Date(startDateStr);
+        const endDate = new Date(endDateStr);
+        if (isNaN(startDate.getTime()) ) {
+          throw new BadRequestException('Start and end dates must be valid ISO date strings (YYYY-MM-DD format)');
+        }
+        if (startDate > endDate) {
+          throw new BadRequestException('Start date must be before or equal to end date');
+        }
+
+        // Generate all dates from start to end inclusive
+        const dates: string[] = [];
+        const currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+          dates.push(currentDate.toISOString().split('T')[0]);
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        // Regenerate ItineraryDay objects based on all dates
+        const itinerary = dates.map((date, index) => ({
+          day: index + 1, // number, required
+          date: date, // string (ISO), required
+          name: `Day ${index + 1}: ${trip.destination}`, // string, optional (use existing destination)
+          activities: [] // Reset activities to empty (or preserve logic if needed)
+        }));
+
+        // Update dates and itinerary
+        trip.dates = dates;
+        trip.itinerary = itinerary;
+      }
+
+      // Update other fields (name, destination, budget)
+      if (updateDto.name !== undefined) trip.name = updateDto.name;
+      if (updateDto.destination !== undefined) trip.destination = updateDto.destination;
+      if (updateDto.budget !== undefined) trip.budget = updateDto.budget;
+
       trip.updatedAt = new Date();
       return await trip.save();
     } catch (error: any) {
