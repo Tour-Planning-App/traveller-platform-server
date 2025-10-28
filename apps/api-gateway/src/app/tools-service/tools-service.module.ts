@@ -21,7 +21,7 @@ import { JwtModule } from '@nestjs/jwt';
           options: {
             package: 'tools',
             protoPath: join(__dirname, 'proto/tool.proto'),
-            url: 'localhost:50054', // Assume port for itineraries service
+            url: 'localhost:50057', // Assume port for itineraries service
           },
         },
         {

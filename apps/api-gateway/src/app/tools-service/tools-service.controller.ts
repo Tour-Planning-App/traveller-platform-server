@@ -46,7 +46,7 @@ export class ToolsServiceController {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };
 
-      const data = { amount: body.amount, target_currency: body.target_currency };
+      const data = { amount: body.amount, targetCurrency: body.target_currency };
 
       const result = await firstValueFrom(
         this.toolsService.ConvertCurrency(data).pipe(
@@ -62,6 +62,7 @@ export class ToolsServiceController {
           })
         )
       );
+      console.log('Conversion result:', result);
       return result;
     } catch (error: any) {
       this.logger.error(`ConvertCurrency failed: ${error.message}`, error.stack);

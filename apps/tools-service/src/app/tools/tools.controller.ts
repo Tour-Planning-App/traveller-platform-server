@@ -12,10 +12,11 @@ export class ToolsController {
   constructor(private readonly toolsService: ToolsService) {}
 
   @GrpcMethod('ToolsService', 'ConvertCurrency')
-  async convertCurrency(@Payload() data: { amount: number; target_currency: string }) {
+  async convertCurrency(@Payload() data: { amount: number; targetCurrency: string }) {
     try {
       console.log('Received convertCurrency request:', data);
-      const result = await this.toolsService.convertCurrency(data.amount, data.target_currency);
+      const result = await this.toolsService.convertCurrency(data.amount, data.targetCurrency);
+      console.log('Conversion result:', result);
       return { success: true, message: 'Currency converted successfully', ...result };
     } catch (error: any) {
       this.logger.error(`gRPC ConvertCurrency error: ${error.message}`, error.stack);

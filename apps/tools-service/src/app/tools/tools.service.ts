@@ -26,8 +26,9 @@ export class ToolsService {
     });
   }
 
-  async convertCurrency(amount: number, targetCurrency: string): Promise<{ converted_amount: number; exchange_rate: number; from_currency: string; to_currency: string }> {
+  async convertCurrency(amount: number, targetCurrency: string): Promise<any> {
     try {
+      console.log(`Converting amount: ${amount} to currency: ${targetCurrency}`);
       if (amount < 0 || !targetCurrency) {
         throw new BadRequestException('Invalid amount or target currency');
       }
@@ -41,6 +42,8 @@ export class ToolsService {
         })
       );
 
+      console.log('Exchange rates response:', response.data);
+
       const rates = response.data.rates;
       const lkrRate = rates['LKR'];
       const targetRate = rates[targetCurrency.toUpperCase()];
@@ -53,10 +56,10 @@ export class ToolsService {
       const convertedAmount = amountInUsd * targetRate;
 
       return {
-        converted_amount: parseFloat(convertedAmount.toFixed(2)),
-        exchange_rate: parseFloat((1 / lkrRate * targetRate).toFixed(2)), // Effective rate from LKR to target
-        from_currency: 'LKR',
-        to_currency: targetCurrency.toUpperCase(),
+        convertedAmount: parseFloat(convertedAmount.toFixed(2)),
+        exchangeRate: parseFloat((1 / lkrRate * targetRate).toFixed(2)), // Effective rate from LKR to target
+        fromCurrency: 'LKR',
+        toCurrency: targetCurrency.toUpperCase(),
       };
     } catch (error: any) {
       if (error.response) {
