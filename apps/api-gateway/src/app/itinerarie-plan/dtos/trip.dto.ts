@@ -79,7 +79,7 @@ export class AddNoteResponseDto {
   message: string;
 
   @ApiProperty()
-  note: { title: string; content: string; createdAt: string };
+  note: { id: string; title: string; content: string; createdAt: string };
 }
 export class AddChecklistItemDto {
   @ApiProperty({ example: 'Preparation Checklist' })
@@ -185,3 +185,4 @@ export class LocationSuggestionDto {
   @ApiProperty({ example: 'ChIJ...' })
   placeId: string;
 }
+
