@@ -28,11 +28,12 @@ export class Activity extends Document {
   placeId: string;
 
   @Prop({ type: [{ 
+    _id: { type: Types.ObjectId, auto: true },
     title: { type: String, required: true },
     content: { type: String, required: true }, 
     createdAt: { type: Date, default: Date.now } 
   }], default: [] })
-  notes: { title: string; content: string; createdAt: Date }[];
+  notes: { _id: Types.ObjectId; title: string; content: string; createdAt: Date }[];
 
   @Prop({ type: [{ 
       id: { type: Types.ObjectId, auto: true },
