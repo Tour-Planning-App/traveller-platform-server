@@ -54,9 +54,10 @@ message NoteList {
 }
 
 message Note {
-  string title = 1;
-  string content = 2;
-  google.protobuf.Timestamp createdAt = 3;
+  string id = 1;
+  string title = 2;
+  string content = 3;
+  google.protobuf.Timestamp createdAt = 4;
 }
 
 message Checklist {
@@ -231,6 +232,30 @@ message UpdateChecklistItemResponse {
   string message = 2;
 }
 
+message DeleteChecklistRequest {
+  string tripId = 1;
+  string userId = 2;
+  string activityId = 3;
+  string checklistId = 4;
+}
+
+message DeleteChecklistResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message DeleteNoteRequest {
+  string tripId = 1;
+  string userId = 2;
+  string activityId = 3;
+  string noteId = 4;
+}
+
+message DeleteNoteResponse {
+  bool success = 1;
+  string message = 2;
+}
+
 message OptimizeDayRequest{
   string tripId = 1;
   string userId =2;
@@ -302,6 +327,8 @@ service ItinerariesService {
   rpc AddNote(AddNoteRequest) returns (AddNoteResponse);
   rpc AddChecklistItem(AddChecklistItemRequest) returns (AddChecklistItemResponse);
   rpc UpdateChecklistItem(UpdateChecklistItemRequest) returns (UpdateChecklistItemResponse);
+  rpc DeleteChecklist(DeleteChecklistRequest) returns (DeleteChecklistResponse);
+  rpc DeleteNote(DeleteNoteRequest) returns (DeleteNoteResponse);
   rpc OptimizeDay(OptimizeDayRequest) returns (OptimizeDayResponse);
   rpc MoveBucketToItinerary(MoveBucketToItineraryRequest) returns (MoveBucketToItineraryResponse);
   rpc AutoFillLocation(AutoFillLocationRequest) returns (AutoFillLocationResponse);
