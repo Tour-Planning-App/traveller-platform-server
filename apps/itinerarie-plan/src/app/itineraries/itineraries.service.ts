@@ -564,7 +564,7 @@ async createAITrip(userId: string, createDto: CreateAITripDto): Promise<Trip> {
     }
   }
 
-  async addNote(tripId: string, activityId: string, title: string, content: string, userId: string): Promise<{ title: string; content: string; createdAt: Date }> {
+  async addNote(tripId: string, activityId: string, title: string, content: string, userId: string): Promise<{ _id: Types.ObjectId; title: string; content: string; createdAt: Date }> {
     try {
       // Validation
       if (!isValidObjectId(tripId)) {
@@ -596,6 +596,7 @@ async createAITrip(userId: string, createDto: CreateAITripDto): Promise<Trip> {
       }
 
       const newNote = { 
+        _id: new Types.ObjectId(),
         title: title.trim(), 
         content: content.trim(), 
         createdAt: new Date() 
@@ -1005,5 +1006,116 @@ async addChecklistItem(tripId: string, activityId: string, checklistTitle: strin
     }
 
     return suggestions;
+  }
+
+  async deleteActivityChecklist(tripId: string, activityId: string, checklistId: string, userId: string): Promise<void> {
+    try {
+      // Validation
+      if (!isValidObjectId(tripId)) {
+        throw new BadRequestException('Invalid trip ID');
+      }
+      if (!isValidObjectId(activityId)) {
+        throw new BadRequestException('Invalid activity ID');
+      }
+      if (!isValidObjectId(checklistId)) {
+        throw new BadRequestException('Invalid checklist ID');
+      }
+      if (!userId || !isValidObjectId(userId)) {
+        throw new BadRequestException('Invalid user ID');
+      }
+
+      const trip = await this.tripModel.findOne({ _id: tripId, userId }).populate('itinerary.activities');
+      if (!trip) {
+        throw new NotFoundException('Trip not found');
+      }
+
+      // Find the activity across all days
+      let activity: any = null;
+      for (const day of trip.itinerary) {
+        activity = day.activities.find((act: any) => act._id.toString() === activityId);
+        if (activity) break;
+      }
+      if (!activity) {
+        throw new NotFoundException('Activity not found');
+      }
+
+      // Ensure checklists array exists
+      if (!activity.checklists || activity.checklists.length === 0) {
+        throw new NotFoundException('No checklists found for this activity');
+      }
+
+      const checklistIndex = activity.checklists.findIndex((cl: any) => cl.id?.toString() === checklistId);
+      console.log('Checklist index found:', checklistIndex);
+      
+      if (checklistIndex === -1) {
+        throw new NotFoundException('Checklist not found');
+      }
+
+      activity.checklists.splice(checklistIndex, 1);
+      await activity.save();
+      await trip.save(); // Save trip to update references if needed
+      console.log('Checklist deleted successfully');
+    } catch (error: any) {
+      console.error('DeleteChecklist error:', error.message, error.stack);
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to delete checklist: ${error.message}`);
+    }
+  }
+
+  async deleteActivityNote(tripId: string, activityId: string, noteId: string, userId: string): Promise<void> {
+    try {
+      // Validation
+      if (!isValidObjectId(tripId)) {
+        throw new BadRequestException('Invalid trip ID');
+      }
+      if (!isValidObjectId(activityId)) {
+        throw new BadRequestException('Invalid activity ID');
+      }
+      if (!isValidObjectId(noteId)) {
+        throw new BadRequestException('Invalid note ID');
+      }
+      if (!userId || !isValidObjectId(userId)) {
+        throw new BadRequestException('Invalid user ID');
+      }
+
+      const trip = await this.tripModel.findOne({ _id: tripId, userId }).populate('itinerary.activities');
+      if (!trip) {
+        throw new NotFoundException('Trip not found');
+      }
+
+      // Find the activity across all days
+      let activity: any = null;
+      for (const day of trip.itinerary) {
+        activity = day.activities.find((act: any) => act._id.toString() === activityId);
+        if (activity) break;
+      }
+      if (!activity) {
+        throw new NotFoundException('Activity not found');
+      }
+
+      // Ensure notes array exists
+      if (!activity.notes || activity.notes.length === 0) {
+        throw new NotFoundException('No notes found for this activity');
+      }
+
+      const noteIndex = activity.notes.findIndex((note: any) => note._id && note._id.toString() === noteId);
+
+      if (noteIndex === -1) {
+        throw new NotFoundException('Note not found');
+      }
+
+      activity.notes.splice(noteIndex, 1);
+      await activity.save();
+      await trip.save(); // Save trip to update references if needed
+      console.log('Note deleted successfully');
+    } catch (error: any) {
+      console.error('DeleteNote error:', error.message, error.stack);
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to delete note: ${error.message}`);
+    }
   }
 }
