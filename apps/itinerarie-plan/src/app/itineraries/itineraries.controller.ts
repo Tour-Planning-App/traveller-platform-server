@@ -2,7 +2,7 @@ import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod, Payload } from '@nestjs/microservices';
 import { RpcException } from '@nestjs/microservices';
 import { CreateTripDto, UpdateTripDto, AddItineraryItemDto, CreateAITripDto, SearchLocationsDto } from './dtos/trip.dto';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ItinerariesService } from './itineraries.service';
 
 @Controller('itineraries')
@@ -179,7 +179,14 @@ export class ItinerariesController {
     try {
       console.log(data)
       const result = await this.tripService.addNote(data.tripId, data.activityId, data.title, data.content, data.userId);
-      return { success: true, message: 'Note added', note: result };
+      // Map _id to id for gRPC response
+      const noteResponse = {
+        id: result._id.toString(),
+        title: result.title,
+        content: result.content,
+        createdAt: result.createdAt
+      };
+      return { success: true, message: 'Note added', note: noteResponse };
     } catch (error: any) {
       this.logger.error(`gRPC AddNote error: ${error.message}`, error.stack);
       throw new RpcException({
@@ -320,5 +327,49 @@ export class ItinerariesController {
         message: error.message,
       });
     }
+  }
+
+  @GrpcMethod('ItinerariesService', 'DeleteChecklist')
+  async deleteActivityChecklist(@Payload() data: { tripId: string; activityId: string; checklistId: string; userId: string }) : Promise<{ success: boolean; message: string }> {
+    try {
+      await this.tripService.deleteActivityChecklist(data.tripId, data.activityId, data.checklistId, data.userId);
+      return { success: true, message: 'Checklist deleted successfully' };
+    } catch (error: any) {
+      this.logger.error(`gRPC DeleteChecklist error: ${error.message}`, error.stack);
+      
+      let grpcCode = 2; // Default to UNKNOWN
+      if (error instanceof BadRequestException) {
+        grpcCode = 3; // INVALID_ARGUMENT
+      } else if (error instanceof NotFoundException) {
+        grpcCode = 5; // NOT_FOUND
+      }
+      
+      throw new RpcException({
+        code: grpcCode,
+        message: error.message,
+      });
+    } 
+  }
+  
+  @GrpcMethod('ItinerariesService', 'DeleteNote')
+  async deleteActivityNote(@Payload() data: { tripId: string; activityId: string; noteId: string; userId: string }) : Promise<{ success: boolean; message: string }> {
+    try {
+      await this.tripService.deleteActivityNote(data.tripId, data.activityId, data.noteId, data.userId);
+      return { success: true, message: 'Note deleted successfully' };
+    } catch (error: any) {
+      this.logger.error(`gRPC DeleteNote error: ${error.message}`, error.stack);
+
+      let grpcCode = 2; // Default to UNKNOWN
+      if (error instanceof BadRequestException) {
+        grpcCode = 3; // INVALID_ARGUMENT
+      } else if (error instanceof NotFoundException) {
+        grpcCode = 5; // NOT_FOUND
+      }
+      
+      throw new RpcException({
+        code: grpcCode,
+        message: error.message,
+      });
+    } 
   }
 }
