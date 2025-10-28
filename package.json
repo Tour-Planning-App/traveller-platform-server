@@ -45,6 +45,7 @@
   ],
   "dependencies": {
     "@aws-sdk/client-s3": "^3.908.0",
+    "@google-cloud/translate": "^9.2.1",
     "@googlemaps/google-maps-services-js": "^3.4.2",
     "@googlemaps/routing": "^2.1.1",
     "@grpc/grpc-js": "^1.13.4",
@@ -54,6 +55,7 @@
     "@langchain/langgraph": "^0.4.9",
     "@langchain/openai": "^0.6.13",
     "@nestjs-modules/mailer": "^2.0.2",
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.0",
@@ -76,7 +78,7 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.0",
+    "rxjs": "^7.8.2",
     "stripe": "^19.1.0",
     "twilio": "^5.9.0"
   }
