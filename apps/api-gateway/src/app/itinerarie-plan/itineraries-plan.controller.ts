@@ -778,4 +778,58 @@ export class ItinerariesPlanController {
       throw error;
     }
   }
+
+  @Delete(':id/activities/:activityId/checklist/:checklistId')
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @Roles(Role.TRAVELER)
+  @SubscriptionCheck(0)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove checklist from activity' })
+  async deleteActivityChecklist(@Param('id') tripId: string, @Param('activityId') activityId: string, @Param('checklistId') checklistId: string, @Req() req: any) {
+    const userId = req.user.userId;
+    try {
+      console.log('API Gateway DeleteChecklist called:', { tripId, activityId, checklistId, userId });
+      const result = await firstValueFrom(
+        this.itinerariesService.DeleteChecklist({ tripId, activityId, checklistId, userId }).pipe(
+          catchError((error) => {
+            this.logger.error(`DeleteChecklist gRPC error: ${error.message}`, error);
+            console.error('DeleteChecklist gRPC error details:', error);
+            throw error; // Re-throw to let the global filter handle it
+          })
+        )
+      );
+      console.log('DeleteChecklist success:', result);
+      return result;
+    } catch (error: any) {
+      console.error('DeleteChecklist final error:', error);
+      throw error;
+    }
+  }
+  
+  @Delete(':id/activities/:activityId/note/:noteId')
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @Roles(Role.TRAVELER)
+  @SubscriptionCheck(0)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove note from activity' })
+  async deleteActivityNote(@Param('id') tripId: string, @Param('activityId') activityId: string, @Param('noteId') noteId: string, @Req() req: any) {
+    const userId = req.user.userId;
+    try {
+      console.log('API Gateway DeleteNote called:', { tripId, activityId, noteId, userId });
+      const result = await firstValueFrom(
+        this.itinerariesService.DeleteNote({ tripId, activityId, noteId, userId }).pipe(
+          catchError((error) => {
+            this.logger.error(`DeleteNote gRPC error: ${error.message}`, error);
+            console.error('DeleteNote gRPC error details:', error);
+            throw error; // Re-throw to let the global filter handle it
+          })
+        )
+      );
+      console.log('DeleteNote success:', result);
+      return result;
+    } catch (error: any) {
+      console.error('DeleteNote final error:', error);
+      throw error;
+    }
+  }
 }
