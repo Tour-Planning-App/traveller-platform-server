@@ -144,7 +144,6 @@ export class CommunityService {
         .select('-likes -comments') // Omit heavy fields for feed
         .lean() // Use lean for performance
         .exec();
-console.log(posts)
       const total = await this.postModel.countDocuments(query);
 
       // Fetch unique user details via gRPC
@@ -194,32 +193,72 @@ console.log(posts)
           isFollowing: false,
         },
       }));
-console.log(enhancedPosts)
       // Add isFollowing if currentUserId provided
-      if (data.currentUserId) {
-        const followeeIds = uniqueUserIds.map(id => new Types.ObjectId(id));
-        const follows = await this.followModel.find({
-          followerId: new Types.ObjectId(data.currentUserId),
-          followeeId: { $in: followeeIds },
-        }).select('followeeId').exec();
-        const followedSet = new Set(follows.map((f: any) => f.followeeId.toString()));
-        enhancedPosts = enhancedPosts.map((post: any) => ({
+  // Add isFollowing if currentUserId provided
+    if (data.currentUserId) {
+      const currentUserId = data.currentUserId.toString();
+      console.log('Current User ID:', currentUserId);
+      const followeeIds = uniqueUserIds.map(id => id.toString());
+      console.log('Followee IDs:', followeeIds);
+
+      const follows = await this.followModel.find({
+        followerId: new Types.ObjectId(currentUserId),
+        followeeId: { $in: followeeIds.map(id => new Types.ObjectId(id)) },
+      }).select('followeeId').exec();
+
+      console.log('Follows fetched:', follows.length);
+
+      const followedSet = new Set(follows.map((f: any) => f.followeeId.toString()));
+      console.log('Followed Set:', followedSet);
+
+      enhancedPosts = enhancedPosts.map((post: any) => {
+        const isFollowing = followedSet.has(post.userId); // Use post.userId directly (string)
+        return {
           ...post,
           user: {
             ...post.user,
-            isFollowing: followedSet.has(post.user.id),
+            isFollowing, // Set based on direct userId match
           },
-        }));
-      } else {
-        // Public: isFollowing false
-        enhancedPosts = enhancedPosts.map((post: any) => ({
-          ...post,
-          user: {
-            ...post.user,
-            isFollowing: false,
-          },
-        }));
-      }
+        };
+      });
+    } else {
+      // Public: isFollowing false
+      enhancedPosts = enhancedPosts.map((post: any) => ({
+        ...post,
+        user: {
+          ...post.user,
+          isFollowing: false,
+        },
+      }));
+    }
+
+    // Add isLiked if currentUserId provided (check if current user liked the post)
+    if (data.currentUserId) {
+      const currentUserId = data.currentUserId.toString();
+      // Since likes are not populated in lean(), we need to fetch posts with likes populated or use aggregate
+      // For efficiency, use aggregate to check likes for current user
+      const popularPosts = await this.postModel.aggregate([
+        { $match: { _id: { $in: postIds } } },
+        { $addFields: {
+            isLiked: { $in: [new Types.ObjectId(currentUserId), '$likes'] }
+          }
+        },
+        { $project: { _id: 1, isLiked: 1 } }
+      ]).exec();
+
+      const isLikedMap = new Map(popularPosts.map((p: any) => [p._id.toString(), p.isLiked]));
+
+      enhancedPosts = enhancedPosts.map((post: any) => ({
+        ...post,
+        isLiked: isLikedMap.get(post.id) || false,
+      }));
+    } else {
+      // Public: isLiked false
+      enhancedPosts = enhancedPosts.map((post: any) => ({
+        ...post,
+        isLiked: false,
+      }));
+    }
 
       return { success: true, posts: enhancedPosts, total } as any;
     } catch (error) {
@@ -692,7 +731,7 @@ async getPostComments(data: GetPostCommentsDto): Promise<GetPostCommentsResponse
       if (!user.data) {
         throw new NotFoundException('User not found');
       }
-console.log(user)
+      console.log(user)
       // Fetch post count, followers, following
       const postCount = await this.postModel.countDocuments({ userId: data.userId });
       const followerCount = await this.followModel.countDocuments({ followeeId: data.userId });

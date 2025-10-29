@@ -254,7 +254,8 @@ message Post {
   repeated Comment comments = 9;
   google.protobuf.Timestamp createdAt = 10;
   google.protobuf.Timestamp updatedAt = 11;
-  UserSummary user = 12;
+  bool isLiked = 12;
+  UserSummary user = 13;
 }
 
 message Like {
