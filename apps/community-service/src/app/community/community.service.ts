@@ -194,30 +194,31 @@ export class CommunityService {
         },
       }));
       // Add isFollowing if currentUserId provided
-  // Add isFollowing if currentUserId provided
     if (data.currentUserId) {
-      const currentUserId = data.currentUserId.toString();
-      console.log('Current User ID:', currentUserId);
-      const followeeIds = uniqueUserIds.map(id => id.toString());
-      console.log('Followee IDs:', followeeIds);
+      const currentUserIdStr = data.currentUserId.toString();
+      console.log('Current User ID (string):', currentUserIdStr);
+      const followeeIdsStr = uniqueUserIds; // strings
+      console.log('Followee IDs (strings):', followeeIdsStr);
 
+      // Use strings for query (Mongoose converts to ObjectId automatically for ObjectId fields)
       const follows = await this.followModel.find({
-        followerId: new Types.ObjectId(currentUserId),
-        followeeId: { $in: followeeIds.map(id => new Types.ObjectId(id)) },
+        followerId: currentUserIdStr, // string
+        followeeId: { $in: followeeIdsStr }, // array of strings
       }).select('followeeId').exec();
 
       console.log('Follows fetched:', follows.length);
+      console.log('Follows data:', follows.map(f => ({ followerId: f.followerId, followeeId: f.followeeId })));
 
       const followedSet = new Set(follows.map((f: any) => f.followeeId.toString()));
       console.log('Followed Set:', followedSet);
 
       enhancedPosts = enhancedPosts.map((post: any) => {
-        const isFollowing = followedSet.has(post.userId); // Use post.userId directly (string)
+        const isFollowing = followedSet.has(post.userId); // post.userId is string
         return {
           ...post,
           user: {
             ...post.user,
-            isFollowing, // Set based on direct userId match
+            isFollowing, // Now correctly set
           },
         };
       });
