@@ -10,7 +10,6 @@ import { Notification } from './schemas/notification.schema';
 import { Follow } from './schemas/follow.schema';
 import {
   CreatePostDto, CreatePostResponseDto,
-  GetPostsDto, GetPostsResponseDto,
   GetPostByIdDto, GetPostResponseDto,
   UpdatePostDto, UpdatePostResponseDto,
   DeletePostDto, DeletePostResponseDto,
@@ -570,7 +569,7 @@ async getPostComments(data: GetPostCommentsDto): Promise<GetPostCommentsResponse
           postId: data.postId,
           userId: comment.userId.toString(),
           text: comment.text,
-          createdAt: comment.createdAt,  // Keep as Date object for gRPC Timestamp serialization
+          createdAt: comment.createdAt.toISOString(),  // Keep as Date object for gRPC Timestamp serialization
         },
         user: {
           id: user?.id || comment.userId.toString(),

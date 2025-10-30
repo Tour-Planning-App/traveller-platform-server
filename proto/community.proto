@@ -268,7 +268,7 @@ message Comment {
   string postId = 2;  // Added for quick queries
   string userId = 3;
   string text = 4;
-  google.protobuf.Timestamp createdAt = 5;
+  string createdAt = 5;
 }
 message DetailedComment {
   Comment comment = 1;
