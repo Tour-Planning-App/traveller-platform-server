@@ -756,7 +756,6 @@ async getPostComments(data: GetPostCommentsDto): Promise<GetPostCommentsResponse
         followingCount: followingCount,
         posts,
       };
-console.log(profile)
       return { success: true, profile } as any;
     } catch (error) {
       this.logger.error(`GetProfile error: ${error.message}`);

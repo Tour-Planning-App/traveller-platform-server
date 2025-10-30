@@ -40,6 +40,9 @@ export class User extends Document {
   @Prop({ default: false })
   isOnboarded!: boolean;
 
+  @Prop()
+  bio?: string;
+
   // Personal Details Fields
   @Prop()
   residentialAddress?: string;

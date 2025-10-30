@@ -86,6 +86,7 @@ export class UserController {
   @GrpcMethod('UserService', 'UpdateProfile')
   async updateProfile(@Payload() data: UpdateProfileDto) {
     try {
+      console.log('called with data:', data);
       const result = await this.userService.updateProfile(data);
       return { status: 200, message: 'Profile updated successfully', id: result._id };
     } catch (error: any) {

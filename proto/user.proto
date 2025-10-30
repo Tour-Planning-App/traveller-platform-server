@@ -83,6 +83,8 @@ message UpdateProfileRequest {
   string email = 3;
   string preferredLanguage = 4;
   string preferredCurrency = 5;
+  string bio = 6;
+  string profileImage = 7;
 }
 
 message UpdateProfileResponse {
@@ -153,6 +155,8 @@ message User {
   bool profile_visibility = 27;
   bool is_deactivated = 28;
   string profile_picture_url = 29;
+  string bio = 30;
+  string profileImage = 31;
 }
 
 // New messages for subscriptions

@@ -64,9 +64,23 @@ export class UpdateProfileDto {
   @IsString({ message: 'Name must be a string' })
   name?: string;
 
+  @ApiProperty({ example: 'user123', description: 'User ID' })
+  @IsString({ message: 'User ID must be a string' })
+  userId: string; // Assuming userId is required to identify which profile to update
+
   @ApiProperty({ example: 'user@example.com', description: 'User email' })
   @IsEmail({}, { message: 'Invalid email format' })
   email: string;
+
+  @ApiProperty({ example: 'This is my bio', description: 'User bio', required: false })
+  @IsOptional()
+  @IsString({ message: 'Bio must be a string' })
+  bio?: string;
+
+  @ApiProperty({ example: 'http://example.com/profile.jpg', description: 'Profile image URL', required: false })
+  @IsOptional()
+  @IsString({ message: 'Profile image must be a string' })
+  profileImage?: string;
 
 
   @ApiProperty({ example: 'English', description: 'Preferred language', required: false })

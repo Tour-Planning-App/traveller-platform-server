@@ -125,12 +125,15 @@ export class UserService {
 
   async updateProfile(updateProfileDto: UpdateProfileDto): Promise<User> {
     try {
-      const user = await this.userModel.findOne({ email: updateProfileDto.email }).exec();
+      console.log('UpdateProfile called with:', updateProfileDto);
+      const user = await this.userModel.findById({ id: updateProfileDto.userId }).exec();
       if (!user) {
         throw new NotFoundException('User not found');
       }
 
       if (updateProfileDto.name) user.name = updateProfileDto.name;
+      if (updateProfileDto.bio) user.bio = updateProfileDto.bio;
+      if (updateProfileDto.profileImage) user.profileImage = updateProfileDto.profileImage;
       if (updateProfileDto.preferredLanguage) user.preferredLanguage = updateProfileDto.preferredLanguage;
       if (updateProfileDto.preferredCurrency) user.preferredCurrency = updateProfileDto.preferredCurrency;
 

@@ -292,6 +292,7 @@ export class CommunityController {
   @GrpcMethod('CommunityService', 'UpdateProfile')
   async updateProfile(@Payload() data: UpdateProfileDto): Promise<UpdateProfileResponseDto> {
     try {
+      console.log('UpdateProfile gRPC called with data:', data);
       const result = await this.communityService.updateProfile(data);
       return {
         success: result.success,
