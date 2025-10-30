@@ -59,8 +59,9 @@ export class CommunityController {
   @GrpcMethod('CommunityService', 'GetPosts')
   async getPosts(@Payload() data: GetPostsDto): Promise<any> {
     try {
-      console.log(data)
       const result = await this.communityService.getPosts(data);
+      console.log('GetPosts result:');
+      console.log(result)
       return {
         success: result.success,
         posts: result.posts,

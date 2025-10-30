@@ -214,6 +214,7 @@ export class CommunityServiceController {
           })
         )
       );
+      console.log('Public Posts Result:', result);
       return result;
     } catch (error: any) {
       this.logger.error(`GetPublicPosts failed: ${error.message}`, error.stack);

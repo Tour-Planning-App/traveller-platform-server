@@ -173,7 +173,7 @@ export class CommunityService {
         { $group: { _id: '$postId', count: { $sum: 1 } } },
       ]).exec();
       const countsMap = new Map(commentsCountsAgg.map((c: any) => [c._id.toString(), c.count]));
-
+      
       // Enhance posts
       let enhancedPosts: any[] = posts.map((post: any) => ({
         id: post._id.toString(),
@@ -183,8 +183,8 @@ export class CommunityService {
         tags: post.tags,
         likeCount: post.likeCount,
         commentsCount: countsMap.get(post._id.toString()) || 0,
-        createdAt: post.createdAt,
-        updatedAt: post.updatedAt,
+        createdAt: post.createdAt.toISOString(),
+        updatedAt: post.updatedAt.toISOString(),
         user: usersMap.get(post.userId) || {
           id: post.userId,
           name: 'Unknown User',
@@ -260,7 +260,6 @@ export class CommunityService {
         isLiked: false,
       }));
     }
-
       return { success: true, posts: enhancedPosts, total } as any;
     } catch (error) {
       this.logger.error(`GetPosts error: ${error.message}`);
