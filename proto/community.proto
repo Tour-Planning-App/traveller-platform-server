@@ -32,6 +32,7 @@ service CommunityService {
   rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
 
   rpc UploadMedia(UploadMediaRequest) returns (UploadMediaResponse);
+  rpc UploadProfileImage(UploadMediaRequest) returns (UploadMediaResponse);
 
   rpc GetPostLikers(GetPostLikersRequest) returns (GetPostLikersResponse);
   rpc GetPostComments(GetPostCommentsRequest) returns (GetPostCommentsResponse);

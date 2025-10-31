@@ -115,6 +115,81 @@ export class CommunityServiceController {
   }
 
 
+  @Post('profile-image/upload')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Media file upload',
+    type: 'multipart/form-data',
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Media file (JPEG, PNG, JPG, AVIF, WEBP)',
+        },
+      },
+    },
+  })
+  @ApiOperation({ summary: 'Upload media via gRPC to Backblaze B2' })
+  @ApiResponse({ status: 201, description: 'File uploaded successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid file or upload failed' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error during upload' })
+  async uploadProfilePhoto(
+    @UploadedFile() file: any,
+    @Req() req: any,
+  ): Promise<{ success: boolean; url: string; message: string }> {
+    try {
+      const userId = req?.user?.userId;
+      if (!userId) {
+        return { success: false, url: '', message: 'User not authenticated' };
+      }
+
+      if (!file) {
+        throw new HttpException('No file uploaded', HttpStatus.BAD_REQUEST);
+      }
+
+      // Validate file
+      const allowedTypes = ['image/jpeg','image/jpg', 'image/png','image/avif','image/webp'];
+      if (!allowedTypes.includes(file.mimetype)) {
+        throw new HttpException('Unsupported file type', HttpStatus.BAD_REQUEST);
+      }
+
+      // Prepare gRPC request (base64 encode buffer)
+      const base64Data = file.buffer.toString('base64');
+      const data: any = {
+        userId: userId,
+        fileData: Buffer.from(base64Data, 'base64'), // Reconstruct bytes
+        fileName: file.originalname,
+        contentType: file.mimetype,
+      };
+
+      const result = await firstValueFrom(
+        this.communityService.UploadProfileImage(data).pipe(
+          catchError((error) => {
+            this.logger.error(`UploadMedia gRPC error: ${error.message}`, error.stack);
+            if (error.code === 2 || error.code === 'INTERNAL') {
+              throw new HttpException('Internal server error during upload', HttpStatus.INTERNAL_SERVER_ERROR);
+            } else if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
+              throw new HttpException('Invalid file data', HttpStatus.BAD_REQUEST);
+            } else {
+              throw new HttpException('Upload failed', HttpStatus.BAD_REQUEST);
+            }
+          }),
+        ),
+      ) as any;
+
+      return { success: result.success, url: result.url, message: result.message } as any;
+    } catch (error: any) {
+      this.logger.error(`UploadMedia failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+
   @Post('posts')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

@@ -48,4 +48,30 @@ export class MediaService {
       throw new BadRequestException('File upload failed');
     }
   }
+
+  async uploadProfileImage(buffer: Buffer, fileName: string, contentType: string, bucketName: string = process.env.B2_BUCKET_NAME || ''): Promise<string> {
+    if (!buffer || buffer.length === 0) {
+      throw new BadRequestException('No file data provided');
+    }
+
+    const fileExtension = extname(fileName);
+    const key = `community-profile/${Date.now()}-${Math.round(Math.random() * 1e9)}${fileExtension}`;
+    const params = {
+      Bucket: bucketName,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    } as any;
+
+    try {
+      await this.s3Client.send(new PutObjectCommand(params));
+      const url = `https://f005.backblazeb2.com/file/${bucketName}/${key}`;
+      this.logger.log(`File uploaded: ${url}`);
+      return url;
+    } catch (error: any) {
+      this.logger.error(`Upload failed: ${error.message}`);
+      throw new BadRequestException('File upload failed');
+    }
+  }
+
 }

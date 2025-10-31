@@ -363,6 +363,25 @@ export class CommunityController {
     }
   }
 
+  @GrpcMethod('CommunityService', 'UploadProfileImage')
+  async UploadProfileImage(@Payload() data: any): Promise<any> {
+    try {
+      const buffer = Buffer.from(data.fileData);
+      const url = await this.mediaService.uploadProfileImage(
+        buffer,
+        data.fileName,
+        data.contentType,
+      );
+      return { success: true, message: 'Upload successful', url };
+    } catch (error: any) {
+      this.logger.error(`gRPC UploadMedia error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
 
 @GrpcMethod('CommunityService', 'GetPostLikers')
 async getPostLikers(@Payload() data: GetPostLikersDto): Promise<GetPostLikersResponseDto> {
