@@ -36,6 +36,7 @@ import { Types } from 'mongoose'; // Ensure this is imported at the top
 export class CommunityService {
   private readonly logger = new Logger(CommunityService.name);
   private userService: any;
+  private logsService: any;
 
   constructor(
     @InjectModel(Post.name) private postModel: Model<Post>,
@@ -43,8 +44,10 @@ export class CommunityService {
     @InjectModel(Follow.name) private followModel: Model<Follow>,
     @InjectModel(Comment.name) private commentModel: Model<Comment>,
     @Inject('USER_PACKAGE') private userClient: ClientGrpcProxy,
+    @Inject('LOGS_PACKAGE') private logsClient: ClientGrpcProxy,
   ) {
     this.userService = this.userClient.getService('UserService');
+    this.logsService = this.logsClient.getService('LogsService');
   }
 
   async createPost(data: CreatePostDto): Promise<CreatePostResponseDto> {
@@ -64,12 +67,54 @@ export class CommunityService {
       });
       await post.save();
 
+      // Log post creation to logs-service
+      try {
+        await firstValueFrom(
+          this.logsService.CreateLog({
+            serviceName: 'community-service',
+            action: 'POST_CREATED',
+            userId: data.userId,
+            resourceId: post._id.toString(),
+            resourceType: 'post',
+            details: JSON.stringify({
+              caption: data.caption,
+              imageUrl: data.imageUrl,
+              tags: data.tags,
+            }),
+            status: 'success',
+            ipAddress: data.ipAddress || 'internal', // Use passed IP or default to 'internal'
+          })
+        );
+        this.logger.log(`Post creation logged for post ${post._id}`);
+      } catch (logError) {
+        // Log error but don't fail the post creation
+        this.logger.error(`Failed to log post creation: ${logError.message}`);
+      }
+
       // Emit Kafka event for post creation (e.g., notify followers)
       // Assuming Kafka client is injected or handled elsewhere
       // this.kafkaClient.emit('post.created', { postId: post.id, userId: data.userId });
 
       return { success: true, message: 'Post created', post: post.toObject() } as any;
     } catch (error) {
+      // Log error to logs-service
+      try {
+        await firstValueFrom(
+          this.logsService.CreateLog({
+            serviceName: 'community-service',
+            action: 'POST_CREATED',
+            userId: data.userId,
+            resourceId: '',
+            resourceType: 'post',
+            details: JSON.stringify({ error: error.message }),
+            status: 'error',
+            ipAddress: data.ipAddress || 'internal',
+          })
+        );
+      } catch (logError) {
+        this.logger.error(`Failed to log error: ${logError.message}`);
+      }
+
       this.logger.error(`CreatePost error: ${error.message}`);
       throw new BadRequestException(error.message);
     }
