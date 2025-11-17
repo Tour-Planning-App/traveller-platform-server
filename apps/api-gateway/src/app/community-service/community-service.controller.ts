@@ -203,7 +203,15 @@ export class CommunityServiceController {
       const userId = req?.user?.userId;
       if (!userId) return { success: false, message: 'User not authenticated' };
 
-      const data = { ...dto, userId: userId }; // Override with authenticated user
+      // Capture client IP address
+      const ipAddress = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || req.ip || 'unknown';
+    // console.log('Client IP Address:', ipAddress);
+
+      const data = { 
+        ...dto, 
+        userId: userId,
+        ipAddress: typeof ipAddress === 'string' ? ipAddress.split(',')[0].trim() : ipAddress
+      }; // Override with authenticated user and add IP
 
       const result = await firstValueFrom(
         this.communityService.CreatePost(data).pipe(

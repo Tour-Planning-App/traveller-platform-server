@@ -30,6 +30,15 @@ import { Comment, CommentSchema } from './schemas/comment.schema';
         },
       },
       {
+        name: 'LOGS_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'logs',
+          protoPath: join(__dirname, 'proto/logs.proto'),
+          url: process.env.LOGS_SERVICE_URL || 'localhost:50056',
+        },
+      },
+      {
         name: 'KAFKA_PRODUCER',
         transport: Transport.KAFKA,
         options: {

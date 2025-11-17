@@ -233,6 +233,11 @@ export class CreatePostDto {
   @IsArray()
   @IsOptional()
   tags?: string[];
+
+  @ApiProperty({ example: '192.168.1.1', required: false })
+  @IsString()
+  @IsOptional()
+  ipAddress?: string;
 }
 
 export class CreatePostResponseDto {

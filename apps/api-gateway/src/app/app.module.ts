@@ -14,6 +14,7 @@ import { TipsServiceModule } from './tips-service/tips-service.module';
 import { ToolsServiceService } from './tools-service/tools-service.service';
 import { ToolsServiceModule } from './tools-service/tools-service.module';
 import { LogsServiceModule } from './logs-service/logs-service.module';
+import { LogsModule } from './logs/logs.module';
 
 @Module({
   imports: [
@@ -116,6 +117,7 @@ import { LogsServiceModule } from './logs-service/logs-service.module';
     TipsServiceModule,
     ToolsServiceModule,
     LogsServiceModule,
+    LogsModule,
   ],
   controllers: [AppController],
   providers: [AppService, ToolsServiceService],
