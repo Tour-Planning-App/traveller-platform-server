@@ -6,6 +6,7 @@ import "google/protobuf/timestamp.proto";
 service UserService {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc GetAllUsers(ListUsersRequest) returns (ListUsersResponse);
   rpc GetUserById(GetUserByIdRequest) returns (GetUserResponse);
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
@@ -33,6 +34,20 @@ message CreateUserRequest {
   string preferredLanguage = 5;
   string preferredCurrency = 6;
 }
+
+
+message ListUsersRequest {
+  int32 page = 1;       // Page number (1-based)
+  int32 limit = 2;  // Number of users per page (max 100)
+}
+
+// Response message for listing users
+message ListUsersResponse {
+  repeated User users = 1;         // List of users
+  int64 total = 2;                // Total number of users (for pagination metadata)
+  // If using cursor-based: string next_page_token = 3;
+}
+
 
 message CreateUserResponse {
   int32 status = 1;

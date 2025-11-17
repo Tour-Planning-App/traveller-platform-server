@@ -34,9 +34,6 @@
       "path": "./apps/tools-service"
     },
     {
-      "path": "./apps/logs-service-e2e"
-    },
-    {
       "path": "./apps/logs-service"
     }
   ]

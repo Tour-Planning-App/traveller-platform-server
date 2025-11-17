@@ -27,6 +27,21 @@ export class UserController {
     }
   }
 
+  @GrpcMethod('UserService', 'GetAllUsers')
+  async getAllUsers(@Payload() data: { page: number; limit: number }) {
+    try {
+      this.logger.log(`Fetching users - Page: ${data.page}, Limit: ${data.limit}`);
+      const result = await this.userService.getAllUsers(data.page , data.limit);
+      return { users: result.users, total: result.total };
+    } catch (error: any) {
+      this.logger.error(`gRPC GetUser error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
   @GrpcMethod('UserService', 'GetUser')
   async getUser(@Payload() data: { email: string }) {
     try {

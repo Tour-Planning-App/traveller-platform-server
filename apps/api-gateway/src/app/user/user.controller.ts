@@ -1,7 +1,7 @@
-import { Body, Controller, Post, UseGuards, Inject, Get, Param, Req, Put, Delete } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Inject, Get, Param, Req, Put, Delete, Query } from '@nestjs/common';
 import {  ClientGrpcProxy } from '@nestjs/microservices';
 import { firstValueFrom, catchError } from 'rxjs';
-import { ApiBadRequestResponse, ApiBearerAuth, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/decorators/role.enum';
@@ -83,6 +83,67 @@ export class UserController {
         )
       );
       return result;
+    } catch (error: any) {
+      this.logger.error(`GetUser failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+
+  @Get('all/users')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all users with pagination' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of users per page (default: 10, max: 100)', example: 10 })
+  @ApiResponse({ status: 200, description: 'Users fetched successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid pagination parameters' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error during user fetch' })
+  async getAllUsers(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Req() req: any,
+  ) {
+    try {
+      const userId = req?.user?.userId;
+      if (!userId) return { success: false, message: 'User not authenticated' };
+
+      if (page < 1) {
+        throw new HttpException('Page must be greater than 0', HttpStatus.BAD_REQUEST);
+      }
+      if (limit < 1 || limit > 100) {
+        throw new HttpException('Page size must be between 1 and 100', HttpStatus.BAD_REQUEST);
+      }
+
+      const request = {
+        page,
+        limit,
+      };
+
+      const result: any = await firstValueFrom(
+        this.userService.GetAllUsers( request ).pipe(
+          catchError((error) => {
+            this.logger.error(`GetAllUsers error: ${error.message}`, error.stack);
+            if (error.code === 2 || error.code === 'INTERNAL') {
+              throw new HttpException('Internal server error during user fetch', HttpStatus.INTERNAL_SERVER_ERROR);
+            } else if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
+              throw new HttpException('Invalid pagination parameters', HttpStatus.BAD_REQUEST);
+            } else {
+              throw new HttpException('User fetch failed', HttpStatus.BAD_REQUEST);
+            }
+          })
+        )
+      );
+      return {
+        success: true,
+        data: result.users || [],
+        pagination: {
+          page,
+          limit,
+          total: result.total || 0, // Assuming the response includes total count; adjust based on proto
+          totalPages: Math.ceil((result.total || 0) / limit),
+        },
+      };
     } catch (error: any) {
       this.logger.error(`GetUser failed: ${error.message}`, error.stack);
       throw error;

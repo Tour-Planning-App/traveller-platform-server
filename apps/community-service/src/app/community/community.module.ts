@@ -42,6 +42,15 @@ import { Comment, CommentSchema } from './schemas/comment.schema';
           },
         },
       },
+      {
+        name: 'NOTIFICATION_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'notification',
+          protoPath: join(__dirname, 'proto/notification.proto'), // Assume proto exists
+          url: 'localhost:50051', // Notification gRPC port
+        },
+      },
     ]),
     MulterModule.register({
       dest: '/tmp/uploads', // Temporary storage; adjust as needed

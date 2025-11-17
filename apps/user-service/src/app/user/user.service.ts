@@ -62,6 +62,30 @@ export class UserService {
     }
   }
 
+  async getAllUsers(page: number, limit:number): Promise<{ users: User[]; total: number }> {
+try {
+      // Validate pagination parameters
+      if (page < 1) {
+        throw new NotFoundException('Page must be greater than 0');
+      }
+      if (limit < 1 || limit > 100) {
+        throw new NotFoundException('Limit must be between 1 and 100');
+      }
+
+      const skip = (page - 1) * limit;
+
+      // Fetch users with pagination
+      const users = await this.userModel.find().skip(skip).limit(limit).exec();
+      // Fetch total count for pagination metadata
+      const total = await this.userModel.countDocuments().exec();
+
+      return { users, total };
+    } catch (error) {
+      this.logger.error(`GetAllUsers error: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
   async getUser(email: string): Promise<User> {
     try {
       const user = await this.userModel.findOne({ email }).exec();
