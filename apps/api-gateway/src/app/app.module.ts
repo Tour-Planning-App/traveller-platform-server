@@ -13,6 +13,7 @@ import { CommunityServiceModule } from './community-service/community-service.mo
 import { TipsServiceModule } from './tips-service/tips-service.module';
 import { ToolsServiceService } from './tools-service/tools-service.service';
 import { ToolsServiceModule } from './tools-service/tools-service.module';
+import { LogsServiceModule } from './logs-service/logs-service.module';
 
 @Module({
   imports: [
@@ -114,6 +115,7 @@ import { ToolsServiceModule } from './tools-service/tools-service.module';
     CommunityServiceModule,
     TipsServiceModule,
     ToolsServiceModule,
+    LogsServiceModule,
   ],
   controllers: [AppController],
   providers: [AppService, ToolsServiceService],

@@ -63,7 +63,8 @@
         "apps/itinerarie-plan-e2e/**/*",
         "apps/community-service-e2e/**/*",
         "apps/tips-service-e2e/**/*",
-        "apps/tools-service-e2e/**/*"
+        "apps/tools-service-e2e/**/*",
+        "apps/logs-service-e2e/**/*"
       ]
     }
   ],
