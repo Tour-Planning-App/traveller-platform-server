@@ -12,13 +12,13 @@ import { PersonalDetailsDto, AccountSettingsDto } from './dtos/auth.dto'; // Imp
 
 @Injectable()
 export class UserService {
-      private readonly logger = new Logger(UserService.name);
-    private stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-09-30.clover' });
+  private readonly logger = new Logger(UserService.name);
+  private stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-09-30.clover' });
 
   constructor(
     @InjectModel(User.name)
     private readonly userModel: Model<User>,
-  ) {}
+  ) { }
 
   async createUser(createUserDto: CreateUserDto): Promise<any> {
     try {
@@ -27,8 +27,8 @@ export class UserService {
         throw new BadRequestException('Email already exists');
       }
       const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-      const user = new this.userModel({ 
-        ...createUserDto, 
+      const user = new this.userModel({
+        ...createUserDto,
         password: hashedPassword,
         role: createUserDto.role || 'TRAVELER', // Default to traveler
         plan: 'free', // Default to free plan
@@ -48,10 +48,10 @@ export class UserService {
         throw new BadRequestException('Email already exists');
       }
       const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-      const user = new this.userModel({ 
-        ...createUserDto, 
+      const user = new this.userModel({
+        ...createUserDto,
         password: hashedPassword,
-        role: 'ADMIN' ,
+        role: 'ADMIN',
         plan: 'free',
         isSubscribed: false,
       });
@@ -62,8 +62,8 @@ export class UserService {
     }
   }
 
-  async getAllUsers(page: number, limit:number): Promise<{ users: User[]; total: number }> {
-try {
+  async getAllUsers(page: number, limit: number): Promise<{ users: User[]; total: number }> {
+    try {
       // Validate pagination parameters
       if (page < 1) {
         throw new NotFoundException('Page must be greater than 0');
@@ -150,7 +150,7 @@ try {
   async updateProfile(updateProfileDto: UpdateProfileDto): Promise<User> {
     try {
       console.log('UpdateProfile called with:', updateProfileDto);
-      const user = await this.userModel.findById({ id: updateProfileDto.userId }).exec();
+      const user = await this.userModel.findById(updateProfileDto.userId).exec();
       if (!user) {
         throw new NotFoundException('User not found');
       }
@@ -169,7 +169,7 @@ try {
   }
 
 
-// New: Update Personal Details
+  // New: Update Personal Details
   async updatePersonalDetails(data: { userId: string } & Partial<PersonalDetailsDto>): Promise<User> {
     try {
       const user = await this.userModel.findById(data.userId).exec();
@@ -193,7 +193,7 @@ try {
     }
   }
 
-// New: Update Account Settings
+  // New: Update Account Settings
   async updateAccountSettings(data: { userId: string } & Partial<AccountSettingsDto>): Promise<User> {
     try {
       const user = await this.userModel.findById(data.userId).exec();
@@ -213,7 +213,7 @@ try {
     }
   }
 
-// New: Deactivate Account
+  // New: Deactivate Account
   async deactivateAccount(data: { userId: string }): Promise<User> {
     try {
       const user = await this.userModel.findById(data.userId).exec();
@@ -238,7 +238,7 @@ try {
     }
   }
 
-// New: Create subscription with Stripe checkout
+  // New: Create subscription with Stripe checkout
   async createSubscription(data: CreateSubscriptionDto & { userId: string }): Promise<{ url: string }> {
     try {
       const { userId, plan } = data;
