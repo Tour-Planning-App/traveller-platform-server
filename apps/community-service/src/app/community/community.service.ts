@@ -176,8 +176,8 @@ export class CommunityService {
         ];
       }
       // For popular, sort by likeCount descending, then createdAt
-      const sortQuery = data.feedType === 'popular' 
-        ? { likeCount: -1, createdAt: -1 } 
+      const sortQuery = data.feedType === 'popular'
+        ? { likeCount: -1, createdAt: -1 }
         : { createdAt: -1 } as any;
 
       const posts = await this.postModel
@@ -192,7 +192,7 @@ export class CommunityService {
 
       // Fetch unique user details via gRPC
       const uniqueUserIds = [...new Set(posts.map((p: any) => p.userId))];
-      const userPromises = uniqueUserIds.map((id: string) => 
+      const userPromises = uniqueUserIds.map((id: string) =>
         firstValueFrom(this.userService.GetUserById({ id })).catch(() => null)
       );
       const userResponses = await Promise.all(userPromises);
@@ -205,7 +205,7 @@ export class CommunityService {
             name: user.name || 'Unknown User',
             username: user.username || '',
             profileImage: user.profileImage || '',
-            isFollowing : user.isFollowing
+            isFollowing: user.isFollowing
           });
         }
       });
@@ -217,7 +217,7 @@ export class CommunityService {
         { $group: { _id: '$postId', count: { $sum: 1 } } },
       ]).exec();
       const countsMap = new Map(commentsCountsAgg.map((c: any) => [c._id.toString(), c.count]));
-      
+
       // Enhance posts
       let enhancedPosts: any[] = posts.map((post: any) => ({
         id: post._id.toString(),
@@ -238,72 +238,73 @@ export class CommunityService {
         },
       }));
       // Add isFollowing if currentUserId provided
-    if (data.currentUserId) {
-      const currentUserIdStr = data.currentUserId.toString();
-      console.log('Current User ID (string):', currentUserIdStr);
-      const followeeIdsStr = uniqueUserIds; // strings
-      console.log('Followee IDs (strings):', followeeIdsStr);
+      if (data.currentUserId) {
+        const currentUserIdStr = data.currentUserId.toString();
+        console.log('Current User ID (string):', currentUserIdStr);
+        const followeeIdsStr = uniqueUserIds; // strings
+        console.log('Followee IDs (strings):', followeeIdsStr);
 
-      // Use strings for query (Mongoose converts to ObjectId automatically for ObjectId fields)
-      const follows = await this.followModel.find({
-        followerId: currentUserIdStr, // string
-        followeeId: { $in: followeeIdsStr }, // array of strings
-      }).select('followeeId').exec();
+        // Use strings for query (Mongoose converts to ObjectId automatically for ObjectId fields)
+        const follows = await this.followModel.find({
+          followerId: currentUserIdStr, // string
+          followeeId: { $in: followeeIdsStr }, // array of strings
+        }).select('followeeId').exec();
 
-      console.log('Follows fetched:', follows.length);
-      console.log('Follows data:', follows.map(f => ({ followerId: f.followerId, followeeId: f.followeeId })));
+        console.log('Follows fetched:', follows.length);
+        console.log('Follows data:', follows.map(f => ({ followerId: f.followerId, followeeId: f.followeeId })));
 
-      const followedSet = new Set(follows.map((f: any) => f.followeeId.toString()));
-      console.log('Followed Set:', followedSet);
+        const followedSet = new Set(follows.map((f: any) => f.followeeId.toString()));
+        console.log('Followed Set:', followedSet);
 
-      enhancedPosts = enhancedPosts.map((post: any) => {
-        const isFollowing = followedSet.has(post.userId); // post.userId is string
-        return {
+        enhancedPosts = enhancedPosts.map((post: any) => {
+          const isFollowing = followedSet.has(post.userId); // post.userId is string
+          return {
+            ...post,
+            user: {
+              ...post.user,
+              isFollowing, // Now correctly set
+            },
+          };
+        });
+      } else {
+        // Public: isFollowing false
+        enhancedPosts = enhancedPosts.map((post: any) => ({
           ...post,
           user: {
             ...post.user,
-            isFollowing, // Now correctly set
+            isFollowing: false,
           },
-        };
-      });
-    } else {
-      // Public: isFollowing false
-      enhancedPosts = enhancedPosts.map((post: any) => ({
-        ...post,
-        user: {
-          ...post.user,
-          isFollowing: false,
-        },
-      }));
-    }
+        }));
+      }
 
-    // Add isLiked if currentUserId provided (check if current user liked the post)
-    if (data.currentUserId) {
-      const currentUserId = data.currentUserId.toString();
-      // Since likes are not populated in lean(), we need to fetch posts with likes populated or use aggregate
-      // For efficiency, use aggregate to check likes for current user
-      const popularPosts = await this.postModel.aggregate([
-        { $match: { _id: { $in: postIds } } },
-        { $addFields: {
-            isLiked: { $in: [new Types.ObjectId(currentUserId), '$likes'] }
-          }
-        },
-        { $project: { _id: 1, isLiked: 1 } }
-      ]).exec();
+      // Add isLiked if currentUserId provided (check if current user liked the post)
+      if (data.currentUserId) {
+        const currentUserId = data.currentUserId.toString();
+        // Since likes are not populated in lean(), we need to fetch posts with likes populated or use aggregate
+        // For efficiency, use aggregate to check likes for current user
+        const popularPosts = await this.postModel.aggregate([
+          { $match: { _id: { $in: postIds } } },
+          {
+            $addFields: {
+              isLiked: { $in: [new Types.ObjectId(currentUserId), '$likes'] }
+            }
+          },
+          { $project: { _id: 1, isLiked: 1 } }
+        ]).exec();
 
-      const isLikedMap = new Map(popularPosts.map((p: any) => [p._id.toString(), p.isLiked]));
+        const isLikedMap = new Map(popularPosts.map((p: any) => [p._id.toString(), p.isLiked]));
 
-      enhancedPosts = enhancedPosts.map((post: any) => ({
-        ...post,
-        isLiked: isLikedMap.get(post.id) || false,
-      }));
-    } else {
-      // Public: isLiked false
-      enhancedPosts = enhancedPosts.map((post: any) => ({
-        ...post,
-        isLiked: false,
-      }));
-    }
+        enhancedPosts = enhancedPosts.map((post: any) => ({
+          ...post,
+          isLiked: isLikedMap.get(post.id) || false,
+        }));
+      } else {
+        // Public: isLiked false
+        enhancedPosts = enhancedPosts.map((post: any) => ({
+          ...post,
+          isLiked: false,
+        }));
+      }
       return { success: true, posts: enhancedPosts, total } as any;
     } catch (error) {
       this.logger.error(`GetPosts error: ${error.message}`);
@@ -380,7 +381,7 @@ export class CommunityService {
       console.log('Post Likes before operation:', post.likes);
       const existingLikeIndex = post.likes.findIndex(l => l.equals(userIdObj));
       console.log('LikePost data:', data);
-      console.log('Existing likes before operation:', post.likes , existingLikeIndex);
+      console.log('Existing likes before operation:', post.likes, existingLikeIndex);
       //const existingLikeIndex = post.likes.findIndex(l => l.userId === data.userId);
       if (data.like) {
         console.log('Liking the post');
@@ -523,25 +524,81 @@ export class CommunityService {
   //   }
   // }
   async getPostLikers(data: GetPostLikersDto): Promise<GetPostLikersResponseDto> {
-  try {
-    const post = await this.postModel.findById(data.postId);
-    if (!post) {
-      throw new NotFoundException('Post not found');
+    try {
+      const post = await this.postModel.findById(data.postId);
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+
+      const likeIds = post.likes;  // Array of ObjectId (no populate)
+      const total = likeIds.length;
+
+      // Paginate IDs first (efficient)
+      const paginatedIds = likeIds.slice(data.offset || 0, (data.offset || 0) + (data.limit || 10));
+
+      // Fetch user details via gRPC for each
+      const likerPromises = paginatedIds.map(async (likeId: Types.ObjectId) => {
+        try {
+          const userResponse = await firstValueFrom(
+            this.userService.GetUserById({ id: likeId.toString() })
+          ) as any;
+          const user = userResponse.data || userResponse.user;  // Adjust based on UserService response
+
+          let isFollowing = false;
+          if (data.currentUserId && user) {
+            const follow = await this.followModel.findOne({
+              followerId: new Types.ObjectId(data.currentUserId),
+              followeeId: new Types.ObjectId(user.id),
+            });
+            isFollowing = !!follow;
+          }
+
+          return {
+            id: user?.id || likeId.toString(),
+            name: user?.name || 'Unknown User',
+            username: user?.username || '',
+            profileImage: user?.profileImage || '',
+            isFollowing,
+          };
+        } catch (fetchError) {
+          this.logger.warn(`Failed to fetch user ${likeId}: ${fetchError.message}`);
+          return {
+            id: likeId.toString(),
+            name: 'Unknown User',
+            username: '',
+            profileImage: '',
+            isFollowing: false,
+          };
+        }
+      });
+
+      const likerSummaries = await Promise.all(likerPromises);
+
+      return { success: true, likers: likerSummaries, total };
+    } catch (error: any) {
+      this.logger.error(`GetPostLikers error: ${error.message}`);
+      throw new BadRequestException('Failed to fetch likers');
     }
+  }
 
-    const likeIds = post.likes;  // Array of ObjectId (no populate)
-    const total = likeIds.length;
+  // New method: Get comments with details
+  async getPostComments(data: GetPostCommentsDto): Promise<GetPostCommentsResponseDto> {
+    try {
+      const comments = await this.commentModel
+        .find({ postId: new Types.ObjectId(data.postId) })
+        .sort({ createdAt: -1 })
+        .limit(data.limit || 10)
+        .skip(data.offset || 0)
+        .exec() as any;  // No populate
 
-    // Paginate IDs first (efficient)
-    const paginatedIds = likeIds.slice(data.offset || 0, (data.offset || 0) + (data.limit || 10));
+      const total = await this.commentModel.countDocuments({ postId: new Types.ObjectId(data.postId) });
 
-    // Fetch user details via gRPC for each
-    const likerPromises = paginatedIds.map(async (likeId: Types.ObjectId) => {
-      try {
+      const detailedComments = await Promise.all(comments.map(async (comment) => {
+        // Fetch user via gRPC
         const userResponse = await firstValueFrom(
-          this.userService.GetUserById({ id: likeId.toString() })
+          this.userService.GetUserById({ id: comment.userId.toString() })
         ) as any;
-        const user = userResponse.data || userResponse.user;  // Adjust based on UserService response
+        const user = userResponse.data || userResponse.user;
 
         let isFollowing = false;
         if (data.currentUserId && user) {
@@ -553,85 +610,29 @@ export class CommunityService {
         }
 
         return {
-          id: user?.id || likeId.toString(),
-          name: user?.name || 'Unknown User',
-          username: user?.username || '',
-          profileImage: user?.profileImage || '',
+          comment: {
+            id: comment._id.toString(),
+            postId: data.postId,
+            userId: comment.userId.toString(),
+            text: comment.text,
+            createdAt: comment.createdAt.toISOString(),  // Keep as Date object for gRPC Timestamp serialization
+          },
+          user: {
+            id: user?.id || comment.userId.toString(),
+            name: user?.name || 'Unknown User',
+            username: user?.username || '',
+            profileImage: user?.profileImage || '',
+          },
           isFollowing,
         };
-      } catch (fetchError) {
-        this.logger.warn(`Failed to fetch user ${likeId}: ${fetchError.message}`);
-        return {
-          id: likeId.toString(),
-          name: 'Unknown User',
-          username: '',
-          profileImage: '',
-          isFollowing: false,
-        };
-      }
-    });
+      }));
 
-    const likerSummaries = await Promise.all(likerPromises);
-
-    return { success: true, likers: likerSummaries, total };
-  } catch (error: any) {
-    this.logger.error(`GetPostLikers error: ${error.message}`);
-    throw new BadRequestException('Failed to fetch likers');
+      return { success: true, comments: detailedComments, total } as any;
+    } catch (error: any) {
+      this.logger.error(`GetPostComments error: ${error.message}`);
+      throw new BadRequestException('Failed to fetch comments');
+    }
   }
-}
-
-  // New method: Get comments with details
-async getPostComments(data: GetPostCommentsDto): Promise<GetPostCommentsResponseDto> {
-  try {
-    const comments = await this.commentModel
-      .find({ postId: new Types.ObjectId(data.postId) })
-      .sort({ createdAt: -1 })
-      .limit(data.limit || 10)
-      .skip(data.offset || 0)
-      .exec() as any;  // No populate
-
-    const total = await this.commentModel.countDocuments({ postId: new Types.ObjectId(data.postId) });
-
-    const detailedComments = await Promise.all(comments.map(async (comment) => {
-      // Fetch user via gRPC
-      const userResponse = await firstValueFrom(
-        this.userService.GetUserById({ id: comment.userId.toString() })
-      ) as any;
-      const user = userResponse.data || userResponse.user;
-
-      let isFollowing = false;
-      if (data.currentUserId && user) {
-        const follow = await this.followModel.findOne({
-          followerId: new Types.ObjectId(data.currentUserId),
-          followeeId: new Types.ObjectId(user.id),
-        });
-        isFollowing = !!follow;
-      }
-
-      return {
-        comment: {
-          id: comment._id.toString(),
-          postId: data.postId,
-          userId: comment.userId.toString(),
-          text: comment.text,
-          createdAt: comment.createdAt.toISOString(),  // Keep as Date object for gRPC Timestamp serialization
-        },
-        user: {
-          id: user?.id || comment.userId.toString(),
-          name: user?.name || 'Unknown User',
-          username: user?.username || '',
-          profileImage: user?.profileImage || '',
-        },
-        isFollowing,
-      };
-    }));
-
-    return { success: true, comments: detailedComments, total } as any;
-  } catch (error: any) {
-    this.logger.error(`GetPostComments error: ${error.message}`);
-    throw new BadRequestException('Failed to fetch comments');
-  }
-}
 
   async followUser(data: FollowUserDto): Promise<FollowUserResponseDto> {
     try {
@@ -693,7 +694,7 @@ async getPostComments(data: GetPostCommentsDto): Promise<GetPostCommentsResponse
         username: f.followerId.username,
         profileImage: f.followerId.profileImage,
         isFollowing: true, // Since they follow you
-      })) ;
+      }));
 
       return { success: true, followers: followerSummaries, total };
     } catch (error) {
@@ -789,16 +790,37 @@ async getPostComments(data: GetPostCommentsDto): Promise<GetPostCommentsResponse
         .populate('userId', 'name')
         .exec();
 
+      // Transform posts to include properly formatted likes and comments
+      const transformedPosts = posts.map((post: any) => ({
+        id: post._id.toString(),
+        userId: post.userId?.toString() || data.userId,
+        caption: post.caption,
+        imageUrl: post.imageUrl,
+        tags: post.tags || [],
+        likeCount: post.likeCount || 0,
+        commentsCount: post.comments?.length || 0,
+        // Convert ObjectId likes to proper Like objects with userId
+        likes: (post.likes || []).map((likeId: Types.ObjectId) => ({
+          userId: likeId.toString(),
+        })),
+        // Convert ObjectId comments to proper Comment objects with id
+        comments: (post.comments || []).map((commentId: Types.ObjectId) => ({
+          id: commentId.toString(),
+        })),
+        createdAt: post.createdAt?.toString() || new Date().toISOString(),
+        updatedAt: post.updatedAt?.toString() || new Date().toISOString(),
+      }));
+
       const profile = {
         id: data.userId,
         userId: data.userId,
         bio: user.data.bio || '', // Assuming user has bio
-        name : user.data.name,
+        name: user.data.name,
         profileImage: user.data.profileImage,
         postCount: postCount,
         followerCount: followerCount,
         followingCount: followingCount,
-        posts,
+        posts: transformedPosts,
       };
       return { success: true, profile } as any;
     } catch (error) {
