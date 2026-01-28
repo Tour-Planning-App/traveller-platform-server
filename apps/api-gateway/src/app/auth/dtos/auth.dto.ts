@@ -51,7 +51,7 @@ export class OnboardingDto {
   @IsOptional()
   preferredCurrency!: string;
 
-  @ApiProperty({ example: 'solo', description: 'Traveler types', enum:['solo', 'couples', 'friends', 'family', 'business'] })
+  @ApiProperty({ example: 'solo', description: 'Traveler types', enum: ['solo', 'couples', 'friends', 'family', 'business'] })
   @IsString()
   @IsOptional()
   travelerTypes!: string;
@@ -97,7 +97,7 @@ export class OnboardingBasicDto {
 
 
 export class OnboardingSurveyDto {
-  @ApiProperty({ example: 'solo', description: 'Traveler types', enum:['solo', 'couples', 'friends', 'family', 'business'] })
+  @ApiProperty({ example: 'solo', description: 'Traveler types', enum: ['solo', 'couples', 'friends', 'family', 'business'] })
   @IsString()
   @IsOptional()
   travelerTypes!: string;
@@ -286,4 +286,114 @@ export class AccountSettingsDto {
   @ApiProperty({ example: true, description: 'Profile visibility' })
   @IsOptional()
   profileVisibility?: boolean;
+}
+
+// ============ SERVICE PROVIDER DTOs ============
+
+export class ServiceProviderRegisterDto {
+  @ApiProperty({ example: 'saman@villagetours.lk', description: 'Service provider email' })
+  @IsEmail({}, { message: 'Invalid email format' })
+  email: string;
+
+  @ApiProperty({ example: 'SecurePass123!', description: 'Password' })
+  @IsString({ message: 'Password must be a string' })
+  @IsNotEmpty({ message: 'Password cannot be empty' })
+  @Length(6, 128, { message: 'Password must be between 6 and 128 characters' })
+  password: string;
+
+  @ApiProperty({ example: 'Saman Perera', description: 'Full name' })
+  @IsString({ message: 'Name must be a string' })
+  @IsNotEmpty({ message: 'Name cannot be empty' })
+  name: string;
+
+  @ApiProperty({ example: '+94771234567', description: 'Phone number' })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+}
+
+export class ServiceProviderLoginDto {
+  @ApiProperty({ example: 'saman@villagetours.lk', description: 'Service provider email' })
+  @IsEmail({}, { message: 'Invalid email format' })
+  email: string;
+
+  @ApiProperty({ example: 'SecurePass123!', description: 'Password' })
+  @IsString({ message: 'Password must be a string' })
+  @IsNotEmpty({ message: 'Password cannot be empty' })
+  password: string;
+}
+
+export class LocationDto {
+  @ApiProperty({ example: '123 Temple Road', description: 'Address' })
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @ApiProperty({ example: 'Kandy', description: 'City' })
+  @IsString()
+  @IsNotEmpty()
+  city: string;
+
+  @ApiProperty({ example: 'Central', description: 'District' })
+  @IsString()
+  @IsNotEmpty()
+  district: string;
+
+  @ApiProperty({ example: 7.2906, description: 'Latitude' })
+  @IsOptional()
+  lat?: number;
+
+  @ApiProperty({ example: 80.6337, description: 'Longitude' })
+  @IsOptional()
+  lng?: number;
+}
+
+export class ServiceProviderOnboardingDto {
+  @ApiProperty({ example: 'Saman Village Tours', description: 'Business name' })
+  @IsString()
+  @IsNotEmpty({ message: 'Business name is required' })
+  businessName: string;
+
+  @ApiProperty({
+    example: 'village_tour',
+    description: 'Business type',
+    enum: ['cooking_class', 'village_tour', 'cultural_experience', 'nature_tour', 'adventure', 'wellness', 'craft_workshop', 'other']
+  })
+  @IsString()
+  @IsIn(['cooking_class', 'village_tour', 'cultural_experience', 'nature_tour', 'adventure', 'wellness', 'craft_workshop', 'other'])
+  businessType: string;
+
+  @ApiProperty({ example: 'Experience authentic Sri Lankan village life with a local family', description: 'Business description' })
+  @IsOptional()
+  @IsString()
+  businessDescription?: string;
+
+  @ApiProperty({ example: ['village_tour', 'cultural_experience'], description: 'Service categories' })
+  @IsOptional()
+  @IsArray()
+  serviceCategories?: string[];
+
+  @ApiProperty({ type: LocationDto, description: 'Business location' })
+  @IsOptional()
+  location?: LocationDto;
+
+  @ApiProperty({ example: '+94771234567', description: 'Contact phone' })
+  @IsOptional()
+  @IsString()
+  contactPhone?: string;
+
+  @ApiProperty({ example: '+94771234567', description: 'WhatsApp number' })
+  @IsOptional()
+  @IsString()
+  whatsappNumber?: string;
+
+  @ApiProperty({ example: ['English', 'Sinhala'], description: 'Languages spoken' })
+  @IsOptional()
+  @IsArray()
+  languages?: string[];
+
+  @ApiProperty({ example: 'mid-range', enum: ['budget', 'mid-range', 'premium'], description: 'Price range' })
+  @IsOptional()
+  @IsIn(['budget', 'mid-range', 'premium'])
+  priceRange?: string;
 }

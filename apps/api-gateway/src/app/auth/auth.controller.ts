@@ -4,8 +4,8 @@ import { ApiBadRequestResponse, ApiBearerAuth, ApiInternalServerErrorResponse, A
 import { catchError, firstValueFrom, of } from 'rxjs';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
-import { SignInDto, VerifyOtpDto, OAuthProfileDto, AuthResponseDto, OnboardingDto, LoginDto } from './dtos/auth.dto';
-import { JwtService } from '@nestjs/jwt'; 
+import { SignInDto, VerifyOtpDto, OAuthProfileDto, AuthResponseDto, OnboardingDto, LoginDto, ServiceProviderRegisterDto, ServiceProviderLoginDto, ServiceProviderOnboardingDto } from './dtos/auth.dto';
+import { JwtService } from '@nestjs/jwt';
 
 @Controller('auth')
 export class AuthController {
@@ -16,7 +16,7 @@ export class AuthController {
     @Inject('AUTH_PACKAGE') private authClient: ClientGrpcProxy,
     private jwtService: JwtService,
   ) {
-        this.authService = this.authClient.getService('AuthService');
+    this.authService = this.authClient.getService('AuthService');
 
   }
 
@@ -43,13 +43,13 @@ export class AuthController {
         )
       );
       return result;
-    } catch (error : any) {
+    } catch (error: any) {
       this.logger.error(`SignIn failed: ${error.message}`, error.stack);
       throw error;
     }
   }
 
-@Public()
+  @Public()
   @Post('verify-otp')
   @ApiOperation({ summary: 'Verify OTP and get JWT' })
   @ApiResponse({ status: 200, description: 'Authentication successful', type: AuthResponseDto })
@@ -91,7 +91,7 @@ export class AuthController {
       }
 
       return result;
-    } catch (error:any) {
+    } catch (error: any) {
       //this.logger.error(`VerifyOtp failed: ${error.message}`, error.stack);
       throw error;
     }
@@ -160,7 +160,7 @@ export class AuthController {
         )
       );
       return result;
-    } catch (error:any) {
+    } catch (error: any) {
       this.logger.error(`CompleteOnboarding failed: ${error.message}`, error.stack);
       throw error;
     }
@@ -191,7 +191,7 @@ export class AuthController {
         )
       );
       return result;
-    } catch (error:any) {
+    } catch (error: any) {
       this.logger.error(`GoogleSignIn failed: ${error.message}`, error.stack);
       throw error;
     }
@@ -221,7 +221,7 @@ export class AuthController {
         )
       );
       return result;
-    } catch (error:any) {
+    } catch (error: any) {
       this.logger.error(`FacebookSignIn failed: ${error.message}`, error.stack);
       throw error;
     }
@@ -246,7 +246,7 @@ export class AuthController {
       if (!userId) return { success: false, message: 'User not authenticated' };
 
       const result = await firstValueFrom(
-        this.authService.CompleteOnboarding({ userId}).pipe(
+        this.authService.CompleteOnboarding({ userId }).pipe(
           catchError((error) => {
             this.logger.error(`CompleteOnboarding error: ${error.message}`, error.stack);
             if (error.code === 2 || error.code === 'INTERNAL') {
@@ -262,8 +262,104 @@ export class AuthController {
         )
       );
       return result;
-    } catch (error:any) {
+    } catch (error: any) {
       this.logger.error(`CompleteOnboarding failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  // ============ SERVICE PROVIDER REST ENDPOINTS ============
+
+  @Public()
+  @Post('service-provider/register')
+  @ApiOperation({ summary: 'Register a new service provider' })
+  @ApiResponse({ status: 201, description: 'Service provider registered successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid registration data or email already exists' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error during registration' })
+  async serviceProviderRegister(@Body() dto: ServiceProviderRegisterDto) {
+    try {
+      const result = await firstValueFrom(
+        this.authService.ServiceProviderRegister(dto).pipe(
+          catchError((error) => {
+            this.logger.error(`ServiceProviderRegister error: ${error.message}`, error.stack);
+            if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
+              throw new HttpException(error.details || 'Invalid registration data', HttpStatus.BAD_REQUEST);
+            } else if (error.code === 2 || error.code === 'INTERNAL') {
+              throw new HttpException('Internal server error during registration', HttpStatus.INTERNAL_SERVER_ERROR);
+            } else {
+              throw new HttpException('Registration failed', HttpStatus.BAD_REQUEST);
+            }
+          })
+        )
+      );
+      return result;
+    } catch (error: any) {
+      this.logger.error(`ServiceProviderRegister failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  @Public()
+  @Post('service-provider/login')
+  @ApiOperation({ summary: 'Service provider login with email and password' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiBadRequestResponse({ description: 'Invalid credentials' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error during login' })
+  async serviceProviderLogin(@Body() dto: ServiceProviderLoginDto) {
+    try {
+      const result = await firstValueFrom(
+        this.authService.ServiceProviderLogin(dto).pipe(
+          catchError((error) => {
+            this.logger.error(`ServiceProviderLogin error: ${error.message}`, error.stack);
+            if (error.code === 16 || error.code === 'UNAUTHENTICATED') {
+              throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+            } else if (error.code === 2 || error.code === 'INTERNAL') {
+              throw new HttpException('Internal server error during login', HttpStatus.INTERNAL_SERVER_ERROR);
+            } else {
+              throw new HttpException('Login failed', HttpStatus.BAD_REQUEST);
+            }
+          })
+        )
+      ) as any;
+      return {
+        accessToken: result.token,
+        user: result.user,
+      };
+    } catch (error: any) {
+      this.logger.error(`ServiceProviderLogin failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  @Put('service-provider/onboarding')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Complete service provider business profile onboarding' })
+  @ApiResponse({ status: 200, description: 'Onboarding completed' })
+  @ApiBadRequestResponse({ description: 'Invalid onboarding data' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error during onboarding' })
+  async serviceProviderOnboarding(@Body() dto: ServiceProviderOnboardingDto, @Req() req: any) {
+    try {
+      const userId = req?.user?.userId;
+      if (!userId) return { success: false, message: 'User not authenticated' };
+
+      const result = await firstValueFrom(
+        this.authService.CompleteServiceProviderOnboarding({ userId, ...dto }).pipe(
+          catchError((error) => {
+            this.logger.error(`ServiceProviderOnboarding error: ${error.message}`, error.stack);
+            if (error.code === 3 || error.code === 'INVALID_ARGUMENT') {
+              throw new HttpException(error.details || 'Invalid onboarding data', HttpStatus.BAD_REQUEST);
+            } else if (error.code === 2 || error.code === 'INTERNAL') {
+              throw new HttpException('Internal server error during onboarding', HttpStatus.INTERNAL_SERVER_ERROR);
+            } else {
+              throw new HttpException('Onboarding failed', HttpStatus.BAD_REQUEST);
+            }
+          })
+        )
+      );
+      return result;
+    } catch (error: any) {
+      this.logger.error(`ServiceProviderOnboarding failed: ${error.message}`, error.stack);
       throw error;
     }
   }

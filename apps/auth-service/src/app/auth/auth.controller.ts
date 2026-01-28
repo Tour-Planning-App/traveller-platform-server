@@ -1,19 +1,19 @@
 import { BadRequestException, Controller, Logger, UnauthorizedException } from '@nestjs/common';
 import { GrpcMethod, Payload, RpcException } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
-import { SignInDto, VerifyOtpDto, OnboardingDto, OAuthProfileDto, CreateSubscriptionDto, LoginDto } from './dtos/auth.dto';
+import { SignInDto, VerifyOtpDto, OnboardingDto, OAuthProfileDto, CreateSubscriptionDto, LoginDto, ServiceProviderRegisterDto, ServiceProviderOnboardingDto } from './dtos/auth.dto';
 
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @GrpcMethod('AuthService', 'SignIn')
   async signIn(data: SignInDto) {
     try {
       return await this.authService.signIn(data);
-    } catch (error:any) {
+    } catch (error: any) {
       this.logger.error(`gRPC SignIn error: ${error.message}`, error.stack);
       throw new RpcException({
         code: error instanceof BadRequestException ? 3 : 2, // INVALID_ARGUMENT or INTERNAL
@@ -26,7 +26,7 @@ export class AuthController {
   async verifyOtp(data: VerifyOtpDto) {
     try {
       return await this.authService.verifyOtp(data);
-    } catch (error:any) {
+    } catch (error: any) {
       //this.logger.error(`gRPC VerifyOtp error: ${error.message}`, error.stack);
       throw new RpcException({
         code: error instanceof UnauthorizedException ? 16 : (error instanceof BadRequestException ? 3 : 2), // UNAUTHENTICATED, INVALID_ARGUMENT, or INTERNAL
@@ -39,7 +39,7 @@ export class AuthController {
   async completeOnboarding(data: { userId: string } & OnboardingDto) {
     try {
       return await this.authService.completeOnboarding(data.userId, data);
-    } catch (error:any) {
+    } catch (error: any) {
       this.logger.error(`gRPC CompleteOnboarding error: ${error.message}`, error.stack);
       throw new RpcException({
         code: error instanceof BadRequestException ? 3 : 2, // INVALID_ARGUMENT or INTERNAL
@@ -52,7 +52,7 @@ export class AuthController {
   async oAuthSignIn(data: OAuthProfileDto) {
     try {
       return await this.authService.oAuthSignIn(data);
-    } catch (error:any) {
+    } catch (error: any) {
       this.logger.error(`gRPC OAuthSignIn error: ${error.message}`, error.stack);
       throw new RpcException({
         code: error instanceof BadRequestException ? 3 : 2, // INVALID_ARGUMENT or INTERNAL
@@ -157,6 +157,50 @@ export class AuthController {
       return result;
     } catch (error: any) {
       this.logger.error(`gRPC UpdateSubscription error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
+  // ============ SERVICE PROVIDER gRPC HANDLERS ============
+
+  @GrpcMethod('AuthService', 'ServiceProviderRegister')
+  async serviceProviderRegister(@Payload() data: ServiceProviderRegisterDto) {
+    try {
+      const result = await this.authService.registerServiceProvider(data);
+      return result;
+    } catch (error: any) {
+      this.logger.error(`gRPC ServiceProviderRegister error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof BadRequestException ? 3 : 2,
+        message: error.message,
+      });
+    }
+  }
+
+  @GrpcMethod('AuthService', 'ServiceProviderLogin')
+  async serviceProviderLogin(@Payload() data: { email: string; password: string }) {
+    try {
+      const result = await this.authService.serviceProviderLogin(data.email, data.password);
+      return result;
+    } catch (error: any) {
+      this.logger.error(`gRPC ServiceProviderLogin error: ${error.message}`, error.stack);
+      throw new RpcException({
+        code: error instanceof UnauthorizedException ? 16 : (error instanceof BadRequestException ? 3 : 2),
+        message: error.message,
+      });
+    }
+  }
+
+  @GrpcMethod('AuthService', 'CompleteServiceProviderOnboarding')
+  async completeServiceProviderOnboarding(@Payload() data: { userId: string } & ServiceProviderOnboardingDto) {
+    try {
+      const result = await this.authService.completeServiceProviderOnboarding(data.userId, data);
+      return result;
+    } catch (error: any) {
+      this.logger.error(`gRPC CompleteServiceProviderOnboarding error: ${error.message}`, error.stack);
       throw new RpcException({
         code: error instanceof BadRequestException ? 3 : 2,
         message: error.message,

@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
-import { SignInDto, VerifyOtpDto, OnboardingDto, OAuthProfileDto, AuthResponseDto, CreateSubscriptionDto, PlanDto } from './dtos/auth.dto';
+import { SignInDto, VerifyOtpDto, OnboardingDto, OAuthProfileDto, AuthResponseDto, CreateSubscriptionDto, PlanDto, ServiceProviderRegisterDto, ServiceProviderOnboardingDto } from './dtos/auth.dto';
 import twilio from 'twilio';
 import { ClientKafka } from '@nestjs/microservices';
 // import sgMail from '@twilio/email';
@@ -31,7 +31,7 @@ export class AuthService {
       );
       this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-09-30.clover' });
       //this.sgMailClient = sgMail(process.env.TWILIO_SENDGRID_API_KEY);
-    } catch (error:any) {
+    } catch (error: any) {
       this.logger.error(`Failed to initialize Twilio clients: ${error.message}`);
       throw new InternalServerErrorException('Service initialization failed');
     }
@@ -65,7 +65,7 @@ export class AuthService {
         //   text: `Your OTP code is ${code}. It is valid for 10 minutes.`,
         // });
         this.logger.log(`Email OTP sent to ${email}`);
-        return { success: emailRes ? true : false , user: email};
+        return { success: emailRes ? true : false, user: email };
       } else if (phone) {
         // Send OTP via SMS using Twilio
         const message = await this.twilioClient.messages.create({
@@ -74,13 +74,13 @@ export class AuthService {
           to: phone,
         });
         this.logger.log(`SMS OTP sent to ${phone}, SID: ${message.sid}`);
-        return { success: message ? true : false , user: phone};
+        return { success: message ? true : false, user: phone };
       } else {
         throw new BadRequestException('Must provide email or phone');
       }
 
       // return { success: true , user: email? email : phone};
-    } catch (error : any) {
+    } catch (error: any) {
       this.logger.error(`SignIn failed for ${dto.email || dto.phone}: ${error.message}`, error.stack);
       if (error.code === 21608) { // Twilio invalid phone number
         throw new BadRequestException('Invalid phone number');
@@ -118,14 +118,14 @@ export class AuthService {
       console.log("User after OTP verification: ", user);
       const isNewUser = !user;
       if (isNewUser) {
-        user = new this.userModel({ 
-          email, 
-          phone, 
-          role: 'TRAVELER', 
-          isOnboarded: false ,
+        user = new this.userModel({
+          email,
+          phone,
+          role: 'TRAVELER',
+          isOnboarded: false,
           plan: 'free', // New: Assign free plan
           isSubscribed: false,
-        }); 
+        });
         await user.save();
         this.logger.log(`New user created: ${user._id}`);
       }
@@ -136,7 +136,7 @@ export class AuthService {
       otpStore.delete(identifier); // Clear OTP
       this.logger.log(`OTP verified for ${identifier}, user: ${user._id}`);
       return { accessToken, isNewUser, isOnboarded: user.isOnboarded };
-    } catch (error : any) {
+    } catch (error: any) {
       //this.logger.error(`VerifyOtp failed for ${dto.email || dto.phone}: ${error.message}`, error.stack);
       if (error instanceof UnauthorizedException || error.message.includes('Invalid OTP')) {
         throw new UnauthorizedException('Invalid OTP');
@@ -159,7 +159,7 @@ export class AuthService {
       this.logger.log(`Onboarding completed for user: ${userId}`);
       // const result = { success: user ? true : false , ...user};
       return user;
-    } catch (error:any) {
+    } catch (error: any) {
       this.logger.error(`CompleteOnboarding failed for ${userId}: ${error.message}`, error.stack);
       if (error instanceof BadRequestException) {
         throw error;
@@ -204,7 +204,7 @@ export class AuthService {
     try {
       const { email, name, providerId, provider } = data;
       let user = await this.userModel.findOne({ [provider === 'google' ? 'googleId' : 'facebookId']: providerId }) as any | null;
-      
+
       if (!user) {
         user = await this.userModel.findOne({ email });
       }
@@ -244,7 +244,7 @@ export class AuthService {
   async login(email: string, password: string): Promise<{ token: string; user: any }> {
     try {
       console.log('Login attempt for:', email);
-      console.log('Password provided:', password );
+      console.log('Password provided:', password);
       const user = await this.userModel.findOne({ email });
       console.log('User found:', user);
       if (!user || !await bcrypt.compare(password, user.password || '')) {
@@ -366,23 +366,23 @@ export class AuthService {
   }
 
   // New: Get plan
-async getPlan(planId: string): Promise<any> {
-  try {
-    console.log('Fetching plan for ID:', planId); // Temp debug log
+  async getPlan(planId: string): Promise<any> {
+    try {
+      console.log('Fetching plan for ID:', planId); // Temp debug log
 
-    const plans = await this.getPlans();
-    let plan = plans.plans.find(p => p.id.toLowerCase() === planId.toLowerCase()); // Case-insensitive match
-    if (!plan) {
-      console.warn(`Plan not found for ID: ${planId}. Falling back to free plan.`); // Temp log
-      plan = plans.plans.find(p => p.id === 'free') || { id: 'free', name: 'Free', level: 0, price: 0, features: ['Basic access'], duration: 'lifetime' }; // Fallback
+      const plans = await this.getPlans();
+      let plan = plans.plans.find(p => p.id.toLowerCase() === planId.toLowerCase()); // Case-insensitive match
+      if (!plan) {
+        console.warn(`Plan not found for ID: ${planId}. Falling back to free plan.`); // Temp log
+        plan = plans.plans.find(p => p.id === 'free') || { id: 'free', name: 'Free', level: 0, price: 0, features: ['Basic access'], duration: 'lifetime' }; // Fallback
+      }
+
+      return { success: true, plan };
+    } catch (error: any) {
+      this.logger.error(`GetPlan error for ${planId}: ${error.message}`, error.stack);
+      throw new BadRequestException('Plan not found');
     }
-
-    return { success: true, plan };
-  } catch (error: any) {
-    this.logger.error(`GetPlan error for ${planId}: ${error.message}`, error.stack);
-    throw new BadRequestException('Plan not found');
   }
-}
 
   // New: Update subscription
   async updateSubscription(subscriptionId: string, planId: string): Promise<any> {
@@ -411,6 +411,148 @@ async getPlan(planId: string): Promise<any> {
     } catch (error: any) {
       this.logger.error(`GetPersonalDetails error for ${userId}: ${error.message}`, error.stack);
       throw error;
+    }
+  }
+
+  // ============ SERVICE PROVIDER METHODS ============
+
+  async registerServiceProvider(dto: ServiceProviderRegisterDto): Promise<any> {
+    try {
+      const { email, password, name, phone } = dto;
+
+      // Check if email already exists
+      const existingUser = await this.userModel.findOne({ email });
+      if (existingUser) {
+        throw new BadRequestException('Email already registered');
+      }
+
+      // Hash password
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+      // Create service provider user
+      const user = new this.userModel({
+        email,
+        password: hashedPassword,
+        name,
+        phone,
+        role: 'SERVICE_PROVIDER',
+        isOnboarded: false,
+        plan: 'free',
+        isSubscribed: false,
+        isVerified: false,
+        isActive: true,
+      });
+      await user.save();
+
+      // Generate JWT token
+      const payload = { sub: user._id.toString(), email: user.email, role: user.role };
+      const accessToken = this.jwtService.sign(payload);
+
+      this.logger.log(`Service provider registered: ${user._id} (${email})`);
+      return {
+        success: true,
+        message: 'Service provider registered successfully',
+        accessToken,
+        userId: user._id.toString(),
+      };
+    } catch (error: any) {
+      this.logger.error(`RegisterServiceProvider error: ${error.message}`, error.stack);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Registration failed');
+    }
+  }
+
+  async serviceProviderLogin(email: string, password: string): Promise<{ token: string; user: any }> {
+    try {
+      const user = await this.userModel.findOne({ email, role: 'SERVICE_PROVIDER' });
+      if (!user) {
+        throw new UnauthorizedException('Invalid credentials or not a service provider account');
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password || '');
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      const payload = { sub: user._id.toString(), email: user.email, role: user.role };
+      const token = this.jwtService.sign(payload);
+
+      const userResponse = {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        role: user.role,
+        isOnboarded: user.isOnboarded,
+        isVerified: user.isVerified,
+        businessName: user.businessName,
+        businessType: user.businessType,
+      };
+
+      this.logger.log(`Service provider login successful for ${email}`);
+      return { token, user: userResponse };
+    } catch (error: any) {
+      this.logger.error(`ServiceProviderLogin error: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  async completeServiceProviderOnboarding(userId: string, dto: ServiceProviderOnboardingDto): Promise<any> {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      if (user.role !== 'SERVICE_PROVIDER') {
+        throw new BadRequestException('User is not a service provider');
+      }
+
+      // Update with business profile
+      const updatedUser = await this.userModel.findByIdAndUpdate(
+        userId,
+        {
+          businessName: dto.businessName,
+          businessType: dto.businessType,
+          businessDescription: dto.businessDescription,
+          serviceCategories: dto.serviceCategories,
+          location: dto.location,
+          contactPhone: dto.contactPhone,
+          whatsappNumber: dto.whatsappNumber,
+          languages: dto.languages,
+          priceRange: dto.priceRange,
+          isOnboarded: true,
+        },
+        { new: true }
+      );
+
+      this.logger.log(`Service provider onboarding completed for user: ${userId}`);
+      return {
+        success: true,
+        message: 'Onboarding completed successfully',
+        id: updatedUser._id.toString(),
+        email: updatedUser.email,
+        name: updatedUser.name,
+        businessName: updatedUser.businessName,
+        businessType: updatedUser.businessType,
+        businessDescription: updatedUser.businessDescription,
+        serviceCategories: updatedUser.serviceCategories,
+        location: updatedUser.location,
+        languages: updatedUser.languages,
+        priceRange: updatedUser.priceRange,
+        isVerified: updatedUser.isVerified,
+        isOnboarded: updatedUser.isOnboarded,
+        role: updatedUser.role,
+      };
+    } catch (error: any) {
+      this.logger.error(`CompleteServiceProviderOnboarding error for ${userId}: ${error.message}`, error.stack);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Onboarding failed');
     }
   }
 }

@@ -17,6 +17,10 @@ service AuthService {
   rpc GetPlan(GetPlanRequest) returns (GetPlanResponse);
   rpc UpdateSubscription(UpdateSubscriptionRequest) returns (UpdateSubscriptionResponse);
   rpc CheckSubscriptionAccess(CheckSubscriptionAccessRequest) returns (CheckSubscriptionAccessResponse);
+  // Service Provider RPCs
+  rpc ServiceProviderRegister(ServiceProviderRegisterRequest) returns (ServiceProviderRegisterResponse);
+  rpc ServiceProviderLogin(ServiceProviderLoginRequest) returns (LoginResponse);
+  rpc CompleteServiceProviderOnboarding(ServiceProviderOnboardingRequest) returns (ServiceProviderOnboardingResponse);
 }
 
 message SignInRequest {
@@ -236,4 +240,64 @@ message CheckSubscriptionAccessRequest {
 
 message CheckSubscriptionAccessResponse {
   bool has_access = 1;
+}
+
+// ============ SERVICE PROVIDER MESSAGES ============
+
+message ServiceProviderRegisterRequest {
+  string email = 1;
+  string password = 2;
+  string name = 3;
+  string phone = 4;
+}
+
+message ServiceProviderRegisterResponse {
+  bool success = 1;
+  string message = 2;
+  string accessToken = 3;
+  string userId = 4;
+}
+
+message ServiceProviderLoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message Location {
+  string address = 1;
+  string city = 2;
+  string district = 3;
+  double lat = 4;
+  double lng = 5;
+}
+
+message ServiceProviderOnboardingRequest {
+  string userId = 1;
+  string businessName = 2;
+  string businessType = 3;
+  string businessDescription = 4;
+  repeated string serviceCategories = 5;
+  Location location = 6;
+  string contactPhone = 7;
+  string whatsappNumber = 8;
+  repeated string languages = 9;
+  string priceRange = 10;
+}
+
+message ServiceProviderOnboardingResponse {
+  bool success = 1;
+  string message = 2;
+  string id = 3;
+  string email = 4;
+  string name = 5;
+  string businessName = 6;
+  string businessType = 7;
+  string businessDescription = 8;
+  repeated string serviceCategories = 9;
+  Location location = 10;
+  repeated string languages = 11;
+  string priceRange = 12;
+  bool isVerified = 13;
+  bool isOnboarded = 14;
+  string role = 15;
 }

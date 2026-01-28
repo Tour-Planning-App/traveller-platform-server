@@ -106,7 +106,55 @@ export class User extends Document {
 
   @Prop({ default: false })
   isDeactivated?: boolean;
-  
+
+  // ============ SERVICE PROVIDER FIELDS ============
+  @Prop()
+  businessName?: string; // e.g., "Saman's Cooking Class"
+
+  @Prop()
+  businessType?: string; // e.g., "cooking_class", "village_tour", "cultural_experience"
+
+  @Prop()
+  businessDescription?: string; // About the service
+
+  @Prop({ type: [String] })
+  serviceCategories?: string[]; // ["cooking", "traditional_arts", "nature_tours"]
+
+  @Prop({ type: Object })
+  location?: {
+    address?: string;
+    city?: string;
+    district?: string;
+    coordinates?: { lat: number; lng: number };
+  };
+
+  @Prop()
+  contactPhone?: string;
+
+  @Prop()
+  whatsappNumber?: string;
+
+  @Prop({ type: [String] })
+  languages?: string[]; // Languages provider speaks
+
+  @Prop()
+  priceRange?: string; // "budget", "mid-range", "premium"
+
+  @Prop({ default: false })
+  isVerified?: boolean; // Admin verification status
+
+  @Prop({ default: true })
+  isActive?: boolean; // Provider can toggle availability
+
+  @Prop({ default: 0 })
+  rating?: number; // Average rating from travelers
+
+  @Prop({ default: 0 })
+  totalReviews?: number;
+
+  @Prop({ type: [String] })
+  portfolioImages?: string[]; // Images of their services
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
