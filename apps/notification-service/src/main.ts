@@ -17,7 +17,7 @@ async function bootstrap() {
       options: {
         package: 'notification',
         protoPath: join(__dirname, 'proto/notification.proto'),
-        url: 'localhost:50051',
+        url: process.env.GRPC_URL || 'localhost:50051',
       },
     },
   );

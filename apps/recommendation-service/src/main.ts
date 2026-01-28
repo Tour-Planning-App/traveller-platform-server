@@ -15,7 +15,7 @@ async function bootstrap() {
     options: {
       package: 'recommendation',
       protoPath: join(__dirname, 'proto/recommendation.proto'),
-      url: 'localhost:50052', 
+      url: process.env.GRPC_URL || 'localhost:50052',
     },
   });
   await app.listen();

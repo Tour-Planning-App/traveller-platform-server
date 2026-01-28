@@ -16,7 +16,7 @@ async function bootstrap() {
     options: {
       package: 'tools',
       protoPath: join(__dirname, 'proto/tool.proto'),
-      url: 'localhost:50057', 
+      url: process.env.GRPC_URL || 'localhost:50057',
     },
   });
   await app.listen();

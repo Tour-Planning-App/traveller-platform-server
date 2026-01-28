@@ -16,7 +16,7 @@ async function bootstrap() {
     options: {
       package: 'itineraries',
       protoPath: join(__dirname, 'proto/itineraries.proto'),
-      url: 'localhost:50054', 
+      url: process.env.GRPC_URL || 'localhost:50054',
     },
   });
   await app.listen();
