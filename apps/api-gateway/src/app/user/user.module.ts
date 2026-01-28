@@ -11,42 +11,42 @@ import { SubscriptionGuard } from '../auth/guards/subscription.guard';
 
 @Module({
   imports: [
-      JwtModule.register({
-        secret: process.env.JWT_SECRET || 'secret',
-        global: true,
-      }),
-      ClientsModule.register([
-        {
-          name: 'USER_PACKAGE',
-          transport: Transport.GRPC,
-          options: {
-            package: 'user',
-            protoPath: join(__dirname, 'proto/user.proto'),
-            url: 'localhost:50053', // Matches recommendation service port
-          },
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'secret',
+      global: true,
+    }),
+    ClientsModule.register([
+      {
+        name: 'USER_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'user',
+          protoPath: join(__dirname, 'proto/user.proto'),
+          url: process.env.USER_GRPC_URL || 'localhost:50053',
         },
-        {
+      },
+      {
         name: 'AUTH_PACKAGE',
         transport: Transport.GRPC,
         options: {
           package: 'auth',
           protoPath: join(__dirname, 'proto/auth.proto'), // Adjust if auth is in sibling dir (e.g., ../../ for Nx)
-          url: 'localhost:50000', // Auth service port
+          url: process.env.AUTH_GRPC_URL || 'localhost:50000',
         },
       },
-      ]),
-    ],
+    ]),
+  ],
   controllers: [UserController],
   providers: [UserService,
-        {
-          provide: APP_GUARD,
-          useClass: JwtAuthGuard,
-        },
-        {
-          provide:APP_FILTER,
-          useClass:GrpcExceptionFilter
-        },
-        SubscriptionGuard
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GrpcExceptionFilter
+    },
+    SubscriptionGuard
   ],
 })
-export class UserModule {}
+export class UserModule { }

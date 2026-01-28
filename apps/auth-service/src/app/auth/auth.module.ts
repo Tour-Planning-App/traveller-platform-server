@@ -28,9 +28,20 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
           client: {
             clientId: 'auth-service',
             brokers: [process.env.KAFKA_BROKER || 'localhost:29092'],
+            retry: {
+              initialRetryTime: 1000,
+              retries: 10,
+            },
+            connectionTimeout: 10000,
           },
           consumer: {
             groupId: 'auth-consumer-group',
+          },
+          producer: {
+            retry: {
+              initialRetryTime: 1000,
+              retries: 10,
+            },
           },
         },
       },
@@ -39,4 +50,4 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
   controllers: [AuthController],
   providers: [AuthService],
 })
-export class AuthModule {}
+export class AuthModule { }

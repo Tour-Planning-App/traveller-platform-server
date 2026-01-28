@@ -10,32 +10,32 @@ import { join } from 'path';
 import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
 
 @Module({
-     imports: [
-        JwtModule.register({
-          secret: process.env.JWT_SECRET || 'secret',
-          global: true,
-        }),
-        ClientsModule.register([
-          {
-            name: 'TIPS_PACKAGE',
-            transport: Transport.GRPC,
-            options: {
-              package: 'tips',
-              protoPath: join(__dirname, 'proto/tips.proto'),
-              url: 'localhost:50056', // Assume port for itineraries service
-            },
-          },
-          {
-            name: 'AUTH_PACKAGE',
-            transport: Transport.GRPC,
-            options: {
-              package: 'auth',
-              protoPath: join(__dirname, 'proto/auth.proto'), // Adjust if auth is in sibling dir (e.g., ../../ for Nx)
-              url: 'localhost:50000', // Auth service port
-            },
-          },
-        ]),
-      ],
+  imports: [
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'secret',
+      global: true,
+    }),
+    ClientsModule.register([
+      {
+        name: 'TIPS_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'tips',
+          protoPath: join(__dirname, 'proto/tips.proto'),
+          url: process.env.TIPS_GRPC_URL || 'localhost:50056',
+        },
+      },
+      {
+        name: 'AUTH_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'auth',
+          protoPath: join(__dirname, 'proto/auth.proto'), // Adjust if auth is in sibling dir (e.g., ../../ for Nx)
+          url: process.env.AUTH_GRPC_URL || 'localhost:50000',
+        },
+      },
+    ]),
+  ],
   controllers: [TipsServiceController],
   providers: [TipsServiceService,
     {
@@ -49,4 +49,4 @@ import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
     SubscriptionGuard, // Optional global; use per-route
   ],
 })
-export class TipsServiceModule {}
+export class TipsServiceModule { }

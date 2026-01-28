@@ -9,7 +9,7 @@ import { join } from 'path';
 import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
 
 @Module({
-    imports: [
+  imports: [
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'secret',
       global: true,
@@ -21,7 +21,7 @@ import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
         options: {
           package: 'notification',
           protoPath: join(__dirname, 'proto/notification.proto'),
-          url: 'localhost:50051',
+          url: process.env.NOTIFICATION_GRPC_URL || 'localhost:50051',
         },
       },
     ]),
@@ -38,4 +38,4 @@ import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
     },
   ],
 })
-export class NotificationModule {}
+export class NotificationModule { }

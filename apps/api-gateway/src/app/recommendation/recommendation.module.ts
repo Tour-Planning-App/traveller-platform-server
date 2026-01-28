@@ -22,7 +22,7 @@ import { SubscriptionGuard } from '../auth/guards/subscription.guard';
         options: {
           package: 'recommendation',
           protoPath: join(__dirname, 'proto/recommendation.proto'),
-          url: 'localhost:50052', // Matches recommendation service port
+          url: process.env.RECOMMENDATION_GRPC_URL || 'localhost:50052',
         },
       },
       {
@@ -31,7 +31,7 @@ import { SubscriptionGuard } from '../auth/guards/subscription.guard';
         options: {
           package: 'auth',
           protoPath: join(__dirname, 'proto/auth.proto'), // Adjust if auth is in sibling dir (e.g., ../../ for Nx)
-          url: 'localhost:50000', // Auth service port
+          url: process.env.AUTH_GRPC_URL || 'localhost:50000',
         },
       },
     ]),
@@ -43,10 +43,10 @@ import { SubscriptionGuard } from '../auth/guards/subscription.guard';
       useClass: JwtAuthGuard,
     },
     {
-      provide:APP_FILTER,
-      useClass:GrpcExceptionFilter
+      provide: APP_FILTER,
+      useClass: GrpcExceptionFilter
     },
     SubscriptionGuard
   ],
 })
-export class RecommendationModule {}
+export class RecommendationModule { }

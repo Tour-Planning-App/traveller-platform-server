@@ -5,7 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { NotificationModule } from './notification/notification.module';
-import {} from '@nestjs/common';
+import { } from '@nestjs/common';
 import { RecommendationModule } from './recommendation/recommendation.module';
 import { UserModule } from './user/user.module';
 import { ItinerariesPlanModule } from './itinerarie-plan/itineraries-plan.module';
@@ -26,7 +26,7 @@ import { LogsModule } from './logs/logs.module';
         options: {
           package: 'auth',
           protoPath: join(__dirname, 'proto/auth.proto'),
-          url: 'localhost:50000',
+          url: process.env.AUTH_GRPC_URL || 'localhost:50000',
         },
       },
       {
@@ -35,7 +35,7 @@ import { LogsModule } from './logs/logs.module';
         options: {
           package: 'notification',
           protoPath: join(__dirname, 'proto/notification.proto'),
-          url: 'localhost:50051',
+          url: process.env.NOTIFICATION_GRPC_URL || 'localhost:50051',
         },
       },
       {
@@ -44,7 +44,7 @@ import { LogsModule } from './logs/logs.module';
         options: {
           package: 'recommendation',
           protoPath: join(__dirname, 'proto/recommendation.proto'),
-          url: 'localhost:50052', // Matches recommendation service port
+          url: process.env.RECOMMENDATION_GRPC_URL || 'localhost:50052',
         },
       },
       {
@@ -53,7 +53,7 @@ import { LogsModule } from './logs/logs.module';
         options: {
           package: 'user',
           protoPath: join(__dirname, 'proto/user.proto'),
-          url: 'localhost:50053', // Matches recommendation service port
+          url: process.env.USER_GRPC_URL || 'localhost:50053',
         },
       },
       {
@@ -62,7 +62,7 @@ import { LogsModule } from './logs/logs.module';
         options: {
           package: 'itineraries',
           protoPath: join(__dirname, 'proto/itineraries.proto'),
-          url: 'localhost:50054', // Assume port for itineraries service
+          url: process.env.ITINERARIES_GRPC_URL || 'localhost:50054',
         },
       },
       {
@@ -71,7 +71,7 @@ import { LogsModule } from './logs/logs.module';
         options: {
           package: 'community',
           protoPath: join(__dirname, 'proto/community.proto'),
-          url: 'localhost:50055', // Assume port for itineraries service
+          url: process.env.COMMUNITY_GRPC_URL || 'localhost:50055',
         },
       },
       {
@@ -80,7 +80,7 @@ import { LogsModule } from './logs/logs.module';
         options: {
           package: 'tips',
           protoPath: join(__dirname, 'proto/tips.proto'),
-          url: 'localhost:50056', // Assume port for itineraries service
+          url: process.env.TIPS_GRPC_URL || 'localhost:50056',
         },
       },
       {
@@ -89,7 +89,7 @@ import { LogsModule } from './logs/logs.module';
         options: {
           package: 'tools',
           protoPath: join(__dirname, 'proto/tool.proto'),
-          url: 'localhost:50057', // Assume port for itineraries service
+          url: process.env.TOOLS_GRPC_URL || 'localhost:50057',
         },
       },
       // {
@@ -122,4 +122,4 @@ import { LogsModule } from './logs/logs.module';
   controllers: [AppController],
   providers: [AppService, ToolsServiceService],
 })
-export class AppModule {}
+export class AppModule { }

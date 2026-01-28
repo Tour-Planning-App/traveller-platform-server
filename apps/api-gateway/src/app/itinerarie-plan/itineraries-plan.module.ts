@@ -22,7 +22,7 @@ import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
         options: {
           package: 'itineraries',
           protoPath: join(__dirname, 'proto/itineraries.proto'),
-          url: 'localhost:50054', // Assume port for itineraries service
+          url: process.env.ITINERARIES_GRPC_URL || 'localhost:50054',
         },
       },
       {
@@ -31,7 +31,7 @@ import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
         options: {
           package: 'auth',
           protoPath: join(__dirname, 'proto/auth.proto'), // Adjust if auth is in sibling dir (e.g., ../../ for Nx)
-          url: 'localhost:50000', // Auth service port
+          url: process.env.AUTH_GRPC_URL || 'localhost:50000',
         },
       },
     ]),
@@ -49,4 +49,4 @@ import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
     SubscriptionGuard, // Optional global; use per-route
   ],
 })
-export class ItinerariesPlanModule {}
+export class ItinerariesPlanModule { }

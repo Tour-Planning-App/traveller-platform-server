@@ -10,44 +10,44 @@ import { join } from 'path';
 import { GrpcExceptionFilter } from '../../filters/grpc-exception.filter';
 
 @Module({
-   imports: [
-      JwtModule.register({
-        secret: process.env.JWT_SECRET || 'secret',
-        global: true,
-      }),
-      ClientsModule.register([
-        {
-          name: 'COMMUNITY_PACKAGE',
-          transport: Transport.GRPC,
-          options: {
-            package: 'community',
-            protoPath: join(__dirname, 'proto/community.proto'),
-            url: 'localhost:50055', // Assume port for itineraries service
-          },
+  imports: [
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'secret',
+      global: true,
+    }),
+    ClientsModule.register([
+      {
+        name: 'COMMUNITY_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'community',
+          protoPath: join(__dirname, 'proto/community.proto'),
+          url: process.env.COMMUNITY_GRPC_URL || 'localhost:50055',
         },
-        {
-          name: 'AUTH_PACKAGE',
-          transport: Transport.GRPC,
-          options: {
-            package: 'auth',
-            protoPath: join(__dirname, 'proto/auth.proto'), // Adjust if auth is in sibling dir (e.g., ../../ for Nx)
-            url: 'localhost:50000', // Auth service port
-          },
+      },
+      {
+        name: 'AUTH_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'auth',
+          protoPath: join(__dirname, 'proto/auth.proto'), // Adjust if auth is in sibling dir (e.g., ../../ for Nx)
+          url: process.env.AUTH_GRPC_URL || 'localhost:50000',
         },
-      ]),
-    ],
-      
+      },
+    ]),
+  ],
+
   controllers: [CommunityServiceController],
   providers: [CommunityServiceService,
     {
-        provide: APP_GUARD,
-        useClass: JwtAuthGuard,
-      },
-      {
-        provide: APP_FILTER,
-        useClass: GrpcExceptionFilter,
-      },
-      SubscriptionGuard, // Optional global; use per-route
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GrpcExceptionFilter,
+    },
+    SubscriptionGuard, // Optional global; use per-route
   ],
 })
-export class CommunityServiceModule {}
+export class CommunityServiceModule { }

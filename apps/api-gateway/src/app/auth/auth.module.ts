@@ -20,10 +20,10 @@ import { SubscriptionGuard } from './guards/subscription.guard';
         name: 'AUTH_PACKAGE',
         transport: Transport.GRPC,
         options: {
-           package: 'auth',
-           protoPath: join(__dirname, 'proto/auth.proto'),
-           url: 'localhost:50000',
-         },
+          package: 'auth',
+          protoPath: join(__dirname, 'proto/auth.proto'),
+          url: process.env.AUTH_GRPC_URL || 'localhost:50000',
+        },
       },
     ]),
   ],
@@ -40,4 +40,4 @@ import { SubscriptionGuard } from './guards/subscription.guard';
     SubscriptionGuard
   ],
 })
-export class AuthModule {}
+export class AuthModule { }

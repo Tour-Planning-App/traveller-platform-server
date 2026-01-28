@@ -1,0 +1,94 @@
+# docker-compose.prod.yml - Production Configuration
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+version: '3.8'
+
+services:
+  # Override all services for production
+
+  api-gateway:
+    build:
+      target: production
+    command: node dist/apps/api-gateway/main.js
+    volumes: [] # Remove volume mounts in production
+    environment:
+      NODE_ENV: production
+
+  auth-service:
+    build:
+      target: production
+    command: node dist/apps/auth-service/main.js
+    volumes: []
+    environment:
+      NODE_ENV: production
+
+  user-service:
+    build:
+      target: production
+    command: node dist/apps/user-service/main.js
+    volumes: []
+    environment:
+      NODE_ENV: production
+
+  notification-service:
+    build:
+      target: production
+    command: node dist/apps/notification-service/main.js
+    volumes: []
+    environment:
+      NODE_ENV: production
+
+  recommendation-service:
+    build:
+      target: production
+    command: node dist/apps/recommendation-service/main.js
+    volumes: []
+    environment:
+      NODE_ENV: production
+
+  itinerarie-plan:
+    build:
+      target: production
+    command: node dist/apps/itinerarie-plan/main.js
+    volumes: []
+    environment:
+      NODE_ENV: production
+
+  community-service:
+    build:
+      target: production
+    command: node dist/apps/community-service/main.js
+    volumes: []
+    environment:
+      NODE_ENV: production
+
+  tips-service:
+    build:
+      target: production
+    command: node dist/apps/tips-service/main.js
+    volumes: []
+    environment:
+      NODE_ENV: production
+
+  tools-service:
+    build:
+      target: production
+    command: node dist/apps/tools-service/main.js
+    volumes: []
+    environment:
+      NODE_ENV: production
+
+  logs-service:
+    build:
+      target: production
+    command: node dist/apps/logs-service/main.js
+    volumes: []
+    environment:
+      NODE_ENV: production
+
+  email-service:
+    build:
+      target: production
+    command: node dist/apps/email-service/main.js
+    volumes: []
+    environment:
+      NODE_ENV: production

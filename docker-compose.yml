@@ -1,24 +1,33 @@
-# docker-compose.yml
+# docker-compose.yml - Traveller Platform Microservices
 version: '3.8'
 
 services:
+  # ============================================
+  # Infrastructure Services
+  # ============================================
+
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "22181:2181"
     networks:
-      - app-network
+      - traveller-network
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      test: [ "CMD", "nc", "-z", "localhost", "2181" ]
       interval: 10s
       timeout: 5s
       retries: 5
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
     depends_on:
       zookeeper:
         condition: service_healthy
@@ -31,87 +40,398 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKAJS_NO_PARTITIONER_WARNING: "1"
     networks:
-      - app-network
+      - traveller-network
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "9092"]
+      test: [ "CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    networks:
+      - traveller-network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
       interval: 10s
       timeout: 5s
       retries: 5
+    volumes:
+      - mongodb-data:/data/db
 
-#  api-gateway:
-#    build:
-#      context: ./api-gateway
-#      dockerfile: Dockerfile
-#    ports:
-#      - "3200:3200"
-#    environment:
-#      - PORT=3200
-#      - KAFKA_BROKERS=kafka:9092
-#    depends_on:
-#      - kafka
-#    networks:
-#      - app-network
+  # ============================================
+  # API Gateway (HTTP - Port 3400)
+  # ============================================
 
-#  authentication-service:
-#    build:
-#      context: ./authentication-service
-#      dockerfile: Dockerfile
-#    environment:
-#      - KAFKA_BROKERS=kafka:9092
-#      - DATABASE_URL=postgresql://postgres:Dineth@123@host.docker.internal:5432/travelplanner_user?schema=public
-#      - JWT_SECRET=super-secret
-#      - JWT_EXP=48h
-#    depends_on:
-#      - kafka
-#    networks:
-#      - app-network
-#    restart: on-failure
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: api-gateway
+    command: npx nx serve api-gateway
+    ports:
+      - "3400:3400"
+    environment:
+      NODE_ENV: development
+      PORT: 3400
+      # gRPC service URLs (use container names)
+      AUTH_GRPC_URL: auth-service:50000
+      USER_GRPC_URL: user-service:50053
+      ITINERARIES_GRPC_URL: itinerarie-plan:50054
+      COMMUNITY_GRPC_URL: community-service:50055
+      TIPS_GRPC_URL: tips-service:50056
+      TOOLS_GRPC_URL: tools-service:50057
+      NOTIFICATION_GRPC_URL: notification-service:50051
+      RECOMMENDATION_GRPC_URL: recommendation-service:50052
+      LOGS_GRPC_URL: logs-service:50058
+      # Kafka
+      KAFKA_BROKER: kafka:9092
+      # MongoDB
+      MONGODB_URI: mongodb://admin:password@mongodb:27017
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+    networks:
+      - traveller-network
+    restart: unless-stopped
 
-#  user-survey-service:
-#    build:
-#      context: ./user-survey-service
-#      dockerfile: Dockerfile
-#    ports:
-#      - "3003:3003" # Expose WebSocket port for user-survey-service
-#    environment:
-#      - KAFKA_BROKERS=kafka:9092
-#      - MONGO_DB_URI=mongodb+srv://dineth:XpmL$33i@cluster0.xn1ch.mongodb.net/travelplanner_survey?retryWrites=true&w=majority&appName=Cluster0
-#    depends_on:
-#      - kafka
-#    networks:
-#      - app-network
-#    restart: on-failure
-#
-#  trip-package-service:
-#    build:
-#      context: ./trip-package-service
-#      dockerfile: Dockerfile
-#    ports:
-#      - "3004:3004" # Expose WebSocket port for trip-package-service
-#    environment:
-#      - KAFKA_BROKERS=kafka:9092
-#      - MONGO_DB_URI=mongodb+srv://dineth:XpmL$33i@cluster0.xn1ch.mongodb.net/travelplanner_survey?retryWrites=true&w=majority&appName=Cluster0
-#    depends_on:
-#      - kafka
-#    networks:
-#      - app-network
-#    restart: on-failure
-#
-#  trip-manager:
-#    build:
-#      context: ./trip-manager
-#      dockerfile: Dockerfile
-#    environment:
-#      - KAFKA_BROKERS=kafka:9092
-#      - MONGO_DB_URI=mongodb+srv://dineth:XpmL$33i@cluster0.xn1ch.mongodb.net/travelplanner_survey?retryWrites=true&w=majority&appName=Cluster0
-#    depends_on:
-#      - kafka
-#    networks:
-#      - app-network
-#    restart: on-failure
+  # ============================================
+  # Auth Service (gRPC - Port 50000)
+  # ============================================
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: auth-service
+    command: npx nx serve auth-service
+    ports:
+      - "50000:50000"
+    environment:
+      NODE_ENV: development
+      GRPC_URL: 0.0.0.0:50000
+      MONGODB_URI: mongodb://admin:password@mongodb:27017
+      KAFKA_BROKER: kafka:9092
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - traveller-network
+    restart: unless-stopped
+
+  # ============================================
+  # User Service (gRPC - Port 50053)
+  # ============================================
+
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: user-service
+    command: npx nx serve user-service
+    ports:
+      - "50053:50053"
+    environment:
+      NODE_ENV: development
+      GRPC_URL: 0.0.0.0:50053
+      MONGODB_URI: mongodb://admin:password@mongodb:27017
+      KAFKA_BROKER: kafka:9092
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - traveller-network
+    restart: unless-stopped
+
+  # ============================================
+  # Notification Service (gRPC - Port 50051)
+  # ============================================
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: notification-service
+    command: npx nx serve notification-service
+    ports:
+      - "50051:50051"
+    environment:
+      NODE_ENV: development
+      GRPC_URL: 0.0.0.0:50051
+      MONGODB_URI: mongodb://admin:password@mongodb:27017
+      KAFKA_BROKER: kafka:9092
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - traveller-network
+    restart: unless-stopped
+
+  # ============================================
+  # Recommendation Service (gRPC - Port 50052)
+  # ============================================
+
+  recommendation-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: recommendation-service
+    command: npx nx serve recommendation-service
+    ports:
+      - "50052:50052"
+    environment:
+      NODE_ENV: development
+      GRPC_URL: 0.0.0.0:50052
+      MONGODB_URI: mongodb://admin:password@mongodb:27017
+      KAFKA_BROKER: kafka:9092
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - traveller-network
+    restart: unless-stopped
+
+  # ============================================
+  # Itineraries Service (gRPC - Port 50054)
+  # ============================================
+
+  itinerarie-plan:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: itinerarie-plan
+    command: npx nx serve itinerarie-plan
+    ports:
+      - "50054:50054"
+    environment:
+      NODE_ENV: development
+      GRPC_URL: 0.0.0.0:50054
+      MONGODB_URI: mongodb://admin:password@mongodb:27017
+      KAFKA_BROKER: kafka:9092
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - traveller-network
+    restart: unless-stopped
+
+  # ============================================
+  # Community Service (gRPC - Port 50055)
+  # ============================================
+
+  community-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: community-service
+    command: npx nx serve community-service
+    ports:
+      - "50055:50055"
+    environment:
+      NODE_ENV: development
+      GRPC_URL: 0.0.0.0:50055
+      MONGODB_URI: mongodb://admin:password@mongodb:27017
+      KAFKA_BROKER: kafka:9092
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - traveller-network
+    restart: unless-stopped
+
+  # ============================================
+  # Tips Service (gRPC - Port 50056)
+  # ============================================
+
+  tips-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: tips-service
+    command: npx nx serve tips-service
+    ports:
+      - "50056:50056"
+    environment:
+      NODE_ENV: development
+      GRPC_URL: 0.0.0.0:50056
+      MONGODB_URI: mongodb://admin:password@mongodb:27017
+      KAFKA_BROKER: kafka:9092
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - traveller-network
+    restart: unless-stopped
+
+  # ============================================
+  # Tools Service (gRPC - Port 50057)
+  # ============================================
+
+  tools-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: tools-service
+    command: npx nx serve tools-service
+    ports:
+      - "50057:50057"
+    environment:
+      NODE_ENV: development
+      GRPC_URL: 0.0.0.0:50057
+      MONGODB_URI: mongodb://admin:password@mongodb:27017
+      KAFKA_BROKER: kafka:9092
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - traveller-network
+    restart: unless-stopped
+
+  # ============================================
+  # Logs Service (gRPC - Port 50058)
+  # ============================================
+
+  logs-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: logs-service
+    command: npx nx serve logs-service
+    ports:
+      - "50058:50058"
+    environment:
+      NODE_ENV: development
+      GRPC_URL: 0.0.0.0:50058
+      MONGODB_URI: mongodb://admin:password@mongodb:27017
+      KAFKA_BROKER: kafka:9092
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - traveller-network
+    restart: unless-stopped
+
+  # ============================================
+  # Email Service (Kafka Consumer - No Port)
+  # ============================================
+
+  email-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: email-service
+    command: npx nx serve email-service
+    environment:
+      NODE_ENV: development
+      KAFKA_BROKER: kafka:9092
+      MONGODB_URI: mongodb://admin:password@mongodb:27017
+      # Email configuration (must match MAIL_* expected by email.module.ts)
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USER: ${MAIL_USER:-shanadhi99@gmail.com}
+      MAIL_PASS: ${MAIL_PASS:-mxzn jhbo yhhb pzrn}
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - traveller-network
+    restart: unless-stopped
+
+# ============================================
+# Volumes
+# ============================================
+
+volumes:
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-data:
+  mongodb-data:
+
+    # ============================================
+    # Networks
+    # ============================================
 
 networks:
-  app-network:
+  traveller-network:
     driver: bridge
